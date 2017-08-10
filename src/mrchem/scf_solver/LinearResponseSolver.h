@@ -2,6 +2,8 @@
 
 #include "SCF.h"
 
+class Accelerator;
+
 class LinearResponseSolver : public SCF {
 public:
     LinearResponseSolver(HelmholtzOperatorSet &h,

@@ -33,11 +33,11 @@ public:
     virtual Orbital* operator() (Orbital &phi) = 0;
     virtual Orbital* adjoint(Orbital &phi) = 0;
 
-    virtual double operator() (Orbital &phi_i, Orbital &phi_j);
-    virtual double adjoint(Orbital &phi_i, Orbital &phi_j);
+    virtual double operator() (Orbital &phi_i, Orbital &phi_j, QMOperator *R = 0);
+    virtual double adjoint(Orbital &phi_i, Orbital &phi_j, QMOperator *R = 0);
 
-    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs);
-    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
+    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
 
 protected:
     const int max_scale;

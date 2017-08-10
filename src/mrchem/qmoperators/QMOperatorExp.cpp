@@ -1,4 +1,5 @@
 #include "QMOperatorExp.h"
+#include "QMTensorOperator.h"
 #include "Orbital.h"
 #include "OrbitalVector.h"
 #include "OrbitalAdder.h"
@@ -53,6 +54,7 @@ void QMOperatorExp::setup(double prec) {
         }
     }
 }
+
 void QMOperatorExp::clear() {
     for (int i = 0; i < this->oper_exp.size(); i++) {
         for (int j = 0; j < this->oper_exp[i].size(); j++) {
@@ -92,58 +94,84 @@ Orbital* QMOperatorExp::adjoint(Orbital &phi_p) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-double QMOperatorExp::operator() (Orbital &phi_i, Orbital &phi_j) {
-    QMOperatorExp &O = *this;
-    Orbital *Ophi_j = O(phi_j);
-    complex<double> result = phi_i.dot(*Ophi_j);
-    delete Ophi_j;
+double QMOperatorExp::operator() (Orbital &phi_i, Orbital &phi_j, QMOperator *R) {
+    complex<double> result(0.0, 0.0);
+    if (R != 0) {
+        RankZeroTensorOperator OR = (*this) * (*R);
+        Orbital *Rphi_i = (*R)(phi_i);
+        Orbital *ORphi_j = OR(phi_j);
+        result = Rphi_i->dot(*ORphi_j);
+        delete Rphi_i;
+        delete ORphi_j;
+    } else {
+        RankZeroTensorOperator O = (*this);
+        Orbital *Ophi_j = O(phi_j);
+        result = phi_i.dot(*Ophi_j);
+        delete Ophi_j;
+    }
     if (result.imag() > MachineZero) MSG_ERROR("Should be real");
     return result.real();
 }
 
-double QMOperatorExp::adjoint(Orbital &phi_i, Orbital &phi_j) {
+double QMOperatorExp::adjoint(Orbital &phi_i, Orbital &phi_j, QMOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-MatrixXd QMOperatorExp::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd QMOperatorExp::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     QMOperatorExp &O = *this;
 
     int Ni = i_orbs.size();
     int Nj = j_orbs.size();
     MatrixXcd result = MatrixXcd::Zero(Ni, Nj);
 
-    for (int j = 0; j < Nj; j++) {
-        Orbital &phi_j = j_orbs.getOrbital(j);
-        Orbital *Ophi_j = O(phi_j);
-        for (int i = 0; i <  Ni; i++) {
-            Orbital &phi_i = i_orbs.getOrbital(i);
-            result(i,j) = phi_i.dot(*Ophi_j);
+    if (R != 0) {
+        for (int j = 0; j < Nj; j++) {
+            Orbital &phi_j = j_orbs.getOrbital(j);
+            Orbital *Rphi_j = (*R)(phi_j);
+            Orbital *ORphi_j = O(*Rphi_j);
+            delete Rphi_j;
+            for (int i = 0; i <  Ni; i++) {
+                Orbital &phi_i = i_orbs.getOrbital(i);
+                Orbital *Rphi_i = (*R)(phi_i);
+                result(i,j) = Rphi_i->dot(*ORphi_j);
+                delete Rphi_i;
+            }
+            delete ORphi_j;
         }
-        delete Ophi_j;
+    } else {
+        for (int j = 0; j < Nj; j++) {
+            Orbital &phi_j = j_orbs.getOrbital(j);
+            Orbital *Ophi_j = O(phi_j);
+            for (int i = 0; i <  Ni; i++) {
+                Orbital &phi_i = i_orbs.getOrbital(i);
+                result(i,j) = phi_i.dot(*Ophi_j);
+            }
+            delete Ophi_j;
+        }
     }
 
     if (result.imag().norm() > MachineZero) MSG_ERROR("Should be real");
     return result.real();
 }
 
-MatrixXd QMOperatorExp::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd QMOperatorExp::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-double QMOperatorExp::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+double QMOperatorExp::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y, QMOperator *R) {
     QMOperatorExp &O = *this;
 
     double result = 0.0;
     for (int i = 0; i < phi.size(); i++) {
         if (i%mpiOrbSize == mpiOrbRank) {
-	    Orbital &phi_i = phi.getOrbital(i);
-	    Orbital &x_i = x.getOrbital(i);
-	    Orbital &y_i = y.getOrbital(i);
-	    
-	    double eta_i = (double) phi_i.getOccupancy();
-	    double result_1 = O(phi_i, x_i);
-	    double result_2 = O(y_i, phi_i);
-	    result += eta_i*(result_1 + result_2);
+            Orbital &phi_i = phi.getOrbital(i);
+            Orbital &x_i = x.getOrbital(i);
+            Orbital &y_i = y.getOrbital(i);
+
+            double eta_i = (double) phi_i.getOccupancy();
+            double result_1 = O(phi_i, x_i, R);
+            double result_2 = O(y_i, phi_i, R);
+            result += eta_i*(result_1 + result_2);
         }
     }
 #ifdef HAVE_MPI
@@ -153,15 +181,15 @@ double QMOperatorExp::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector 
     return result;
 }
 
-double QMOperatorExp::trace(OrbitalVector &phi) {
+double QMOperatorExp::trace(OrbitalVector &phi, QMOperator *R) {
     QMOperatorExp &O = *this;
 
     double result = 0.0;
     for (int i = 0; i < phi.size(); i++) {
-	if (i%mpiOrbSize == mpiOrbRank) {
-	    Orbital &phi_i = phi.getOrbital(i);
-	    double eta_i = (double) phi_i.getOccupancy();
-	    result += eta_i*O(phi_i, phi_i);
+        if (i%mpiOrbSize == mpiOrbRank) {
+            Orbital &phi_i = phi.getOrbital(i);
+            double eta_i = (double) phi_i.getOccupancy();
+            result += eta_i*O(phi_i, phi_i, R);
         }
     }
 #ifdef HAVE_MPI

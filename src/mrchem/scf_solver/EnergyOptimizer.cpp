@@ -24,11 +24,12 @@ EnergyOptimizer::~EnergyOptimizer() {
 }
 
 void EnergyOptimizer::setup(FockOperator &fock, OrbitalVector &phi, MatrixXd &F,
-                            FockOperator &fock_np1, OrbitalVector &phi_np1) {
+                            FockOperator &fock_np1, OrbitalVector &phi_np1, QMOperator *R) {
     this->fMat_n = &F;
     this->fOper_n = &fock;
     this->fOper_np1 = &fock_np1;
 
+    this->nucCorrFac = R;
     this->orbitals_n = &phi;
     this->orbitals_np1 = &phi_np1;
     this->dOrbitals_n = new OrbitalVector(phi);
@@ -41,6 +42,7 @@ void EnergyOptimizer::clear() {
 
     delete this->dOrbitals_n;
 
+    this->nucCorrFac = 0;
     this->orbitals_n = 0;
     this->orbitals_np1 = 0;
     this->dOrbitals_n = 0;
@@ -143,6 +145,7 @@ bool EnergyOptimizer::optimize() {
 MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     if (this->fOper_np1 == 0) MSG_FATAL("Operator not initialized");
 
+    QMOperator *R = this->nucCorrFac;
     OrbitalVector &phi_n = *this->orbitals_n;
     OrbitalVector &phi_np1 = *this->orbitals_np1;
     OrbitalVector &dPhi_n = *this->dOrbitals_n;
@@ -152,8 +155,8 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     Timer timer;
     IdentityOperator I;
     I.setup(getOrbitalPrecision());
-    MatrixXd dS_1 = I(dPhi_n, phi_n);
-    MatrixXd dS_2 = I(phi_np1, dPhi_n);
+    MatrixXd dS_1 = I(dPhi_n, phi_n, R);
+    MatrixXd dS_2 = I(phi_np1, dPhi_n, R);
     I.clear();
 
     NuclearPotential *v_n = this->fOper_n->getNuclearPotential();
@@ -190,7 +193,7 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
 
             //Only one process does the computations. j orbitals always local
             MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(), orbVecChunk_j.size());
-            resultChunk = (*v_n)(rcvOrbs, orbVecChunk_j);
+            resultChunk = (*v_n)(rcvOrbs, orbVecChunk_j, R);
 
             //copy results into final matrix
             int j = 0;
@@ -212,7 +215,7 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
                       MPI_DOUBLE, MPI_SUM, mpiCommOrb);
 
 #else
-        dV_n = (*v_n)(phi_np1, dPhi_n);
+        dV_n = (*v_n)(phi_np1, dPhi_n, R);
 #endif
 
         timer.stop();
@@ -224,7 +227,7 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     {   // Computing potential matrix excluding nuclear part
         Timer timer;
         FockOperator fock_n(0, 0, j_n, k_n, xc_n);
-        F_n = fock_n(phi_np1, phi_n);
+        F_n = fock_n(phi_np1, phi_n, R);
         timer.stop();
         double t = timer.getWallTime();
         TelePrompter::printDouble(0, "Fock matrix n", t);
@@ -250,8 +253,8 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     {   // Computing potential matrix excluding nuclear part
         Timer timer;
         FockOperator fock_np1(0, 0, j_np1, k_np1, xc_np1);
-        MatrixXd F_1 = fock_np1(phi_n, phi_n);
-        MatrixXd F_2 = fock_np1(phi_n, dPhi_n);
+        MatrixXd F_1 = fock_np1(phi_n, phi_n, R);
+        MatrixXd F_2 = fock_np1(phi_n, dPhi_n, R);
         fock_np1.clear();
 
         F_np1 = F_1 + F_2 + F_2.transpose();

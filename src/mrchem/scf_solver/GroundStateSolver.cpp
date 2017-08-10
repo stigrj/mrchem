@@ -25,6 +25,7 @@ GroundStateSolver::GroundStateSolver(HelmholtzOperatorSet &h)
     : SCF(h),
       fOper_n(0),
       fMat_n(0),
+      nucCorrFac(0),
       orbitals_n(0),
       orbitals_np1(0),
       dOrbitals_n(0) {
@@ -33,6 +34,7 @@ GroundStateSolver::GroundStateSolver(HelmholtzOperatorSet &h)
 GroundStateSolver::~GroundStateSolver() {
     if (this->fOper_n != 0) MSG_ERROR("Solver not properly cleared");
     if (this->fMat_n != 0) MSG_ERROR("Solver not properly cleared");
+    if (this->nucCorrFac != 0) MSG_ERROR("Solver not properly cleared");
     if (this->orbitals_n != 0) MSG_ERROR("Solver not properly cleared");
     if (this->orbitals_np1 != 0) MSG_ERROR("Solver not properly cleared");
     if (this->dOrbitals_n != 0) MSG_ERROR("Solver not properly cleared");
@@ -143,8 +145,9 @@ double GroundStateSolver::calcProperty() {
     MatrixXd &F = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
     OrbitalVector &phi = *this->orbitals_n;
+    QMOperator *R = this->nucCorrFac;
 
-    SCFEnergy E = fock.trace(phi, F);
+    SCFEnergy E = fock.trace(phi, F, R);
     this->energy.push_back(E);
 
     timer.stop();
@@ -215,7 +218,7 @@ void GroundStateSolver::localize(FockOperator &fock, MatrixXd &F, OrbitalVector 
     int n_it = 0;
     if (phi.size() > 1) {
         Timer rr_t;
-        RR rr(this->orbPrec[0], phi);
+        RR rr(this->orbPrec[0], phi, this->nucCorrFac);
         n_it = rr.maximize();//compute total U, rotation matrix
         rr_t.stop();
         TelePrompter::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime());
@@ -294,9 +297,11 @@ MatrixXd GroundStateSolver::calcOrthonormalizationMatrix(OrbitalVector &phi) {
     Timer timer;
     printout(1, "Calculating orthonormalization matrix            ");
 
+    QMOperator *R = this->nucCorrFac;
+
     IdentityOperator I;
     I.setup(getOrbitalPrecision());
-    MatrixXd S_tilde = I(phi, phi);
+    MatrixXd S_tilde = I(phi, phi, R);
     I.clear();
 
     SelfAdjointEigenSolver<MatrixXd> es(S_tilde.cols());
@@ -316,7 +321,7 @@ MatrixXd GroundStateSolver::calcOrthonormalizationMatrix(OrbitalVector &phi) {
 
 /** Compute the position matrix <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
  */
-RR::RR(double prec, OrbitalVector &phi) {
+RR::RR(double prec, OrbitalVector &phi, QMOperator *nuc_corr_fac) {
     N = phi.size();
     if (N < 2) MSG_ERROR("Cannot localize less than two orbitals");
     total_U = MatrixXd::Identity(N,N);
@@ -363,17 +368,17 @@ RR::RR(double prec, OrbitalVector &phi) {
                 //r_x(phi_i, phi_j) != r_x(phi_j, phi_i), we prefer to have consistent results for
                 //different mpiOrbSize
                 if(rcvOrbsIx[j]<=orbsIx[i]){
-                    r_i_orig(orbsIx[i],rcvOrbsIx[j]) = r_x(phi_i, phi_j);
-                    r_i_orig(orbsIx[i],rcvOrbsIx[j]+N) = r_y(phi_i, phi_j);
-                    r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N) = r_z(phi_i, phi_j);
+                    r_i_orig(orbsIx[i],rcvOrbsIx[j]) = r_x(phi_i, phi_j, nuc_corr_fac);
+                    r_i_orig(orbsIx[i],rcvOrbsIx[j]+N) = r_y(phi_i, phi_j, nuc_corr_fac);
+                    r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N) = r_z(phi_i, phi_j, nuc_corr_fac);
                     r_i_orig(rcvOrbsIx[j],orbsIx[i]) = r_i_orig(orbsIx[i],rcvOrbsIx[j]);
                     r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) =  r_i_orig(orbsIx[i],rcvOrbsIx[j]+N);
                     r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N) = r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N);
                 }else{
                     if(rcvOrbsIx[j]%mpiOrbSize != mpiOrbRank){ //need only compute j<=i in own block
-                        r_i_orig(rcvOrbsIx[j],orbsIx[i]) = r_x(phi_j, phi_i);
-                        r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) =  r_y(phi_j, phi_i);
-                        r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N) = r_z(phi_j, phi_i);
+                        r_i_orig(rcvOrbsIx[j],orbsIx[i]) = r_x(phi_j, phi_i, nuc_corr_fac);
+                        r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) =  r_y(phi_j, phi_i, nuc_corr_fac);
+                        r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N) = r_z(phi_j, phi_i, nuc_corr_fac);
                         r_i_orig(orbsIx[i],rcvOrbsIx[j]) = r_i_orig(rcvOrbsIx[j],orbsIx[i]);
                         r_i_orig(orbsIx[i],rcvOrbsIx[j]+N) = r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) ;
                         r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N) = r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N);
@@ -400,9 +405,9 @@ RR::RR(double prec, OrbitalVector &phi) {
             if (spin_i != spin_j) {
                 MSG_ERROR("Spins must be separated before localization");
             }
-            r_i_orig(i,j) = r_x(phi_i, phi_j);
-            r_i_orig(i,j+N) = r_y(phi_i, phi_j);
-            r_i_orig(i,j+2*N) = r_z(phi_i, phi_j);
+            r_i_orig(i,j) = r_x(phi_i, phi_j, nuc_corr_fac);
+            r_i_orig(i,j+N) = r_y(phi_i, phi_j, nuc_corr_fac);
+            r_i_orig(i,j+2*N) = r_z(phi_i, phi_j, nuc_corr_fac);
             r_i_orig(j,i) = r_i_orig(i,j);
             r_i_orig(j,i+N) = r_i_orig(i,j+N);
             r_i_orig(j,i+2*N) = r_i_orig(i,j+2*N);
@@ -416,7 +421,7 @@ RR::RR(double prec, OrbitalVector &phi) {
     //rotate R matrices into orthonormal basis
     IdentityOperator I;
     I.setup(prec);
-    MatrixXd S_tilde = I(phi, phi);
+    MatrixXd S_tilde = I(phi, phi, nuc_corr_fac);
     MatrixXd S_tilde_m12 = MathUtils::hermitianMatrixPow(S_tilde, -1.0/2.0);
     I.clear();
 

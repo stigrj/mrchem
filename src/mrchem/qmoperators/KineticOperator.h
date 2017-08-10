@@ -11,11 +11,11 @@ public:
     }
     virtual ~KineticOperator() { }
 
-    virtual double operator() (Orbital &orb_i, Orbital &orb_j);
-    virtual double adjoint(Orbital &orb_i, Orbital &orb_j);
+    virtual double operator() (Orbital &orb_i, Orbital &orb_j, QMOperator *R = 0);
+    virtual double adjoint(Orbital &orb_i, Orbital &orb_j, QMOperator *R = 0);
 
-    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs);
-    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
+    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
 
     using RankZeroTensorOperator::operator();
     using RankZeroTensorOperator::adjoint;

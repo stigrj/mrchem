@@ -42,21 +42,21 @@ public:
     Orbital* operator() (Orbital &orb_p);
     Orbital* adjoint(Orbital &orb_p);
 
-    double operator() (Orbital &orb_i, Orbital &orb_j);
-    double adjoint(Orbital &orb_i, Orbital &orb_j);
+    double operator() (Orbital &orb_i, Orbital &orb_j, QMOperator *R = 0);
+    double adjoint(Orbital &orb_i, Orbital &orb_j, QMOperator *R = 0);
 
-    Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs);
-    Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
+    Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
 
     Orbital* applyPotential(Orbital &orb_p);
-    double applyPotential(Orbital &orb_i, Orbital &orb_j);
-    Eigen::MatrixXd applyPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    double applyPotential(Orbital &orb_i, Orbital &orb_j, QMOperator *R = 0);
+    Eigen::MatrixXd applyPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
 
     Orbital* applyAdjointPotential(Orbital &orb_p);
-    double applyAdjointPotential(Orbital &orb_i, Orbital &orb_j);
-    Eigen::MatrixXd applyAdjointPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    double applyAdjointPotential(Orbital &orb_i, Orbital &orb_j, QMOperator *R = 0);
+    Eigen::MatrixXd applyAdjointPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
 
-    SCFEnergy trace(OrbitalVector &phi, Eigen::MatrixXd &F);
+    SCFEnergy trace(OrbitalVector &phi, Eigen::MatrixXd &F, QMOperator *R = 0);
 
 protected:
     KineticOperator *T;

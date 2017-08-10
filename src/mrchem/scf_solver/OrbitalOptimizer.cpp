@@ -19,10 +19,12 @@ OrbitalOptimizer::~OrbitalOptimizer() {
 
 void OrbitalOptimizer::setup(FockOperator &fock,
                              OrbitalVector &phi,
-                             MatrixXd &F) {
+                             MatrixXd &F,
+                             QMOperator *R) {
     this->fMat_n = &F;
     this->fOper_n = &fock;
 
+    this->nucCorrFac = R;
     this->orbitals_n = &phi;
     this->orbitals_np1 = new OrbitalVector(phi);
     this->dOrbitals_n = new OrbitalVector(phi);
@@ -35,6 +37,7 @@ void OrbitalOptimizer::clear() {
     delete this->orbitals_np1;
     delete this->dOrbitals_n;
 
+    this->nucCorrFac = 0;
     this->orbitals_n = 0;
     this->orbitals_np1 = 0;
     this->dOrbitals_n = 0;
@@ -45,6 +48,7 @@ void OrbitalOptimizer::clear() {
 
 bool OrbitalOptimizer::optimize() {
     MatrixXd &F = *this->fMat_n;
+    QMOperator *R = this->nucCorrFac;
     FockOperator &fock = *this->fOper_n;
     OrbitalVector &phi_n = *this->orbitals_n;
     OrbitalVector &phi_np1 = *this->orbitals_np1;
@@ -57,7 +61,7 @@ bool OrbitalOptimizer::optimize() {
     double err_p = 1.0;
 
     fock.setup(orb_prec);
-    F = fock(phi_n, phi_n);
+    F = fock(phi_n, phi_n, R);
 
     int nIter = 0;
     bool converged = false;
@@ -131,7 +135,7 @@ bool OrbitalOptimizer::optimize() {
 
         // Compute Fock matrix
         fock.setup(orb_prec);
-        F = fock(phi_n, phi_n);
+        F = fock(phi_n, phi_n, R);
 
         // Finalize SCF cycle
         timer.stop();

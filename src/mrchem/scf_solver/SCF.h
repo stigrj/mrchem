@@ -6,13 +6,10 @@
 #include <vector>
 
 #include "OrbitalAdder.h"
-#include "TelePrompter.h"
 
 class HelmholtzOperatorSet;
-class Accelerator;
 class FockOperator;
 class OrbitalVector;
-class Orbital;
 
 class SCF {
 public:
@@ -61,7 +58,6 @@ protected:
     void printCycle(int nIter) const;
     void printTimer(double t) const;
     void printMatrix(int level, const Eigen::MatrixXd &M, const char &name, int pr = 5) const;
-
     virtual OrbitalVector* setupHelmholtzArguments(FockOperator &fock,
                                                    const Eigen::MatrixXd &M,
                                                    OrbitalVector &phi,

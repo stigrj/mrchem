@@ -24,60 +24,74 @@ Orbital* IdentityOperator::adjoint(Orbital &phi) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-double IdentityOperator::operator() (Orbital &phi_i, Orbital &phi_j) {
+double IdentityOperator::operator() (Orbital &phi_i, Orbital &phi_j, QMOperator *R) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     NOT_IMPLEMENTED_ABORT;
 }
 
-double IdentityOperator::adjoint(Orbital &phi_i, Orbital &phi_j) {
+double IdentityOperator::adjoint(Orbital &phi_i, Orbital &phi_j, QMOperator *R) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     NOT_IMPLEMENTED_ABORT;
 }
 
-MatrixXd IdentityOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd IdentityOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     MatrixXcd S = MatrixXcd::Zero(i_orbs.size(), j_orbs.size());
 
     if (mpiOrbSize > 1) {
         if (&i_orbs == &j_orbs) {
-            S = calcOverlapMatrix_P_H(i_orbs, j_orbs);
+            S = calcOverlapMatrix_P_H(i_orbs, j_orbs, R);
         } else {
-            S = calcOverlapMatrix_P(i_orbs, j_orbs);
+            S = calcOverlapMatrix_P(i_orbs, j_orbs, R);
         }
     } else {
-        S = calcOverlapMatrix(i_orbs, j_orbs);
+        S = calcOverlapMatrix(i_orbs, j_orbs, R);
     }
 
     if (S.imag().norm() > MachineZero) MSG_ERROR("Cannot handle complex yet");
     return S.real();
 }
 
-MatrixXd IdentityOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd IdentityOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     NOT_IMPLEMENTED_ABORT;
 }
 
-MatrixXcd IdentityOperator::calcOverlapMatrix(OrbitalVector &bra, OrbitalVector &ket) {
+MatrixXcd IdentityOperator::calcOverlapMatrix(OrbitalVector &bra, OrbitalVector &ket, QMOperator *R) {
     int Ni = bra.size();
     int Nj = ket.size();
     MatrixXcd S = MatrixXcd::Zero(Ni, Nj);
 
-    for (int i = 0; i < Ni; i++) {
-        Orbital &bra_i = bra.getOrbital(i);
-        for (int j = 0; j < Nj; j++) {
-            Orbital &ket_j = ket.getOrbital(j);
-            S(i,j) = bra_i.dot(ket_j);
+    if (R != 0) {
+        for (int i = 0; i < Ni; i++) {
+            Orbital &phi_i = bra.getOrbital(i);
+            Orbital *bra_i = (*R)(phi_i);
+            for (int j = 0; j < Nj; j++) {
+                Orbital &phi_j = ket.getOrbital(j);
+                Orbital *ket_j = (*R)(phi_j);
+                S(i,j) = bra_i->dot(*ket_j);
+                delete ket_j;
+            }
+            delete bra_i;
+        }
+    } else {
+        for (int i = 0; i < Ni; i++) {
+            Orbital &bra_i = bra.getOrbital(i);
+            for (int j = 0; j < Nj; j++) {
+                Orbital &ket_j = ket.getOrbital(j);
+                S(i,j) = bra_i.dot(ket_j);
+            }
         }
     }
     return S;
 }
 
 /** Calculate overlap matrix between two orbital sets */
-MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVector &ket) {
+MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVector &ket, QMOperator *R) {
 #ifdef HAVE_MPI
     int Ni = bra.size();
     int Nj = ket.size();
@@ -102,14 +116,31 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVecto
         //get a new chunk from other processes
         orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
 
-        //overlap between i and j chunks
-        for (int i = 0; i < rcvOrbs.size(); i++) {
-            int ix = rcvOrbsIx[i];
-            Orbital &bra_i = rcvOrbs.getOrbital(i);
-            for (int j = 0; j < orbVecChunk_j.size(); j++) {
-                int jx = mpiOrbRank + j*mpiOrbSize;
-                Orbital &ket_j = orbVecChunk_j.getOrbital(j);
-                S(ix,jx) = bra_i.dot(ket_j);
+        if (R != 0) {
+            //overlap between i and j chunks
+            for (int i = 0; i < rcvOrbs.size(); i++) {
+                int ix = rcvOrbsIx[i];
+                Orbital &phi_i = rcvOrbs.getOrbital(i);
+                Orbital *bra_i = (*R)(phi_i);
+                for (int j = 0; j < orbVecChunk_j.size(); j++) {
+                    int jx = mpiOrbRank + j*mpiOrbSize;
+                    Orbital &phi_j = orbVecChunk_j.getOrbital(j);
+                    Orbital *ket_j = (*R)(phi_j);
+                    S(ix,jx) = bra_i->dot(*ket_j);
+                    delete ket_j;
+                }
+                delete bra_i;
+            }
+        } else {
+            //overlap between i and j chunks
+            for (int i = 0; i < rcvOrbs.size(); i++) {
+                int ix = rcvOrbsIx[i];
+                Orbital &bra_i = rcvOrbs.getOrbital(i);
+                for (int j = 0; j < orbVecChunk_j.size(); j++) {
+                    int jx = mpiOrbRank + j*mpiOrbSize;
+                    Orbital &ket_j = orbVecChunk_j.getOrbital(j);
+                    S(ix,jx) = bra_i.dot(ket_j);
+                }
             }
         }
         rcvOrbs.clearVec(false);//reset to zero size orbital vector
@@ -132,7 +163,7 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVecto
 /** Calculate overlap matrix between two orbital sets using MPI
  * 	assumes Hermitian overlap
  */
-MatrixXcd IdentityOperator::calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVector &ket) {
+MatrixXcd IdentityOperator::calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVector &ket, QMOperator *R) {
 #ifdef HAVE_MPI
     int Ni = bra.size();
     int Nj = ket.size();
@@ -159,17 +190,38 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVec
         //get a new chunk from other processes
         orbVecChunk_i.getOrbVecChunk_sym(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
 
-        //compute overlap between chunks
-        for (int i = 0; i < rcvOrbs.size(); i++) {
-            int ix = rcvOrbsIx[i];
-            Orbital &bra_i = rcvOrbs.getOrbital(i);
-            for (int j = 0; j < orbVecChunk_j.size(); j++) {
-                int jx = mpiOrbRank+j*mpiOrbSize;
-                Orbital &ket_j = orbVecChunk_j.getOrbital(j);
-                //compute only lower part in own block
-                if (ix%mpiOrbSize != mpiOrbRank or jx<=rcvOrbsIx[i]) {
-                    S(ix,jx) = bra_i.dot(ket_j);
-                    S(jx,ix) = conj(S(ix,jx));//symmetric
+        if (R != 0) {
+            //compute overlap between chunks
+            for (int i = 0; i < rcvOrbs.size(); i++) {
+                int ix = rcvOrbsIx[i];
+                Orbital &phi_i = rcvOrbs.getOrbital(i);
+                Orbital *bra_i = (*R)(phi_i);
+                for (int j = 0; j < orbVecChunk_j.size(); j++) {
+                    int jx = mpiOrbRank + j*mpiOrbSize;
+                    if (ix%mpiOrbSize != mpiOrbRank or jx <= rcvOrbsIx[i]) {
+                        Orbital &phi_j = orbVecChunk_j.getOrbital(j);
+                        Orbital *ket_j = (*R)(phi_j);
+                        //compute only lower part in own block
+                        S(ix,jx) = bra_i->dot(*ket_j);
+                        S(jx,ix) = conj(S(ix,jx));//symmetric
+                        delete ket_j;
+                    }
+                }
+                delete bra_i;
+            }
+        } else {
+            //compute overlap between chunks
+            for (int i = 0; i < rcvOrbs.size(); i++) {
+                int ix = rcvOrbsIx[i];
+                Orbital &bra_i = rcvOrbs.getOrbital(i);
+                for (int j = 0; j < orbVecChunk_j.size(); j++) {
+                    int jx = mpiOrbRank + j*mpiOrbSize;
+                    //compute only lower part in own block
+                    if (ix%mpiOrbSize != mpiOrbRank or jx <= rcvOrbsIx[i]) {
+                        Orbital &ket_j = orbVecChunk_j.getOrbital(j);
+                        S(ix,jx) = bra_i.dot(ket_j);
+                        S(jx,ix) = conj(S(ix,jx));//symmetric
+                    }
                 }
             }
         }

@@ -28,19 +28,19 @@ typedef QMOperatorExp RankZeroTensorOperator;
 template<int I>
 class RankOneTensorOperator : public QMTensorOperator<I, RankZeroTensorOperator> {
 public:
-    Eigen::VectorXd trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+    Eigen::VectorXd trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y, QMOperator *R = 0) {
         RankOneTensorOperator &O = *this;
         Eigen::VectorXd result = Eigen::VectorXd::Zero(I);
         for (int i = 0; i < I; i++) {
-            result(i) = O[i].trace(phi, x, y);
+            result(i) = O[i].trace(phi, x, y, R);
         }
         return result;
     }
-    Eigen::VectorXd trace(OrbitalVector &phi) {
+    Eigen::VectorXd trace(OrbitalVector &phi, QMOperator *R = 0) {
         RankOneTensorOperator &O = *this;
         Eigen::VectorXd result = Eigen::VectorXd::Zero(I);
         for (int i = 0; i < I; i++) {
-            result(i) = O[i].trace(phi);
+            result(i) = O[i].trace(phi, R);
         }
         return result;
     }
@@ -49,19 +49,19 @@ public:
 template<int I, int J>
 class RankTwoTensorOperator : public QMTensorOperator<I, RankOneTensorOperator<J> > {
 public:
-    Eigen::MatrixXd trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+    Eigen::MatrixXd trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y, QMOperator *R = 0) {
         RankTwoTensorOperator &O = *this;
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(I,J);
         for (int i = 0; i < I; i++) {
-            result.row(i) = O[i].trace(phi, x, y);
+            result.row(i) = O[i].trace(phi, x, y, R);
         }
         return result;
     }
-    Eigen::MatrixXd trace(OrbitalVector &phi) {
+    Eigen::MatrixXd trace(OrbitalVector &phi, QMOperator *R = 0) {
         RankTwoTensorOperator &O = *this;
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(I,J);
         for (int i = 0; i < I; i++) {
-            result.row(i) = O[i].trace(phi);
+            result.row(i) = O[i].trace(phi, R);
         }
         return result;
     }

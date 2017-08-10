@@ -12,7 +12,6 @@
 #include "Timer.h"
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
-extern OrbitalVector workOrbVec;
 
 using namespace std;
 using namespace Eigen;
@@ -96,23 +95,23 @@ Orbital* FockOperator::adjoint(Orbital &orb_p) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-double FockOperator::operator() (Orbital &orb_i, Orbital &orb_j) {
+double FockOperator::operator() (Orbital &orb_i, Orbital &orb_j, QMOperator *R) {
     double result = 0.0;
-    if (this->T != 0) result += (*this->T)(orb_i, orb_j);
-    if (this->V != 0) result += (*this->V)(orb_i, orb_j);
-    if (this->J != 0) result += (*this->J)(orb_i, orb_j);
-    if (this->K != 0) result += (*this->K)(orb_i, orb_j);
-    if (this->XC != 0) result += (*this->XC)(orb_i, orb_j);
-    if (this->H_1 != 0) result += (*this->H_1)(orb_i, orb_j);
+    if (this->T != 0) result += (*this->T)(orb_i, orb_j, R);
+    if (this->V != 0) result += (*this->V)(orb_i, orb_j, R);
+    if (this->J != 0) result += (*this->J)(orb_i, orb_j, R);
+    if (this->K != 0) result += (*this->K)(orb_i, orb_j, R);
+    if (this->XC != 0) result += (*this->XC)(orb_i, orb_j, R);
+    if (this->H_1 != 0) result += (*this->H_1)(orb_i, orb_j, R);
     return result;
 }
 
-double FockOperator::adjoint(Orbital &orb_i, Orbital &orb_j) {
+double FockOperator::adjoint(Orbital &orb_i, Orbital &orb_j, QMOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 
 
-MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     int Ni = i_orbs.size();
     int Nj = j_orbs.size();
     MatrixXd result = MatrixXd::Zero(Ni,Nj);
@@ -128,35 +127,35 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
 
     //make vector with adresses of own orbitals
     for (int Ix = mpiOrbRank; Ix < Ni; Ix += mpiOrbSize) {
-	orbVecChunk_i.push_back(i_orbs.getOrbital(Ix));//i orbitals
-	orbsIx.push_back(Ix);
+        orbVecChunk_i.push_back(i_orbs.getOrbital(Ix));//i orbitals
+        orbsIx.push_back(Ix);
     }
     for (int Ix = mpiOrbRank; Ix < Nj; Ix += mpiOrbSize) orbVecChunk_j.push_back(j_orbs.getOrbital(Ix));//j orbitals
     //need to pad orbVecChunk_j so that all have same size
     if (orbVecChunk_j.size() < (Nj+mpiOrbSize-1)/mpiOrbSize) orbVecChunk_j.push_back(j_orbs.getOrbital(mpiOrbRank));
 
     for (int iter = 0; iter >= 0; iter++) {
-	//get a new chunk from other processes
-	//NB: should not use directly workorbvec as rcvOrbs, because they may 
-	//contain own orbitals, and these can be overwritten
-	orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
+        //get a new chunk from other processes
+        //NB: should not use directly workorbvec as rcvOrbs, because they may
+        //contain own orbitals, and these can be overwritten
+        orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
 
-	//Only one process does the computations. j orbitals always local
-	MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
+        //Only one process does the computations. j orbitals always local
+        MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
       
-	if (this->T != 0) resultChunk = (*this->T)(rcvOrbs,orbVecChunk_j);
-	if (this->V != 0) resultChunk += (*this->V)(rcvOrbs,orbVecChunk_j);
-	if (this->J != 0) resultChunk += (*this->J)(rcvOrbs,orbVecChunk_j);
-	if (this->K != 0) {
-	    resultChunk += (*this->K)(rcvOrbs,orbVecChunk_j);
-	    if (rcvOrbs.size() == 0 and iter>=0) {
-		//we must still go through operator to send own orbitals to others. Just make a fake operation!
-		rcvOrbs.push_back(i_orbs.getOrbital(mpiOrbRank));//i orbitals
-		MatrixXd resultChunk_notused = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
-		resultChunk_notused = (*this->K)(rcvOrbs,orbVecChunk_j);
-	    }
-	}
-	if (this->XC != 0) resultChunk += (*this->XC)(rcvOrbs,orbVecChunk_j);
+        if (this->T != 0) resultChunk = (*this->T)(rcvOrbs,orbVecChunk_j, R);
+        if (this->V != 0) resultChunk += (*this->V)(rcvOrbs,orbVecChunk_j, R);
+        if (this->J != 0) resultChunk += (*this->J)(rcvOrbs,orbVecChunk_j, R);
+        if (this->K != 0) {
+            resultChunk += (*this->K)(rcvOrbs,orbVecChunk_j, R);
+            if (rcvOrbs.size() == 0 and iter >= 0) {
+                //we must still go through operator to send own orbitals to others. Just make a fake operation!
+                rcvOrbs.push_back(i_orbs.getOrbital(mpiOrbRank));//i orbitals
+                MatrixXd resultChunk_notused = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
+                resultChunk_notused = (*this->K)(rcvOrbs,orbVecChunk_j, R);
+            }
+        }
+        if (this->XC != 0) resultChunk += (*this->XC)(rcvOrbs,orbVecChunk_j, R);
 
 	//copy results into final matrix
 	int j = 0;
@@ -167,7 +166,6 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
 	    j++;
 	}
 	rcvOrbs.clearVec(false);//reset to zero size orbital vector
-    }
 
     //clear orbital vector adresses. NB: only references and metadata must be deleted, not the trees in orbitals
     orbVecChunk_i.clearVec(false);
@@ -181,37 +179,37 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
 #else
     if (this->T != 0) {
         Timer timer;
-        result += (*this->T)(i_orbs, j_orbs);
+        result += (*this->T)(i_orbs, j_orbs, R);
         timer.stop();
         TelePrompter::printDouble(0, "Kinetic matrix", timer.getWallTime());
     }
     if (this->V != 0) {
         Timer timer;
-        result += (*this->V)(i_orbs, j_orbs);
+        result += (*this->V)(i_orbs, j_orbs, R);
         timer.stop();
         TelePrompter::printDouble(0, "Nuclear potential matrix", timer.getWallTime());
     }
     if (this->J != 0) {
         Timer timer;
-        result += (*this->J)(i_orbs, j_orbs);
+        result += (*this->J)(i_orbs, j_orbs, R);
         timer.stop();
         TelePrompter::printDouble(0, "Coulomb matrix", timer.getWallTime());
     }
     if (this->K != 0) {
         Timer timer;
-        result += (*this->K)(i_orbs, j_orbs);
+        result += (*this->K)(i_orbs, j_orbs, R);
         timer.stop();
         TelePrompter::printDouble(0, "Exchange matrix", timer.getWallTime());
     }
     if (this->XC != 0) {
         Timer timer;
-        result += (*this->XC)(i_orbs, j_orbs);
+        result += (*this->XC)(i_orbs, j_orbs, R);
         timer.stop();
         TelePrompter::printDouble(0, "Exchange-Correlation matrix", timer.getWallTime());
     }
     if (this->H_1 != 0) {
         Timer timer;
-        result += (*this->H_1)(i_orbs, j_orbs);
+        result += (*this->H_1)(i_orbs, j_orbs, R);
         timer.stop();
         TelePrompter::printDouble(0, "Perturbation matrix", timer.getWallTime());
     }
@@ -222,17 +220,17 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
     return result;
 }
 
-MatrixXd FockOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd FockOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     if(mpiOrbSize>1)cout<<"ERROR"<<endl;
     int Ni = i_orbs.size();
     int Nj = j_orbs.size();
     MatrixXd result = MatrixXd::Zero(Ni,Nj);
-    if (this->T != 0) result += (*this->T).adjoint(i_orbs, j_orbs);
-    if (this->V != 0) result += (*this->V).adjoint(i_orbs, j_orbs);
-    if (this->J != 0) result += (*this->J).adjoint(i_orbs, j_orbs);
-    if (this->K != 0) result += (*this->K).adjoint(i_orbs, j_orbs);
-    if (this->XC != 0) result += (*this->XC).adjoint(i_orbs, j_orbs);
-    if (this->H_1 != 0) result += (*this->H_1).adjoint(i_orbs, j_orbs);
+    if (this->T != 0) result += (*this->T).adjoint(i_orbs, j_orbs, R);
+    if (this->V != 0) result += (*this->V).adjoint(i_orbs, j_orbs, R);
+    if (this->J != 0) result += (*this->J).adjoint(i_orbs, j_orbs, R);
+    if (this->K != 0) result += (*this->K).adjoint(i_orbs, j_orbs, R);
+    if (this->XC != 0) result += (*this->XC).adjoint(i_orbs, j_orbs, R);
+    if (this->H_1 != 0) result += (*this->H_1).adjoint(i_orbs, j_orbs, R);
     return result;
 }
 
@@ -263,22 +261,22 @@ Orbital* FockOperator::applyPotential(Orbital &orb_p) {
     return result;
 }
 
-double FockOperator::applyPotential(Orbital &orb_i, Orbital &orb_j) {
+double FockOperator::applyPotential(Orbital &orb_i, Orbital &orb_j, QMOperator *R) {
     double result = 0.0;
-    if (this->V != 0) result += (*this->V)(orb_i, orb_j);
-    if (this->J != 0) result += (*this->J)(orb_i, orb_j);
-    if (this->K != 0) result += (*this->K)(orb_i, orb_j);
-    if (this->XC != 0) result += (*this->XC)(orb_i, orb_j);
+    if (this->V != 0) result += (*this->V)(orb_i, orb_j, R);
+    if (this->J != 0) result += (*this->J)(orb_i, orb_j, R);
+    if (this->K != 0) result += (*this->K)(orb_i, orb_j, R);
+    if (this->XC != 0) result += (*this->XC)(orb_i, orb_j, R);
     return result;
 }
 
-MatrixXd FockOperator::applyPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd FockOperator::applyPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     int nOrbs = i_orbs.size();
     MatrixXd result = MatrixXd::Zero(nOrbs,nOrbs);
-    if (this->V != 0) result += (*this->V)(i_orbs, j_orbs);
-    if (this->J != 0) result += (*this->J)(i_orbs, j_orbs);
-    if (this->K != 0) result += (*this->K)(i_orbs, j_orbs);
-    if (this->XC != 0) result += (*this->XC)(i_orbs, j_orbs);
+    if (this->V != 0) result += (*this->V)(i_orbs, j_orbs, R);
+    if (this->J != 0) result += (*this->J)(i_orbs, j_orbs, R);
+    if (this->K != 0) result += (*this->K)(i_orbs, j_orbs, R);
+    if (this->XC != 0) result += (*this->XC)(i_orbs, j_orbs, R);
     return result;
 }
 
@@ -286,15 +284,15 @@ Orbital* FockOperator::applyAdjointPotential(Orbital &orb_p) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-double FockOperator::applyAdjointPotential(Orbital &orb_i, Orbital &orb_j) {
+double FockOperator::applyAdjointPotential(Orbital &orb_i, Orbital &orb_j, QMOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-MatrixXd FockOperator::applyAdjointPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+MatrixXd FockOperator::applyAdjointPotential(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-SCFEnergy FockOperator::trace(OrbitalVector &phi, MatrixXd &F) {
+SCFEnergy FockOperator::trace(OrbitalVector &phi, MatrixXd &F, QMOperator *R) {
     double E_nuc = 0.0;
     double E_el = 0.0;
     double E_orb = 0.0;
@@ -334,19 +332,19 @@ SCFEnergy FockOperator::trace(OrbitalVector &phi, MatrixXd &F) {
 
             if (this->V != 0) {
                 println(2, "\n<" << i << "|V_nuc|" << i << ">");
-                E_en += occ*(*this->V)(phi_i,phi_i);
+                E_en += occ*(*this->V)(phi_i, phi_i, R);
             }
             if (this->J != 0) {
                 println(2, "\n<" << i << "|J|" << i << ">");
-                E_ee += 0.5*occ*(*this->J)(phi_i,phi_i);
+                E_ee += 0.5*occ*(*this->J)(phi_i, phi_i, R);
             }
             if (this->K != 0) {
                 println(2, "\n<" << i << "|K|" << i << ">");
-                E_x += 0.5*occ*(*this->K)(phi_i,phi_i);
+                E_x += 0.5*occ*(*this->K)(phi_i, phi_i, R);
             }
             if (this->XC != 0) {
                 println(2, "\n<" << i << "|V_xc|" << i << ">");
-                E_xc2 += occ*(*this->XC)(phi_i,phi_i);
+                E_xc2 += occ*(*this->XC)(phi_i, phi_i, R);
             }
         }
     }

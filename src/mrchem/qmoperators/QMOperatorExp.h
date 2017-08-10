@@ -24,14 +24,14 @@ public:
     virtual Orbital* operator() (Orbital &phi_p);
     virtual Orbital* adjoint(Orbital &phi_p);
 
-    virtual double operator() (Orbital &phi_i, Orbital &phi_j);
-    virtual double adjoint(Orbital &phi_i, Orbital &phi_j);
+    virtual double operator() (Orbital &phi_i, Orbital &phi_j, QMOperator *R = 0);
+    virtual double adjoint(Orbital &phi_i, Orbital &phi_j, QMOperator *R = 0);
 
-    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs);
-    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
+    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R = 0);
 
-    virtual double trace(OrbitalVector &phi);
-    virtual double trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
+    virtual double trace(OrbitalVector &phi, QMOperator *R = 0);
+    virtual double trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y, QMOperator *R = 0);
 
     friend QMOperatorExp operator*(std::complex<double> a, QMOperatorExp A);
     friend QMOperatorExp operator*(QMOperatorExp A, QMOperatorExp B);

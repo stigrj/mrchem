@@ -8,7 +8,7 @@ public:
     virtual ~EnergyOptimizer();
 
     void setup(FockOperator &fock, OrbitalVector &phi, Eigen::MatrixXd &F,
-               FockOperator &fock_np1, OrbitalVector &phi_np1);
+               FockOperator &fock_np1, OrbitalVector &phi_np1, QMOperator *R = 0);
     void clear();
 
     virtual bool optimize();

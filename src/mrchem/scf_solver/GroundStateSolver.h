@@ -10,6 +10,8 @@
 #include "SCF.h"
 #include "SCFEnergy.h"
 
+class QMOperator;
+
 class GroundStateSolver : public SCF {
 public:
     GroundStateSolver(HelmholtzOperatorSet &h);
@@ -21,6 +23,7 @@ protected:
     FockOperator *fOper_n;
     Eigen::MatrixXd *fMat_n;
 
+    QMOperator *nucCorrFac; // Nuclear correlation factor R: phi_i = R*F_i
     OrbitalVector *orbitals_n;
     OrbitalVector *orbitals_np1;
     OrbitalVector *dOrbitals_n;
@@ -53,7 +56,7 @@ protected:
 
 class RR : public NonlinearMaximizer {
 public:
-    RR(double prec, OrbitalVector &phi);//make the matrices <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
+    RR(double prec, OrbitalVector &phi, QMOperator *nuc_corr_fac = 0);//make the matrices <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
     const Eigen::MatrixXd &getTotalU() const { return this->total_U; }
 protected:
     int N;//number of orbitals
