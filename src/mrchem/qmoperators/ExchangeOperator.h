@@ -7,11 +7,12 @@ extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 class ExchangeOperator : public QMOperator {
 public:
-    ExchangeOperator(PoissonOperator &P, OrbitalVector &phi, double x_fac)
+    ExchangeOperator(PoissonOperator &P, OrbitalVector &phi, QMOperator *R, double x_fac)
             : QMOperator(MRA->getMaxScale()),
               x_factor(x_fac),
               poisson(&P),
               orbitals(&phi),
+              nuc_corr_fac(R),
               screen(true) {
         int nOrbs = phi.size();
         this->tot_norms = Eigen::VectorXd::Zero(nOrbs);
@@ -34,6 +35,7 @@ protected:
     double x_factor;            ///< Exchange factor for hybrid XC functionals
     PoissonOperator *poisson;   ///< Pointer to external object
     OrbitalVector *orbitals;    ///< Pointer to external object
+    QMOperator *nuc_corr_fac;   ///< Nuclear correlation factor
 
     bool screen;                ///< Apply screening in exchange evaluation
     Eigen::VectorXd tot_norms;  ///< Total norms for use in screening

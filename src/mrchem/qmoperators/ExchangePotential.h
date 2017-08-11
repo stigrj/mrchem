@@ -17,7 +17,7 @@ public:
    * \param[in] phi vector of orbitals which define the exchange operator
    * \param[in] x_fac Exchange factor for Hybrid XC functionals
    */
-    ExchangePotential(PoissonOperator &P, OrbitalVector &phi, double x_fac = 1.0);
+    ExchangePotential(PoissonOperator &P, OrbitalVector &phi, QMOperator *R = 0, double x_fac = 1.0);
     virtual ~ExchangePotential() { }
 
     /*! Rotates the Exchange Fock Matrix

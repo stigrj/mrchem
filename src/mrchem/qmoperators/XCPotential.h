@@ -16,8 +16,8 @@
  */
 class XCPotential : public XCOperator {
 public:
-    XCPotential(XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D = 0)
-        : XCOperator(1, F, phi, D) { }
+    XCPotential(XCFunctional &F, OrbitalVector &phi, QMOperator *R = 0, DerivativeOperator<3> *D = 0)
+        : XCOperator(1, F, phi, R, D) { }
     virtual ~XCPotential() { } 
 
     virtual void setup(double prec);

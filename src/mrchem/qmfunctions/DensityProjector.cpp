@@ -1,6 +1,7 @@
 #include "DensityProjector.h"
 #include "OrbitalVector.h"
 #include "Density.h"
+#include "QMOperator.h"
 #include "SerialFunctionTree.h"
 
 extern MultiResolutionAnalysis<3> *MRA;
@@ -11,18 +12,21 @@ DensityProjector::DensityProjector(double prec, int max_scale)
     : add(prec, max_scale),
       mult(prec, max_scale),
       grid(max_scale) {
-      }
+}
 
 void DensityProjector::setPrecision(double prec) {
     this->add.setPrecision(prec);
     this->mult.setPrecision(prec);
 }
 
-void DensityProjector::operator()(Density &rho, Orbital &phi) {
+void DensityProjector::operator()(Density &rho, Orbital &phi, QMOperator *R) {
     if (rho.hasTotal()) MSG_ERROR("Density not empty");
     if (rho.hasSpin()) MSG_ERROR("Density not empty");
     if (rho.hasAlpha()) MSG_ERROR("Density not empty");
     if (rho.hasBeta()) MSG_ERROR("Density not empty");
+
+    Orbital *Rphi = &phi;
+    if (R != 0) Rphi = (*R)(phi);
 
     double occ = 1.0;
     if (not rho.isSpinDensity()) occ = (double) phi.getOccupancy();
@@ -33,14 +37,14 @@ void DensityProjector::operator()(Density &rho, Orbital &phi) {
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
-        this->grid(*real_2, phi.real());
-        this->mult(*real_2, occ, phi.real(), phi.real(), 1);
+        this->grid(*real_2, Rphi->real());
+        this->mult(*real_2, occ, Rphi->real(), Rphi->real(), 1);
         sum_vec.push_back(real_2);
     }
     if (phi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
-        this->grid(*imag_2, phi.imag());
-        this->mult(*imag_2, occ, phi.imag(), phi.imag(), 1);
+        this->grid(*imag_2, Rphi->imag());
+        this->mult(*imag_2, occ, Rphi->imag(), Rphi->imag(), 1);
         sum_vec.push_back(imag_2);
     }
 
@@ -92,7 +96,7 @@ void DensityProjector::operator()(Density &rho, Orbital &phi) {
     sum_vec.clear(true);
 }
 
-void DensityProjector::operator()(Density &rho, OrbitalVector &phi) {
+void DensityProjector::operator()(Density &rho, OrbitalVector &phi, QMOperator *R) {
     if (rho.hasTotal()) MSG_ERROR("Density not empty");
     if (rho.hasAlpha()) MSG_ERROR("Density not empty");
     if (rho.hasBeta()) MSG_ERROR("Density not empty");
@@ -116,7 +120,7 @@ void DensityProjector::operator()(Density &rho, OrbitalVector &phi) {
 	    if (i_Orb%mpiOrbSize == mpiOrbRank) {
 		Orbital &phi_i = phi.getOrbital(i_Orb);
 		//cout<<mpiOrbRank<<" size orbital "<< i_Orb<< " in MB "<<int((phi_i.real().getNNodes()* phi_i.real().getKp1_d()*8.0*8.0)/1024/1024)<<endl;
-		(*this)(*rho_i, phi_i);
+        (*this)(*rho_i, phi_i, R);
 		if (mpiOrbRank != 0) rho_i->send_Density(0, i_Orb);
 	    }
 	    //add on the fly
@@ -172,72 +176,72 @@ void DensityProjector::operator()(Density &rho, OrbitalVector &phi) {
 	    }
 	}
     }else{      
-	//Serial processing
-	for (int i = 0; i < phi.size(); i++) {
-	    Orbital &phi_i = phi.getOrbital(i);
-	    Density *rho_i = new Density(rho);
-	    (*this)(*rho_i, phi_i);
-	    dens_vec.push_back(rho_i);
-	    if (rho_i->hasTotal()) total_vec.push_back(&rho_i->total());
-	    if (rho_i->hasSpin()) spin_vec.push_back(&rho_i->spin());
-	    if (rho_i->hasAlpha()) alpha_vec.push_back(&rho_i->alpha());
-	    if (rho_i->hasBeta()) beta_vec.push_back(&rho_i->beta());
-	}
+        //Serial processing
+        for (int i = 0; i < phi.size(); i++) {
+            Orbital &phi_i = phi.getOrbital(i);
+            Density *rho_i = new Density(rho);
+            (*this)(*rho_i, phi_i, R);
+            dens_vec.push_back(rho_i);
+            if (rho_i->hasTotal()) total_vec.push_back(&rho_i->total());
+            if (rho_i->hasSpin()) spin_vec.push_back(&rho_i->spin());
+            if (rho_i->hasAlpha()) alpha_vec.push_back(&rho_i->alpha());
+            if (rho_i->hasBeta()) beta_vec.push_back(&rho_i->beta());
+        }
     } 
 
     if (mpiOrbRank == 0 and not rho.isShared()) {
-	if (total_vec.size() > 5) {
-	    rho.allocTotal();
-	    this->add(rho.total(), total_vec);
-	} else if (total_vec.size() > 0) {
-	    rho.allocTotal();
-	    this->grid(rho.total(), total_vec);
-	    this->add(rho.total(), total_vec, 0);
-	}
-	if (spin_vec.size() > 5) {
-	    rho.allocSpin();
-	    this->add(rho.spin(), spin_vec);
-	} else if (spin_vec.size() > 0) {
-	    rho.allocSpin();
-	    this->grid(rho.spin(), spin_vec);
-	    this->add(rho.spin(), spin_vec, 0);
-	}
-	if (alpha_vec.size() > 5) {
-	    rho.allocAlpha();
-	    this->add(rho.alpha(), alpha_vec);
-	} else if (alpha_vec.size() > 0) {
-	    rho.allocAlpha();
-	    this->grid(rho.alpha(), alpha_vec);
-	    this->add(rho.alpha(), alpha_vec, 0);
-	}
-	if (beta_vec.size() > 5) {
-	    rho.allocBeta();
-	    this->add(rho.beta(), beta_vec);
-	} else if (beta_vec.size() > 0) {
-	    rho.allocBeta();
-	    this->grid(rho.beta(), beta_vec);
-	    this->add(rho.beta(), beta_vec, 0);
-	}
+        if (total_vec.size() > 5) {
+            rho.allocTotal();
+            this->add(rho.total(), total_vec);
+        } else if (total_vec.size() > 0) {
+            rho.allocTotal();
+            this->grid(rho.total(), total_vec);
+            this->add(rho.total(), total_vec, 0);
+        }
+        if (spin_vec.size() > 5) {
+            rho.allocSpin();
+            this->add(rho.spin(), spin_vec);
+        } else if (spin_vec.size() > 0) {
+            rho.allocSpin();
+            this->grid(rho.spin(), spin_vec);
+            this->add(rho.spin(), spin_vec, 0);
+        }
+        if (alpha_vec.size() > 5) {
+            rho.allocAlpha();
+            this->add(rho.alpha(), alpha_vec);
+        } else if (alpha_vec.size() > 0) {
+            rho.allocAlpha();
+            this->grid(rho.alpha(), alpha_vec);
+            this->add(rho.alpha(), alpha_vec, 0);
+        }
+        if (beta_vec.size() > 5) {
+            rho.allocBeta();
+            this->add(rho.beta(), beta_vec);
+        } else if (beta_vec.size() > 0) {
+            rho.allocBeta();
+            this->grid(rho.beta(), beta_vec);
+            this->add(rho.beta(), beta_vec, 0);
+        }
 
-	for (int i = 0; i < dens_vec.size(); i++) {
-	    dens_vec[i]->clear();
-	    delete dens_vec[i];
-	    dens_vec[i] = 0;
-	}
+        for (int i = 0; i < dens_vec.size(); i++) {
+            dens_vec[i]->clear();
+            delete dens_vec[i];
+            dens_vec[i] = 0;
+        }
     }
 
 
     //if(mpiOrbRank==0)cout<<"size density MB "<<int((rho.getNNodes()* rho.total().getKp1_d()*8.0*8.0)/1024/1024)<<endl;
     if (mpiOrbSize > 1) {
-	//we always broadcast density
-	//If the density is shared, only metadata will be sent/received
-	if (mpiOrbRank == 0) {
-	    for (int i_MPI = 1; i_MPI < mpiOrbSize; i_MPI++) {
-		rho.send_Density(i_MPI, 54);
-	    }
-	}else{
-	    //do nothing, only receive Density
-	    rho.Rcv_Density(0, 54);
-	}
+        //we always broadcast density
+        //If the density is shared, only metdata will be sent/received
+        if (mpiOrbRank == 0) {
+            for (int i_MPI = 1; i_MPI < mpiOrbSize; i_MPI++) {
+                rho.send_Density(i_MPI, 54);
+            }
+        }else{
+            //do nothing, only receive Density
+            rho.Rcv_Density(0, 54);
+        }
     }
 }

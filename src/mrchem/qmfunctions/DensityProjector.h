@@ -7,6 +7,7 @@
 class OrbitalVector;
 class Orbital;
 class Density;
+class QMOperator;
 
 class DensityProjector {
 public:
@@ -15,8 +16,8 @@ public:
 
     void setPrecision(double prec);
 
-    void operator()(Density &rho, Orbital &phi);
-    void operator()(Density &rho, OrbitalVector &phi);
+    void operator()(Density &rho, Orbital &phi, QMOperator *R = 0);
+    void operator()(Density &rho, OrbitalVector &phi, QMOperator *R = 0);
 
 protected:
     MWAdder<3> add;

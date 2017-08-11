@@ -5,13 +5,13 @@
 
 using namespace std;
 
-void CoulombPotential::calcDensity(Density &rho, OrbitalVector &phi) {
+void CoulombPotential::calcDensity(Density &rho, OrbitalVector &phi, QMOperator *R) {
     if (this->orbitals == 0) MSG_ERROR("Orbitals not initialized");
 
     DensityProjector project(this->apply_prec, this->max_scale);
 
     Timer timer;
-    project(rho, phi);
+    project(rho, phi, R);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes();

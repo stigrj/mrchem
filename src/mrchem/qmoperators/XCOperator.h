@@ -24,7 +24,7 @@ template<int D> class DerivativeOperator;
  */
 class XCOperator : public QMPotential {
 public:
-    XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D);
+    XCOperator(int k, XCFunctional &F, OrbitalVector &phi, QMOperator *R, DerivativeOperator<3> *D);
     virtual ~XCOperator();
 
     double getEnergy() const { return this->energy; }
@@ -34,6 +34,7 @@ protected:
     XCFunctional *functional;           ///< Pointer to external object
     DerivativeOperator<3> *derivative;  ///< Pointer to external object
     OrbitalVector *orbitals;            ///< Pointer to external object
+    QMOperator *nuc_corr_factor;        ///< Nuclear correlation factor
 
     double energy;                      ///< XC energy
     Density density;                    ///< Unperturbed density

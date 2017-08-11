@@ -5,9 +5,10 @@
 
 class CoulombOperator : public QMPotential {
 public:
-    CoulombOperator(PoissonOperator &P, OrbitalVector &phi)
+    CoulombOperator(PoissonOperator &P, OrbitalVector &phi, QMOperator *R)
         : poisson(&P),
           orbitals(&phi),
+          nuc_corr_fac(R),
 #ifdef HAVE_MPI
 	density(false, true){//Use shared memory.
 	//          density(false, false){//do not Use shared memory.
@@ -20,6 +21,7 @@ public:
 protected:
     PoissonOperator *poisson;   // Pointer to external object
     OrbitalVector *orbitals;    // Pointer to external object
+    QMOperator *nuc_corr_fac;   // Nuclear correlation factor
     Density density;            // Density that defines the potential
 };
 

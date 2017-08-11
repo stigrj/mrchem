@@ -13,8 +13,9 @@ extern OrbitalVector workOrbVec2;
 
 ExchangePotential::ExchangePotential(PoissonOperator &P,
                                      OrbitalVector &phi,
+                                     QMOperator *R,
                                      double x_fac)
-    : ExchangeOperator(P, phi, x_fac),
+    : ExchangeOperator(P, phi, R, x_fac),
       exchange(phi) {
 }
 
@@ -59,6 +60,7 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
     OrbitalMultiplier mult(this->apply_prec, this->max_scale);
     MWConvolution<3> apply(this->apply_prec, this->max_scale);
     PoissonOperator &P = *this->poisson;
+    QMOperator *R = this->nuc_corr_fac;
 
     vector<complex<double> > coef_vec;
     vector<Orbital *> orb_vec;
@@ -67,7 +69,12 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
 
     Orbital *ex_p = new Orbital(phi_p);
 
+    Orbital *Rphi_p = &phi_p;
+    if (R != 0) Rphi_p = (*R)(phi_p);
+
 #ifdef HAVE_MPI
+    OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
+    OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
 
     OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
     OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
@@ -76,59 +83,63 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
 
     //make vector with adresses of own orbitals
     for (int Ix = mpiOrbRank;  Ix < nOrbs; Ix += mpiOrbSize) {
-	orbVecChunk_i.push_back(this->orbitals->getOrbital(Ix));//i orbitals
-	orbsIx.push_back(Ix);
+        orbVecChunk_i.push_back(this->orbitals->getOrbital(Ix));//i orbitals
+        orbsIx.push_back(Ix);
     }
 
     for (int iter = 0;  iter >= 0; iter++) {
-	//get a new chunk from other processes
-	orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, nOrbs, iter, workOrbVecSize, 2);
-	for (int i = 0; i<rcvOrbs.size(); i++){
-	    Orbital &phi_i = rcvOrbs.getOrbital(i);
-	
-	    double spinFactor = phi_i.getExchangeFactor(phi_p);
-	    if (IS_EQUAL(spinFactor, 0.0)) continue;
-	    Orbital *phi_ip = new Orbital(phi_p);
-	    mult.adjoint(*phi_ip, 1.0, phi_i, phi_p);
+        //get a new chunk from other processes
+        orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, nOrbs, iter, workOrbVecSize, 2);
+        for (int i = 0; i<rcvOrbs.size(); i++){
+            Orbital &phi_i = rcvOrbs.getOrbital(i);
+            Orbital *Rphi_i = &phi_i;
+            if (R != 0) Rphi_i = (*R)(phi_i);
 
-	    Orbital *V_ip = new Orbital(phi_p);
-	    if (phi_ip->hasReal()) {
-		V_ip->allocReal();
-		apply(V_ip->real(), P, phi_ip->real());
-	    }
-	    if (phi_ip->hasImag()) {
-		V_ip->allocImag();
-		apply(V_ip->imag(), P, phi_ip->imag());
-	    }
-	    delete phi_ip;
+            double spinFactor = phi_i.getExchangeFactor(phi_p);
+            if (IS_EQUAL(spinFactor, 0.0)) continue;
+            Orbital *phi_ip = new Orbital(phi_p);
+            mult.adjoint(*phi_ip, 1.0, Rphi_i, Rphi_p);
 
-	    double multFac = - spinFactor * (this->x_factor / phi_i.getSquareNorm());
-	    Orbital *phi_iip = new Orbital(phi_p);
-	    mult(*phi_iip, multFac, phi_i, *V_ip);
-	    delete V_ip;
+            Orbital *V_ip = new Orbital(phi_p);
+            if (phi_ip->hasReal()) {
+                V_ip->allocReal();
+                apply(V_ip->real(), P, phi_ip->real());
+            }
+            if (phi_ip->hasImag()) {
+                V_ip->allocImag();
+                apply(V_ip->imag(), P, phi_ip->imag());
+            }
+            delete phi_ip;
 
-	    coef_vec.push_back(1.0);
-	    orb_vec.push_back(phi_iip);
-	}
+            double multFac = - spinFactor * (this->x_factor / phi_i.getSquareNorm());
+            Orbital *phi_iip = new Orbital(phi_p);
+            mult(*phi_iip, multFac, phi_i, *V_ip);
+            delete V_ip;
+
+            coef_vec.push_back(1.0);
+            orb_vec.push_back(phi_iip);
+        }
     }
     orbVecChunk_i.clearVec(false);
     rcvOrbs.clearVec(false);
     workOrbVec2.clear();
-	
+
     add(*ex_p, coef_vec, orb_vec, true);
 
     for (int i = 0; i < orb_vec.size(); i++) delete orb_vec[i];
     orb_vec.clear();
-
 #else
     for (int i = 0; i < nOrbs; i++) {
         Orbital &phi_i = this->orbitals->getOrbital(i);
+        Orbital *Rphi_i = &phi_i;
+        if (R != 0) Rphi_i = (*R)(phi_i);
 
         double spinFactor = phi_i.getExchangeFactor(phi_p);
         if (IS_EQUAL(spinFactor, 0.0)) continue;
 
         Orbital *phi_ip = new Orbital(phi_p);
-        mult.adjoint(*phi_ip, 1.0, phi_i, phi_p);
+        mult.adjoint(*phi_ip, 1.0, *Rphi_i, *Rphi_p);
+        if (R != 0) delete Rphi_i;
 
         Orbital *V_ip = new Orbital(phi_p);
         if (phi_ip->hasReal()) {
@@ -141,7 +152,7 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
         }
         delete phi_ip;
 
-        double multFac = - spinFactor * (this->x_factor / phi_i.getSquareNorm());
+        double multFac = -spinFactor * (this->x_factor / phi_i.getSquareNorm());
         Orbital *phi_iip = new Orbital(phi_p);
         mult(*phi_iip, multFac, phi_i, *V_ip);
         delete V_ip;
@@ -154,8 +165,9 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
 
     for (int i = 0; i < orb_vec.size(); i++) delete orb_vec[i];
     orb_vec.clear();
-
 #endif
+
+    if (R != 0) delete Rphi_p;
 
     timer.stop();
     double n = ex_p->getNNodes();
@@ -171,22 +183,40 @@ void ExchangePotential::calcInternalExchange() {
     int nOrbs = this->orbitals->size();
     int n = 0;
 
-    if (mpiOrbSize==1) {
-	for (int i = 0; i < nOrbs; i++) {
-	    calcInternal(i);
-	    for (int j = 0; j < i; j++) {
-		calcInternal(i,j);
-	    }
-	}
-      
-	for (int i = 0; i < nOrbs; i++) {
-	    Orbital &ex_i = this->exchange.getOrbital(i);
-	    this->tot_norms(i) = sqrt(ex_i.getSquareNorm());
-	    n = max(n, ex_i.getNNodes());
-	}
+    if (mpiOrbSize == 1) {
+        for (int i = 0; i < nOrbs; i++) {
+            calcInternal(i);
+            for (int j = 0; j < i; j++) {
+                calcInternal(i,j);
+            }
+        }
+        for (int i = 0; i < nOrbs; i++) {
+            Orbital &ex_i = this->exchange.getOrbital(i);
+            this->tot_norms(i) = sqrt(ex_i.getSquareNorm());
+            n = max(n, ex_i.getNNodes());
+        }
     } else {
-
 #ifdef HAVE_MPI
+        //use symmetri
+        //send one orbital at a time
+        MPI_Request request=MPI_REQUEST_NULL;
+        MPI_Status status;
+        //has to distribute the calculations evenly among processors
+        OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
+        OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
+
+        int orbsIx[workOrbVecSize];     //to store own orbital indices
+        int rcvOrbsIx[workOrbVecSize];  //to store received orbital indices
+
+        int sndtoMPI[workOrbVecSize];   //to store rank of MPI where orbitals were sent
+        int sndOrbIx[workOrbVecSize];   //to store indices of where orbitals were sent
+
+        //make vector with adresses of own orbitals
+        int i = 0;
+        for (int ix = mpiOrbRank; ix < nOrbs; ix += mpiOrbSize) {
+            orbVecChunk_i.push_back(this->orbitals->getOrbital(ix));//i orbitals
+            orbsIx[i++] = ix;
+        }
 
 	//use symmetri
 	//send one orbital at a time
@@ -294,10 +324,9 @@ void ExchangePotential::calcInternalExchange() {
 	}
 	//tot_norms are used for screening. Since we use symmetri, we might need factors from others
 	MPI_Allreduce(MPI_IN_PLACE, &this->tot_norms(0), nOrbs, MPI_DOUBLE, MPI_SUM, mpiCommOrb);
-
 #endif
     }
-   
+
     timer.stop();
     double t = timer.getWallTime();
     TelePrompter::printTree(0, "Hartree-Fock exchange", n, t);
@@ -309,6 +338,7 @@ void ExchangePotential::calcInternal(int i) {
     MWConvolution<3> apply(-1.0, this->max_scale);
 
     PoissonOperator &P = *this->poisson;
+    QMOperator *R = this->nuc_corr_fac;
     Orbital &phi_i = this->orbitals->getOrbital(i);
 
     double prec = getScaledPrecision(i, i);
@@ -317,9 +347,13 @@ void ExchangePotential::calcInternal(int i) {
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
+    Orbital *Rphi_i = &phi_i;
+    if (R != 0) Rphi_i = (*R)(phi_i);
+
     // compute phi_ii = phi_i^dag * phi_i
     Orbital *phi_ii = new Orbital(phi_i);
-    mult.adjoint(*phi_ii, 1.0, phi_i, phi_i);
+    mult.adjoint(*phi_ii, 1.0, *Rphi_i, *Rphi_i);
+    if (R != 0) delete Rphi_i;
 
     // compute V_ii = P[phi_ii]
     Orbital *V_ii = new Orbital(phi_i);
@@ -353,6 +387,7 @@ void ExchangePotential::calcInternal(int i, int j) {
     MWConvolution<3> apply(-1.0, this->max_scale);
 
     PoissonOperator &P = *this->poisson;
+    QMOperator *R = nuc_corr_fac;
     Orbital &phi_i = this->orbitals->getOrbital(i);
     Orbital &phi_j = this->orbitals->getOrbital(j);
 
@@ -371,9 +406,16 @@ void ExchangePotential::calcInternal(int i, int j) {
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
+    Orbital *Rphi_i = &phi_i;
+    Orbital *Rphi_j = &phi_j;
+    if (R != 0) Rphi_i = (*R)(phi_i);
+    if (R != 0) Rphi_j = (*R)(phi_j);
+
     // compute phi_ij = phi_i^dag * phi_j
     Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
+    mult.adjoint(*phi_ij, 1.0, *Rphi_i, *Rphi_j);
+    if (R != 0) delete Rphi_i;
+    if (R != 0) delete Rphi_j;
 
     // compute V_ij = P[phi_ij]
     Orbital *V_ij = new Orbital(phi_i);
@@ -419,6 +461,7 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     MWConvolution<3> apply(-1.0, this->max_scale);
 
     PoissonOperator &P = *this->poisson;
+    QMOperator *R = this->nuc_corr_fac;
 
     double i_factor = phi_i.getExchangeFactor(phi_j);
     double j_factor = phi_j.getExchangeFactor(phi_i);
@@ -435,9 +478,16 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
+    Orbital *Rphi_i = &phi_i;
+    Orbital *Rphi_j = &phi_j;
+    if (R != 0) Rphi_i = (*R)(phi_i);
+    if (R != 0) Rphi_j = (*R)(phi_j);
+
     // compute phi_ij = phi_i^dag * phi_j
     Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
+    mult.adjoint(*phi_ij, 1.0, *Rphi_i, *Rphi_j);
+    if (R != 0) delete Rphi_i;
+    if (R != 0) delete Rphi_j;
 
     // compute V_ij = P[phi_ij]
     Orbital *V_ij = new Orbital(phi_i);
@@ -480,6 +530,7 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     MWConvolution<3> apply(-1.0, this->max_scale);
 
     PoissonOperator &P = *this->poisson;
+    QMOperator *R = this->nuc_corr_fac;
 
     double i_factor = phi_i.getExchangeFactor(phi_j);
     double j_factor = phi_j.getExchangeFactor(phi_i);
@@ -495,9 +546,16 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
+    Orbital *Rphi_i = &phi_i;
+    Orbital *Rphi_j = &phi_j;
+    if (R != 0) Rphi_i = (*R)(phi_i);
+    if (R != 0) Rphi_j = (*R)(phi_j);
+
     // compute phi_ij = phi_i^dag * phi_j
     Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
+    mult.adjoint(*phi_ij, 1.0, *Rphi_i, *Rphi_j);
+    if (R != 0) delete Rphi_i;
+    if (R != 0) delete Rphi_j;
 
     // compute V_ij = P[phi_ij]
     Orbital *V_ij = new Orbital(phi_i);
@@ -532,7 +590,7 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
 
     //This part (phi_iij) is sent to owner of j orbital if it is on another MPI
     if (j%mpiOrbSize == mpiOrbRank) {
-	// compute x_j += phi_iij
+        // compute x_j += phi_iij
         Orbital &ex_j = this->exchange.getOrbital(j);
         add.inPlace(ex_j, j_factor, *phi_iij);
     }

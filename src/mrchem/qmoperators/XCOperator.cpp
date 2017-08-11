@@ -14,12 +14,13 @@ using namespace Eigen;
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D)
+XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, QMOperator *R, DerivativeOperator<3> *D)
         : QMPotential(0),
           order(k),
           functional(&F),
           derivative(D),
           orbitals(&phi),
+          nuc_corr_factor(R),
           energy(0.0),
           xcInput(0),
           xcOutput(0) {
@@ -44,11 +45,12 @@ void XCOperator::calcDensity() {
     Density &rho = this->density;
     Density *dRho = &this->gradient[0];
     QMPotential &V = *this;
+    QMOperator *R = this->nuc_corr_factor;
 
     DensityProjector project(this->apply_prec, this->max_scale);
 
     Timer timer1;
-    project(rho, phi);
+    project(rho, phi, R);
     timer1.stop();
     double t1 = timer1.getWallTime();
     int n1 = rho.getNNodes();
