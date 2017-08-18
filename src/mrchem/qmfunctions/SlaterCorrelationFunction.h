@@ -8,6 +8,16 @@ public:
     SlaterCorrelationFunction(double a) : param(a) { }
     virtual ~SlaterCorrelationFunction() { }
 
+    std::function<double (const double *r)> getS_m1(const Nucleus &nuc) const {
+        double a = this->param;
+        auto f = [a, nuc] (const double *r) -> double {
+            const double *R = nuc.getCoord();
+            double r_R = MathUtils::calcDistance(3, r, R);
+            double Z = nuc.getCharge();
+            return 1.0/(1.0 + exp(-a*r_R*Z)/(a - 1.0));
+        };
+        return f;
+    }
     std::function<double (const double *r)> getS_0(const Nucleus &nuc) const {
         double a = this->param;
         auto f = [a, nuc] (const double *r) -> double {

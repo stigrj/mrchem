@@ -8,6 +8,15 @@ public:
     SeeligCorrelationFunction() { }
     virtual ~SeeligCorrelationFunction() { }
 
+    std::function<double (const double *r)> getS_m1(const Nucleus &nuc) const {
+        auto f = [nuc] (const double *r) -> double {
+            const double *R = nuc.getCoord();
+            double r_R = MathUtils::calcDistance(3, r, R);
+            double Z = nuc.getCharge();
+            return 1.0/exp(-Z*r_R);
+        };
+        return f;
+    }
     std::function<double (const double *r)> getS_0(const Nucleus &nuc) const {
         auto f = [nuc] (const double *r) -> double {
             const double *R = nuc.getCoord();

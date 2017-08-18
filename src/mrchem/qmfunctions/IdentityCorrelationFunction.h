@@ -8,6 +8,10 @@ public:
     IdentityCorrelationFunction() { }
     virtual ~IdentityCorrelationFunction() { }
 
+    std::function<double (const double *r)> getS_m1(const Nucleus &nuc) const {
+        auto f = [nuc] (const double *r) -> double { return 1.0; };
+        return f;
+    }
     std::function<double (const double *r)> getS_0(const Nucleus &nuc) const {
         auto f = [nuc] (const double *r) -> double { return 1.0; };
         return f;
