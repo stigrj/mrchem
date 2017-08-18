@@ -1,7 +1,7 @@
 #include "EnergyOptimizer.h"
 #include "OrbitalVector.h"
 #include "FockOperator.h"
-#include "NuclearPotential.h"
+#include "RegularizedPotential.h"
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 #include "XCOperator.h"
@@ -159,7 +159,7 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     MatrixXd dS_2 = I(phi_np1, dPhi_n, R);
     I.clear();
 
-    NuclearPotential *v_n = this->fOper_n->getNuclearPotential();
+    RegularizedPotential *v_n = this->fOper_n->getNuclearPotential();
     CoulombOperator *j_n = this->fOper_n->getCoulombOperator();
     ExchangeOperator *k_n = this->fOper_n->getExchangeOperator();
     XCOperator *xc_n = this->fOper_n->getXCOperator();

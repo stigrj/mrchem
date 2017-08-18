@@ -1,6 +1,6 @@
 #include "FockOperator.h"
 #include "KineticOperator.h"
-#include "NuclearPotential.h"
+#include "RegularizedPotential.h"
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 #include "XCOperator.h"
@@ -17,7 +17,7 @@ using namespace std;
 using namespace Eigen;
 
 FockOperator::FockOperator(KineticOperator *t,
-                           NuclearPotential *v,
+                           RegularizedPotential *v,
                            CoulombOperator *j,
                            ExchangeOperator *k,
                            XCOperator *xc)
@@ -44,6 +44,7 @@ void FockOperator::setup(double prec) {
     TelePrompter::printHeader(0, "Setting up Fock operator");
     TelePrompter::printDouble(0, "Precision", prec);
     TelePrompter::printSeparator(0, '-');
+    this->setApplyPrec(prec);
     if (this->T != 0) this->T->setup(prec);
     if (this->V != 0) this->V->setup(prec);
     if (this->J != 0) this->J->setup(prec);
@@ -55,6 +56,7 @@ void FockOperator::setup(double prec) {
 }
 
 void FockOperator::clear() {
+    this->clearApplyPrec();
     if (this->T != 0) this->T->clear();
     if (this->V != 0) this->V->clear();
     if (this->J != 0) this->J->clear();

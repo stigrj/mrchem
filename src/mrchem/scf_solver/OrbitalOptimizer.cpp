@@ -1,6 +1,7 @@
 #include "OrbitalOptimizer.h"
 #include "OrbitalVector.h"
 #include "FockOperator.h"
+#include "IdentityOperator.h"
 #include "HelmholtzOperatorSet.h"
 #include "Accelerator.h"
 
@@ -60,8 +61,11 @@ bool OrbitalOptimizer::optimize() {
     double err_t = 1.0;
     double err_p = 1.0;
 
+    IdentityOperator I;
+    I.setup(orb_prec);
     fock.setup(orb_prec);
-    F = fock(phi_n, phi_n, R);
+    F = I(phi_n, phi_n).inverse() * fock(phi_n, phi_n);
+    I.clear();
 
     int nIter = 0;
     bool converged = false;
@@ -134,8 +138,10 @@ bool OrbitalOptimizer::optimize() {
         phi_n.setErrors(errors);
 
         // Compute Fock matrix
+        I.setup(orb_prec);
         fock.setup(orb_prec);
-        F = fock(phi_n, phi_n, R);
+        F = I(phi_n, phi_n).inverse() * fock(phi_n, phi_n);
+        I.clear();
 
         // Finalize SCF cycle
         timer.stop();

@@ -1,4 +1,5 @@
 #include "ExchangePotential.h"
+#include "QMTensorOperator.h"
 #include "OrbitalAdder.h"
 #include "OrbitalMultiplier.h"
 #include "PoissonOperator.h"
@@ -69,9 +70,6 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
 
     Orbital *ex_p = new Orbital(phi_p);
 
-    Orbital *Rphi_p = &phi_p;
-    if (R != 0) Rphi_p = (*R)(phi_p);
-
 #ifdef HAVE_MPI
     OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
     OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
@@ -92,14 +90,18 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
         orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, nOrbs, iter, workOrbVecSize, 2);
         for (int i = 0; i<rcvOrbs.size(); i++){
             Orbital &phi_i = rcvOrbs.getOrbital(i);
-            Orbital *Rphi_i = &phi_i;
-            if (R != 0) Rphi_i = (*R)(phi_i);
 
             double spinFactor = phi_i.getExchangeFactor(phi_p);
             if (IS_EQUAL(spinFactor, 0.0)) continue;
             Orbital *phi_ip = new Orbital(phi_p);
-            mult.adjoint(*phi_ip, 1.0, Rphi_i, Rphi_p);
+            mult.adjoint(*phi_ip, 1.0, phi_i, phi_p);
 
+            Orbital *RRphi_ip = phi_ip;
+            if (R != 0) {
+                RankZeroTensorOperator RR = (*R) * (*R);
+                RRphi_ip = RR(*phi_ip);
+                delete phi_ip;
+            }
             Orbital *V_ip = new Orbital(phi_p);
             if (phi_ip->hasReal()) {
                 V_ip->allocReal();
@@ -109,9 +111,9 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
                 V_ip->allocImag();
                 apply(V_ip->imag(), P, phi_ip->imag());
             }
-            delete phi_ip;
+            delete RRphi_i;
 
-            double multFac = - spinFactor * (this->x_factor / phi_i.getSquareNorm());
+            double multFac = - spinFactor * this->x_factor;
             Orbital *phi_iip = new Orbital(phi_p);
             mult(*phi_iip, multFac, phi_i, *V_ip);
             delete V_ip;
@@ -131,28 +133,32 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
 #else
     for (int i = 0; i < nOrbs; i++) {
         Orbital &phi_i = this->orbitals->getOrbital(i);
-        Orbital *Rphi_i = &phi_i;
-        if (R != 0) Rphi_i = (*R)(phi_i);
 
         double spinFactor = phi_i.getExchangeFactor(phi_p);
         if (IS_EQUAL(spinFactor, 0.0)) continue;
 
         Orbital *phi_ip = new Orbital(phi_p);
-        mult.adjoint(*phi_ip, 1.0, *Rphi_i, *Rphi_p);
-        if (R != 0) delete Rphi_i;
+        mult.adjoint(*phi_ip, 1.0, phi_i, phi_p);
+
+        Orbital *RRphi_ip = phi_ip;
+        if (R != 0) {
+            RankZeroTensorOperator RR = (*R) * (*R);
+            RRphi_ip = RR(*phi_ip);
+            delete phi_ip;
+        }
 
         Orbital *V_ip = new Orbital(phi_p);
-        if (phi_ip->hasReal()) {
+        if (RRphi_ip->hasReal()) {
             V_ip->allocReal();
-            apply(V_ip->real(), P, phi_ip->real());
+            apply(V_ip->real(), P, RRphi_ip->real());
         }
-        if (phi_ip->hasImag()) {
+        if (RRphi_ip->hasImag()) {
             V_ip->allocImag();
-            apply(V_ip->imag(), P, phi_ip->imag());
+            apply(V_ip->imag(), P, RRphi_ip->imag());
         }
-        delete phi_ip;
+        delete RRphi_ip;
 
-        double multFac = -spinFactor * (this->x_factor / phi_i.getSquareNorm());
+        double multFac = -spinFactor * this->x_factor;
         Orbital *phi_iip = new Orbital(phi_p);
         mult(*phi_iip, multFac, phi_i, *V_ip);
         delete V_ip;
@@ -166,8 +172,6 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
     for (int i = 0; i < orb_vec.size(); i++) delete orb_vec[i];
     orb_vec.clear();
 #endif
-
-    if (R != 0) delete Rphi_p;
 
     timer.stop();
     double n = ex_p->getNNodes();
@@ -347,31 +351,32 @@ void ExchangePotential::calcInternal(int i) {
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
-    Orbital *Rphi_i = &phi_i;
-    if (R != 0) Rphi_i = (*R)(phi_i);
-
     // compute phi_ii = phi_i^dag * phi_i
     Orbital *phi_ii = new Orbital(phi_i);
-    mult.adjoint(*phi_ii, 1.0, *Rphi_i, *Rphi_i);
-    if (R != 0) delete Rphi_i;
+    mult.adjoint(*phi_ii, 1.0, phi_i, phi_i);
+
+    Orbital *RRphi_ii = phi_ii;
+    if (R != 0) {
+        RankZeroTensorOperator RR = (*R) * (*R);
+        RRphi_ii = RR(*phi_ii);
+        delete phi_ii;
+    }
 
     // compute V_ii = P[phi_ii]
     Orbital *V_ii = new Orbital(phi_i);
-    if (phi_ii->hasReal()) {
+    if (RRphi_ii->hasReal()) {
         V_ii->allocReal();
-        apply(V_ii->real(), P, phi_ii->real());
+        apply(V_ii->real(), P, RRphi_ii->real());
     }
-    if (phi_ii->hasImag()) {
+    if (RRphi_ii->hasImag()) {
         V_ii->allocImag();
-        apply(V_ii->imag(), P, phi_ii->imag());
+        apply(V_ii->imag(), P, RRphi_ii->imag());
     }
-    if (phi_ii != 0) delete phi_ii;
-
-    double fac_iii = -(this->x_factor/phi_i.getSquareNorm());
+    delete RRphi_ii;
 
     // compute phi_iii = phi_i * V_ii
     Orbital *phi_iii = new Orbital(phi_i);
-    mult(*phi_iii, fac_iii, phi_i, *V_ii);
+    mult(*phi_iii, -this->x_factor, phi_i, *V_ii);
     this->part_norms(i,i) = sqrt(phi_iii->getSquareNorm());
     if (V_ii != 0) delete V_ii;
 
@@ -406,39 +411,37 @@ void ExchangePotential::calcInternal(int i, int j) {
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
-    Orbital *Rphi_i = &phi_i;
-    Orbital *Rphi_j = &phi_j;
-    if (R != 0) Rphi_i = (*R)(phi_i);
-    if (R != 0) Rphi_j = (*R)(phi_j);
-
     // compute phi_ij = phi_i^dag * phi_j
     Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, *Rphi_i, *Rphi_j);
-    if (R != 0) delete Rphi_i;
-    if (R != 0) delete Rphi_j;
+    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
+
+    Orbital *RRphi_ij = phi_ij;
+    if (R != 0) {
+        RankZeroTensorOperator RR = (*R) * (*R);
+        RRphi_ij = RR(*phi_ij);
+        delete phi_ij;
+    }
 
     // compute V_ij = P[phi_ij]
     Orbital *V_ij = new Orbital(phi_i);
-    if (phi_ij->hasReal()) {
+    if (RRphi_ij->hasReal()) {
         V_ij->allocReal();
-        apply(V_ij->real(), P, phi_ij->real());
+        apply(V_ij->real(), P, RRphi_ij->real());
     }
-    if (phi_ij->hasImag()) {
+    if (RRphi_ij->hasImag()) {
         V_ij->allocImag();
-        apply(V_ij->imag(), P, phi_ij->imag());
+        apply(V_ij->imag(), P, RRphi_ij->imag());
     }
-    if (phi_ij != 0) delete phi_ij;
+    delete RRphi_ij;
 
     // compute phi_jij = phi_j * V_ij
-    double fac_jij = -(this->x_factor/phi_j.getSquareNorm());
     Orbital *phi_jij = new Orbital(phi_i);
-    mult(*phi_jij, fac_jij, *V_ij, phi_j);
+    mult(*phi_jij, -this->x_factor, *V_ij, phi_j);
     this->part_norms(j,i) = sqrt(phi_jij->getSquareNorm());
 
     // compute phi_iij = phi_i * V_ij
-    double fac_iij = -(this->x_factor/phi_i.getSquareNorm());
     Orbital *phi_iij = new Orbital(phi_i);
-    mult.adjoint(*phi_iij, fac_iij, *V_ij, phi_i);
+    mult.adjoint(*phi_iij, -this->x_factor, *V_ij, phi_i);
     this->part_norms(i,j) = sqrt(phi_iij->getSquareNorm());
 
     if (V_ij != 0) delete V_ij;
@@ -478,40 +481,38 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
-    Orbital *Rphi_i = &phi_i;
-    Orbital *Rphi_j = &phi_j;
-    if (R != 0) Rphi_i = (*R)(phi_i);
-    if (R != 0) Rphi_j = (*R)(phi_j);
-
     // compute phi_ij = phi_i^dag * phi_j
     Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, *Rphi_i, *Rphi_j);
-    if (R != 0) delete Rphi_i;
-    if (R != 0) delete Rphi_j;
+    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
+
+    Orbital *RRphi_ij = phi_ij;
+    if (R != 0) {
+        RankZeroTensorOperator RR = (*R) * (*R);
+        RRphi_ij = RR(*phi_ij);
+        delete phi_ij;
+    }
 
     // compute V_ij = P[phi_ij]
     Orbital *V_ij = new Orbital(phi_i);
-    if (phi_ij->hasReal()) {
+    if (RRphi_ij->hasReal()) {
         V_ij->allocReal();
-        apply(V_ij->real(), P, phi_ij->real());
+        apply(V_ij->real(), P, RRphi_ij->real());
     }
-    if (phi_ij->hasImag()) {
+    if (RRphi_ij->hasImag()) {
         V_ij->allocImag();
-        apply(V_ij->imag(), P, phi_ij->imag());
+        apply(V_ij->imag(), P, RRphi_ij->imag());
     }
-    if (phi_ij != 0) delete phi_ij;
+    delete RRphi_ij;
 
     // compute phi_jij = phi_j * V_ij
-    double fac_jij = -(this->x_factor/phi_j.getSquareNorm());
     Orbital *phi_jij = new Orbital(phi_i);
-    mult(*phi_jij, fac_jij, *V_ij, phi_j);
+    mult(*phi_jij, -this->x_factor, *V_ij, phi_j);
     this->part_norms(j,i) = sqrt(phi_jij->getSquareNorm());
 
     //part_norms(i,j) MUST be computed to use for symmetric screening
     // compute phi_iij = phi_i * V_ij
     Orbital *phi_iij = new Orbital(phi_i);
-    double fac_iij = -(this->x_factor/phi_i.getSquareNorm());
-    mult.adjoint(*phi_iij, fac_iij, *V_ij, phi_i);
+    mult.adjoint(*phi_iij, -this->x_factor, *V_ij, phi_i);
     this->part_norms(i,j) = sqrt(phi_iij->getSquareNorm());
     if (phi_iij != 0) delete phi_iij;
 
@@ -546,33 +547,32 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     mult.setPrecision(prec);
     apply.setPrecision(prec);
 
-    Orbital *Rphi_i = &phi_i;
-    Orbital *Rphi_j = &phi_j;
-    if (R != 0) Rphi_i = (*R)(phi_i);
-    if (R != 0) Rphi_j = (*R)(phi_j);
-
     // compute phi_ij = phi_i^dag * phi_j
     Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, *Rphi_i, *Rphi_j);
-    if (R != 0) delete Rphi_i;
-    if (R != 0) delete Rphi_j;
+    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
+
+    Orbital *RRphi_ij = phi_ij;
+    if (R != 0) {
+        RankZeroTensorOperator RR = (*R) * (*R);
+        RRphi_ij = RR(*phi_ij);
+        delete phi_ij;
+    }
 
     // compute V_ij = P[phi_ij]
     Orbital *V_ij = new Orbital(phi_i);
-    if (phi_ij->hasReal()) {
+    if (RRphi_ij->hasReal()) {
         V_ij->allocReal();
-        apply(V_ij->real(), P, phi_ij->real());
+        apply(V_ij->real(), P, RRphi_ij->real());
     }
-    if (phi_ij->hasImag()) {
+    if (RRphi_ij->hasImag()) {
         V_ij->allocImag();
-        apply(V_ij->imag(), P, phi_ij->imag());
+        apply(V_ij->imag(), P, RRphi_ij->imag());
     }
     if (phi_ij != 0) delete phi_ij;
 
     // compute phi_jij = phi_j * V_ij
-    double fac_jij = -(this->x_factor/phi_j.getSquareNorm());
     Orbital *phi_jij = new Orbital(phi_i);
-    mult(*phi_jij, fac_jij, *V_ij, phi_j);
+    mult(*phi_jij, -this->x_factor, *V_ij, phi_j);
     this->part_norms(j,i) = sqrt(phi_jij->getSquareNorm());
 
     // compute x_i += phi_jij
@@ -582,8 +582,7 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
 
     //part_norms(i,j) MUST be computed to use for symmetric screening
     // compute phi_iij = phi_i * V_ij
-    double fac_iij = -(this->x_factor/phi_i.getSquareNorm());
-    mult.adjoint(*phi_iij, fac_iij, *V_ij, phi_i);
+    mult.adjoint(*phi_iij, -this->x_factor, *V_ij, phi_i);
     this->part_norms(i,j) = sqrt(phi_iij->getSquareNorm());
 
     if (V_ij != 0) delete V_ij;

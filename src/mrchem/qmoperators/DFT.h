@@ -5,7 +5,7 @@
 class DFT : public FockOperator {
 public:
     DFT(KineticOperator &t,
-        NuclearPotential &v,
+        RegularizedPotential &v,
         CoulombOperator &j,
         XCOperator &xc,
         ExchangeOperator *k = 0)

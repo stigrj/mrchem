@@ -7,7 +7,7 @@
 #include "QMOperator.h"
 
 class QMOperatorExp;
-class NuclearPotential;
+class RegularizedPotential;
 class KineticOperator;
 class CoulombOperator;
 class ExchangeOperator;
@@ -19,7 +19,7 @@ class SCFEnergy;
 class FockOperator : public QMOperator {
 public:
     FockOperator(KineticOperator *t = 0,
-                 NuclearPotential *v = 0,
+                 RegularizedPotential *v = 0,
                  CoulombOperator *j = 0,
                  ExchangeOperator *k = 0,
                  XCOperator *xc = 0);
@@ -29,7 +29,7 @@ public:
     QMOperatorExp *getPerturbationOperator() { return this->H_1; }
 
     KineticOperator *getKineticOperator() { return this->T; }
-    NuclearPotential *getNuclearPotential() { return this->V; }
+    RegularizedPotential *getNuclearPotential() { return this->V; }
     CoulombOperator *getCoulombOperator() { return this->J; }
     ExchangeOperator *getExchangeOperator() { return this->K; }
     XCOperator *getXCOperator() { return this->XC; }
@@ -60,7 +60,7 @@ public:
 
 protected:
     KineticOperator *T;
-    NuclearPotential *V;
+    RegularizedPotential *V;
     CoulombOperator *J;
     ExchangeOperator *K;
     XCOperator *XC;

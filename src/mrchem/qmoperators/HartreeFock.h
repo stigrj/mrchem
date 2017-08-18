@@ -5,7 +5,7 @@
 class HartreeFock : public FockOperator {
 public:
     HartreeFock(KineticOperator &t,
-                NuclearPotential &v,
+                RegularizedPotential &v,
                 CoulombOperator &j,
                 ExchangeOperator &k)
             : FockOperator(&t, &v, &j, &k) { }
