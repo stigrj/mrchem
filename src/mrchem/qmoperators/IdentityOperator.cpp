@@ -1,4 +1,5 @@
 #include "IdentityOperator.h"
+#include "QMTensorOperator.h"
 #include "OrbitalVector.h"
 #include "Orbital.h"
 
@@ -67,22 +68,21 @@ MatrixXcd IdentityOperator::calcOverlapMatrix(OrbitalVector &bra, OrbitalVector 
     MatrixXcd S = MatrixXcd::Zero(Ni, Nj);
 
     if (R != 0) {
-        for (int i = 0; i < Ni; i++) {
-            Orbital &phi_i = bra.getOrbital(i);
-            Orbital *bra_i = (*R)(phi_i);
-            for (int j = 0; j < Nj; j++) {
-                Orbital &phi_j = ket.getOrbital(j);
-                Orbital *ket_j = (*R)(phi_j);
-                S(i,j) = bra_i->dot(*ket_j);
-                delete ket_j;
+        RankZeroTensorOperator RR = (*R) * (*R);
+        for (int j = 0; j < Nj; j++) {
+            Orbital &phi_j = ket.getOrbital(j);
+            Orbital *ket_j = RR(phi_j);
+            for (int i = 0; i < Ni; i++) {
+                Orbital &bra_i = bra.getOrbital(i);
+                S(i,j) = bra_i.dot(*ket_j);
             }
-            delete bra_i;
+            delete ket_j;
         }
     } else {
-        for (int i = 0; i < Ni; i++) {
-            Orbital &bra_i = bra.getOrbital(i);
-            for (int j = 0; j < Nj; j++) {
-                Orbital &ket_j = ket.getOrbital(j);
+        for (int j = 0; j < Nj; j++) {
+            Orbital &ket_j = ket.getOrbital(j);
+            for (int i = 0; i < Ni; i++) {
+                Orbital &bra_i = bra.getOrbital(i);
                 S(i,j) = bra_i.dot(ket_j);
             }
         }
@@ -118,27 +118,26 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVecto
 
         if (R != 0) {
             //overlap between i and j chunks
-            for (int i = 0; i < rcvOrbs.size(); i++) {
-                int ix = rcvOrbsIx[i];
-                Orbital &phi_i = rcvOrbs.getOrbital(i);
-                Orbital *bra_i = (*R)(phi_i);
-                for (int j = 0; j < orbVecChunk_j.size(); j++) {
-                    int jx = mpiOrbRank + j*mpiOrbSize;
-                    Orbital &phi_j = orbVecChunk_j.getOrbital(j);
-                    Orbital *ket_j = (*R)(phi_j);
-                    S(ix,jx) = bra_i->dot(*ket_j);
-                    delete ket_j;
+            RankZeroTensorOperator RR = (*R) * (*R);
+            for (int j = 0; j < orbVecChunk_j.size(); j++) {
+                int jx = mpiOrbRank + j*mpiOrbSize;
+                Orbital &phi_j = orbVecChunk_j.getOrbital(j);
+                Orbital *ket_j = RR(phi_j);
+                for (int i = 0; i < rcvOrbs.size(); i++) {
+                    int ix = rcvOrbsIx[i];
+                    Orbital &bra_i = rcvOrbs.getOrbital(i);
+                    S(ix,jx) = bra_i.dot(*ket_j);
                 }
-                delete bra_i;
+                delete ket_i;
             }
         } else {
             //overlap between i and j chunks
-            for (int i = 0; i < rcvOrbs.size(); i++) {
-                int ix = rcvOrbsIx[i];
-                Orbital &bra_i = rcvOrbs.getOrbital(i);
-                for (int j = 0; j < orbVecChunk_j.size(); j++) {
-                    int jx = mpiOrbRank + j*mpiOrbSize;
-                    Orbital &ket_j = orbVecChunk_j.getOrbital(j);
+            for (int j = 0; j < orbVecChunk_j.size(); j++) {
+                int jx = mpiOrbRank + j*mpiOrbSize;
+                Orbital &ket_j = orbVecChunk_j.getOrbital(j);
+                for (int i = 0; i < rcvOrbs.size(); i++) {
+                    int ix = rcvOrbsIx[i];
+                    Orbital &bra_i = rcvOrbs.getOrbital(i);
                     S(ix,jx) = bra_i.dot(ket_j);
                 }
             }
@@ -191,20 +190,19 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVec
         orbVecChunk_i.getOrbVecChunk_sym(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
 
         if (R != 0) {
+            RankZeroTensorOperator RR = (*R) * (*R);
             //compute overlap between chunks
             for (int i = 0; i < rcvOrbs.size(); i++) {
                 int ix = rcvOrbsIx[i];
                 Orbital &phi_i = rcvOrbs.getOrbital(i);
-                Orbital *bra_i = (*R)(phi_i);
+                Orbital *bra_i = RR(phi_i);
                 for (int j = 0; j < orbVecChunk_j.size(); j++) {
                     int jx = mpiOrbRank + j*mpiOrbSize;
                     if (ix%mpiOrbSize != mpiOrbRank or jx <= rcvOrbsIx[i]) {
-                        Orbital &phi_j = orbVecChunk_j.getOrbital(j);
-                        Orbital *ket_j = (*R)(phi_j);
+                        Orbital &ket_j = orbVecChunk_j.getOrbital(j);
                         //compute only lower part in own block
-                        S(ix,jx) = bra_i->dot(*ket_j);
+                        S(ix,jx) = bra_i->dot(ket_j);
                         S(jx,ix) = conj(S(ix,jx));//symmetric
-                        delete ket_j;
                     }
                 }
                 delete bra_i;

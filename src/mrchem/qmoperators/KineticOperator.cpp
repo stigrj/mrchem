@@ -53,18 +53,11 @@ MatrixXd KineticOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_or
     Timer timer;
     TelePrompter::printHeader(1, "Compute Kinetic Matrix Elements");
 
-    RankZeroTensorOperator O_x;
-    RankZeroTensorOperator O_y;
-    RankZeroTensorOperator O_z;
-    if (R != 0) {
-        O_x = this->p[0]*(*R);
-        O_y = this->p[1]*(*R);
-        O_z = this->p[2]*(*R);
-    } else {
-        O_x = this->p[0];
-        O_y = this->p[1];
-        O_z = this->p[2];
-    }
+    if (R != 0) return RankZeroTensorOperator::operator()(i_orbs, j_orbs, R);
+
+    RankZeroTensorOperator &p_x = this->p[0];
+    RankZeroTensorOperator &p_y = this->p[1];
+    RankZeroTensorOperator &p_z = this->p[2];
 
     int Ni = i_orbs.size();
     int Nj = j_orbs.size();
@@ -76,12 +69,12 @@ MatrixXd KineticOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_or
         OrbitalVector dOrbs_j(0);
         for (int j = 0; j < Nj; j++) {
             Orbital &orb_j = j_orbs.getOrbital(j);
-            Orbital *dOrb_j = O_x(orb_j);
+            Orbital *dOrb_j = p_x(orb_j);
             dOrbs_j.push_back(*dOrb_j);
         }
         for (int i = 0; i < Ni; i++) {
             Orbital &orb_i = i_orbs.getOrbital(i);
-            Orbital *dOrb_i = O_x(orb_i);
+            Orbital *dOrb_i = p_x(orb_i);
             for (int j = 0; j < Nj; j++) {
                 Orbital &dOrb_j = dOrbs_j.getOrbital(j);
                 T_x(i,j) = dOrb_i->dot(dOrb_j);
@@ -98,12 +91,12 @@ MatrixXd KineticOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_or
         OrbitalVector dOrbs_j(0);
         for (int j = 0; j < Nj; j++) {
             Orbital &orb_j = j_orbs.getOrbital(j);
-            Orbital *dOrb_j = O_y(orb_j);
+            Orbital *dOrb_j = p_y(orb_j);
             dOrbs_j.push_back(*dOrb_j);
         }
         for (int i = 0; i < Ni; i++) {
             Orbital &orb_i = i_orbs.getOrbital(i);
-            Orbital *dOrb_i = O_y(orb_i);
+            Orbital *dOrb_i = p_y(orb_i);
             for (int j = 0; j < Nj; j++) {
                 Orbital &dOrb_j = dOrbs_j.getOrbital(j);
                 T_y(i,j) = dOrb_i->dot(dOrb_j);
@@ -120,12 +113,12 @@ MatrixXd KineticOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_or
         OrbitalVector dOrbs_j(0);
         for (int j = 0; j < Nj; j++) {
             Orbital &orb_j = j_orbs.getOrbital(j);
-            Orbital *dOrb_j = O_z(orb_j);
+            Orbital *dOrb_j = p_z(orb_j);
             dOrbs_j.push_back(*dOrb_j);
         }
         for (int i = 0; i < Ni; i++) {
             Orbital &orb_i = i_orbs.getOrbital(i);
-            Orbital *dOrb_i = O_z(orb_i);
+            Orbital *dOrb_i = p_z(orb_i);
             for (int j = 0; j < Nj; j++) {
                 Orbital &dOrb_j = dOrbs_j.getOrbital(j);
                 T_z(i,j) = dOrb_i->dot(dOrb_j);

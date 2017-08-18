@@ -96,19 +96,18 @@ Orbital* QMOperatorExp::adjoint(Orbital &phi_p) {
 
 double QMOperatorExp::operator() (Orbital &phi_i, Orbital &phi_j, QMOperator *R) {
     complex<double> result(0.0, 0.0);
+
+    RankZeroTensorOperator O;
     if (R != 0) {
-        RankZeroTensorOperator OR = (*this) * (*R);
-        Orbital *Rphi_i = (*R)(phi_i);
-        Orbital *ORphi_j = OR(phi_j);
-        result = Rphi_i->dot(*ORphi_j);
-        delete Rphi_i;
-        delete ORphi_j;
+        O = (*R) * (*R) * (*this);
     } else {
-        RankZeroTensorOperator O = (*this);
-        Orbital *Ophi_j = O(phi_j);
-        result = phi_i.dot(*Ophi_j);
-        delete Ophi_j;
+        O = (*this);
     }
+
+    Orbital *Ophi_j = O(phi_j);
+    result = phi_i.dot(*Ophi_j);
+    delete Ophi_j;
+
     if (result.imag() > MachineZero) MSG_ERROR("Should be real");
     return result.real();
 }
@@ -118,36 +117,24 @@ double QMOperatorExp::adjoint(Orbital &phi_i, Orbital &phi_j, QMOperator *R) {
 }
 
 MatrixXd QMOperatorExp::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs, QMOperator *R) {
-    QMOperatorExp &O = *this;
-
     int Ni = i_orbs.size();
     int Nj = j_orbs.size();
     MatrixXcd result = MatrixXcd::Zero(Ni, Nj);
 
+    RankZeroTensorOperator O;
     if (R != 0) {
-        for (int j = 0; j < Nj; j++) {
-            Orbital &phi_j = j_orbs.getOrbital(j);
-            Orbital *Rphi_j = (*R)(phi_j);
-            Orbital *ORphi_j = O(*Rphi_j);
-            delete Rphi_j;
-            for (int i = 0; i <  Ni; i++) {
-                Orbital &phi_i = i_orbs.getOrbital(i);
-                Orbital *Rphi_i = (*R)(phi_i);
-                result(i,j) = Rphi_i->dot(*ORphi_j);
-                delete Rphi_i;
-            }
-            delete ORphi_j;
-        }
+        O = (*R) * (*R) * (*this);
     } else {
-        for (int j = 0; j < Nj; j++) {
-            Orbital &phi_j = j_orbs.getOrbital(j);
-            Orbital *Ophi_j = O(phi_j);
-            for (int i = 0; i <  Ni; i++) {
-                Orbital &phi_i = i_orbs.getOrbital(i);
-                result(i,j) = phi_i.dot(*Ophi_j);
-            }
-            delete Ophi_j;
+        O = (*this);
+    }
+    for (int j = 0; j < Nj; j++) {
+        Orbital &phi_j = j_orbs.getOrbital(j);
+        Orbital *Ophi_j = O(phi_j);
+        for (int i = 0; i <  Ni; i++) {
+            Orbital &phi_i = i_orbs.getOrbital(i);
+            result(i,j) = phi_i.dot(*Ophi_j);
         }
+        delete Ophi_j;
     }
 
     if (result.imag().norm() > MachineZero) MSG_ERROR("Should be real");
