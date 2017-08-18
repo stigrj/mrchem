@@ -148,6 +148,12 @@ def setup_keywords():
     derivatives.add_kw('h_pso',         'STR', 'ABGV_00')
     top.add_sect(derivatives)
 
+    nemo=getkw.Section('NEMO')
+    nemo.add_kw('correlation_factor',   'STR', 'none')
+    nemo.add_kw('derivative',           'STR', 'ABGV_00')
+    nemo.add_kw('parameter',            'DBL', 2.0)
+    top.add_sect(nemo)
+
     molecule=getkw.Section('Molecule', callback = verify_molecule)
     molecule.add_kw('charge',           'INT', 0)
     molecule.add_kw('multiplicity',     'INT', 1)
