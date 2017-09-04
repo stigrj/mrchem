@@ -319,6 +319,35 @@ void Plot<D>::calcSurfCoordinates() {
 //    }
 }
 
+/**
+Making a surface grid.
+TODO{Only working for cons z coord.}
+Rune 08.11.16
+*/
+template<>
+void Plot<3>::calcSurfCoordinates() {
+    int nPerDim = floor(sqrt(this->nPoints));
+    int nRealPoints = pow(nPerDim, 2);
+    this->coords = MatrixXd::Zero(nRealPoints, 3);
+
+    double step[3];
+    for (int d = 0; d < 3; d++) {
+        step[d] = (this->B[d] - this->A[d]) / (nPerDim);
+    }
+
+    int n = 0;
+    for (int i = 0; i < nPerDim; i++) {
+        for (int j = 0; j < nPerDim; j++) {
+            this->coords(n, 0) = i * step[0] + this->A[0];
+            this->coords(n, 1) = j * step[1] + this->A[1];
+            this->coords(n, 2) = (this->A[2]+this->B[2])/2;
+            n++;
+        }
+    }
+}
+
+
+
 /** Calculating coordinates to be evaluated
 
     Generating a vector of nPoints coordinates equally distributed between the
@@ -429,7 +458,18 @@ void Plot<D>::writeLineData() {
 
 template<int D>
 void Plot<D>::writeSurfData() {
-    NOT_IMPLEMENTED_ABORT
+    ostream &o = *this->fout;
+    int totNPoints = this->coords.rows();
+    for (int i = 0; i < totNPoints; i++) {
+        o.precision(8);
+        o.setf(ios::showpoint);
+        for (int d = 0; d < D; d++) {
+            o << this->coords(i, d) << " ";
+        }
+        o.precision(12);
+        o << this->values[i];
+        o << endl;
+    }
 }
 
 
