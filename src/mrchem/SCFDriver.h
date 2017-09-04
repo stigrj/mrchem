@@ -14,6 +14,8 @@ class Getkw;
 
 class Nuclei;
 class Molecule;
+class NuclearCorrelationFunction;
+class NuclearCorrelationOperator;
 class OrbitalVector;
 class OrbitalOptimizer;
 class EnergyOptimizer;
@@ -35,6 +37,7 @@ class FockOperator;
 class CoulombPotential;
 class KineticOperator;
 class NuclearPotential;
+class RegularizedPotential;
 class ExchangePotential;
 class XCPotential;
 class XCFunctional;
@@ -102,6 +105,10 @@ protected:
     string diff_kin;
     string diff_orb;
     string diff_pso;
+
+    string nemo_diff;
+    string nemo_corr_fac;
+    double nemo_param;
 
     // Run parameters
     bool calc_scf_energy;
@@ -204,9 +211,11 @@ protected:
     // Unperturbed quantities
     Molecule *molecule;
     Nuclei *nuclei;
+    NuclearCorrelationFunction *ncf;
+    NuclearCorrelationOperator *R;
     OrbitalVector *phi;
     KineticOperator *T;
-    NuclearPotential *V;
+    RegularizedPotential *V;
     CoulombPotential *J;
     ExchangePotential *K;
     XCPotential *XC;
@@ -244,6 +253,7 @@ protected:
     void calcGroundStateProperties();
     void calcLinearResponseProperties(const ResponseCalculation &rsp_calc);
 
+    NuclearCorrelationOperator* setupNuclearCorrelationFactor(const Nuclei &nucs, const NuclearCorrelationFunction *ncf);
     void setupInitialGroundState();
     void setupPerturbedOperators(const ResponseCalculation &rsp_calc);
     void setupPerturbedOrbitals(bool dynamic);
