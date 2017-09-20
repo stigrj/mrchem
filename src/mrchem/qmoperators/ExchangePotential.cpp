@@ -111,7 +111,7 @@ Orbital* ExchangePotential::calcExchange(Orbital &phi_p) {
                 V_ip->allocImag();
                 apply(V_ip->imag(), P, phi_ip->imag());
             }
-            delete RRphi_i;
+            delete RRphi_ip;
 
             double multFac = - spinFactor * this->x_factor;
             Orbital *phi_iip = new Orbital(phi_p);

@@ -128,7 +128,7 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVecto
                     Orbital &bra_i = rcvOrbs.getOrbital(i);
                     S(ix,jx) = bra_i.dot(*ket_j);
                 }
-                delete ket_i;
+                delete ket_j;
             }
         } else {
             //overlap between i and j chunks
