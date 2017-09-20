@@ -681,9 +681,9 @@ void SCFDriver::run() {
         }
     }
 
-    printEigenvalues(*phi, F);
+    //printEigenvalues(*phi, F);
     molecule->printGeometry();
-    molecule->printProperties();
+    //molecule->printProperties();
 }
 
 bool SCFDriver::runGroundState() {
@@ -693,6 +693,8 @@ bool SCFDriver::runGroundState() {
 
     // Setup initial guess
     setupInitialGroundState();
+    IdentityOperator I;
+    I.setup(rel_prec);
 
     // Optimize orbitals
     if (scf_run) {
@@ -709,6 +711,7 @@ bool SCFDriver::runGroundState() {
         fock->clear();
         I.clear();
     }
+    I.clear();
 
     // Optimize energy
     if (kin_free_run) {
@@ -726,7 +729,7 @@ bool SCFDriver::runGroundState() {
     if (scf_write_orbitals) NOT_IMPLEMENTED_ABORT;
 
     // Compute requested properties
-    if (converged) calcGroundStateProperties();
+    //if (converged) calcGroundStateProperties();
 
     return converged;
 }
