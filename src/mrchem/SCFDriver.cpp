@@ -729,7 +729,7 @@ bool SCFDriver::runGroundState() {
     if (scf_write_orbitals) NOT_IMPLEMENTED_ABORT;
 
     // Compute requested properties
-    //if (converged) calcGroundStateProperties();
+    if (converged) calcGroundStateProperties();
 
     return converged;
 }
