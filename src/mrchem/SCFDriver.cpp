@@ -512,9 +512,21 @@ void SCFDriver::setupInitialGroundState() {
         OrbitalProjector OP(rel_prec, max_scale);
         OrbitalVector *tmp = OP(*nuclei);
 
-        /*
+        std::vector<std::function<double (const double *r)> > funcs;
+        for (int k = 0; k < nuclei->size(); k++) {
+            funcs.push_back(ncf->getS_m1((*nuclei)[k]));
+        }
+
+        auto f = [funcs] (const double *r) -> double {
+            double result = 1.0;
+            for (int i = 0; i < funcs.size(); i++) {
+                result *= funcs[i](r);
+            }
+            return result;
+        };
+
         AnalyticPotential R_m1;
-        R_m1.setReal(ncf->getS_m1((*nuclei)[0]));
+        R_m1.setReal(f);
         R_m1.setup(rel_prec);
         for (int i = 0; i < tmp->size(); i++) {
             Orbital &phi_i = tmp->getOrbital(i);
@@ -522,19 +534,18 @@ void SCFDriver::setupInitialGroundState() {
             tmp->replaceOrbital(i, &F_i);
         }
         R_m1.clear();
-        */
 
         // Compute orthonormalization matrix
         IdentityOperator I;
         I.setup(rel_prec);
-        MatrixXd S = I(*tmp, *tmp, 0);
+        MatrixXd S = I(*tmp, *tmp, R);
         MatrixXd S_m12 = MathUtils::hermitianMatrixPow(S, -1.0/2.0);
         I.clear();
 
         // Compute core Hamiltonian matrix
         CoreHamiltonian h(*T, *V);
         h.setup(rel_prec);
-        MatrixXd f_mat = h(*tmp, *tmp, 0);
+        MatrixXd f_mat = h(*tmp, *tmp, R);
         h.clear();
 
         // Diagonalize core Hamiltonian matrix
@@ -556,8 +567,22 @@ void SCFDriver::setupInitialGroundState() {
         } else {
             OP(*phi, file_basis_set, file_mo_mat_a, file_mo_mat_b);
         }
+
+        // Divide initial guess by nuclear correlation factor
+        std::vector<std::function<double (const double *r)> > funcs;
+        for (int k = 0; k < nuclei->size(); k++) {
+            funcs.push_back(ncf->getS_m1((*nuclei)[k]));
+        }
+        auto f = [funcs] (const double *r) -> double {
+            double result = 1.0;
+            for (int i = 0; i < funcs.size(); i++) {
+                result *= funcs[i](r);
+            }
+            return result;
+        };
+
         AnalyticPotential R_m1;
-        R_m1.setReal(ncf->getS_m1((*nuclei)[0]));
+        R_m1.setReal(f);
         R_m1.setup(rel_prec);
         for (int i = 0; i < phi->size(); i++) {
             Orbital &phi_i = phi->getOrbital(i);
@@ -681,9 +706,9 @@ void SCFDriver::run() {
         }
     }
 
-    //printEigenvalues(*phi, F);
+    printEigenvalues(*phi, F);
     molecule->printGeometry();
-    //molecule->printProperties();
+    molecule->printProperties();
 }
 
 bool SCFDriver::runGroundState() {
