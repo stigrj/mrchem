@@ -857,183 +857,103 @@ void SCFDriver::calcGroundStateProperties() {
         TelePrompter::printHeader(0, "Calculating HyperFine Coupling Constant");
         Timer timer;
 
+        DensityProjector project(rel_prec, MRA->getMaxScale());
+        Density rho(true);
+        project(rho, *phi, 0);
+
         for (int k = 0; k < hfcc_nucleus_k.size(); k++) {
             int K = hfcc_nucleus_k[k];
             HyperFineCoupling &hfc = molecule->getHyperFineCoupling(K);
             const Nuclei &nucs = molecule->getNuclei();
             const Nucleus &nuc = nucs[K];
             const double *r_K = nuc.getCoord();
-            NOT_IMPLEMENTED_ABORT;
-        }
-        timer.stop();
-        TelePrompter::printFooter(0, timer, 2);
-    }
 
-    DensityProjector project(rel_prec, MRA->getMaxScale());
+            SpinOperator s;
+            s.setup(rel_prec);
+            MatrixXd &s_z = hfc.getSpinTerm();
+            s_z(0,0) = s[2].trace(*phi, R);
+            s.clear();
 
-    Density rho(true);
-    project(rho, *phi, 0);
+            // Compute correlation factor contribution
+            double R_K = 1.0;
+            for (int m = 0; m < nuclei->size(); m++) {
+                R_K *= pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
+            }
+            // Compute NEMO density constribution
+            double rho_K = rho.spin().evalf(r_K);
 
-    for (int n = 0; n < nuclei->size(); n++) {
-        Nucleus &nuc = (*nuclei)[n];
-        const double *r_0 = nuc.getCoord();
-        double r_1[3], r_2[3], r_3[3], r_4[3];
-        for (int d = 0; d < 3; d++) r_1[d] = r_0[d] + pi/6.0;
-        for (int d = 0; d < 3; d++) r_2[d] = r_0[d] - pi/6.0;
-        for (int d = 0; d < 3; d++) r_3[d] = r_0[d] + pi/3.0;
-        for (int d = 0; d < 3; d++) r_4[d] = r_0[d] - pi/3.0;
-
-        double total_0 = rho.total().evalf(r_0);
-        double total_1 = rho.total().evalf(r_1);
-        double total_2 = rho.total().evalf(r_2);
-        double total_3 = rho.total().evalf(r_3);
-        double total_4 = rho.total().evalf(r_4);
-        double alpha_0 = rho.alpha().evalf(r_0);
-        double alpha_1 = rho.alpha().evalf(r_1);
-        double alpha_2 = rho.alpha().evalf(r_2);
-        double alpha_3 = rho.alpha().evalf(r_3);
-        double alpha_4 = rho.alpha().evalf(r_4);
-        double beta_0 = rho.beta().evalf(r_0);
-        double beta_1 = rho.beta().evalf(r_1);
-        double beta_2 = rho.beta().evalf(r_2);
-        double beta_3 = rho.beta().evalf(r_3);
-        double beta_4 = rho.beta().evalf(r_4);
-        double spin_0 = rho.spin().evalf(r_0);
-        double spin_1 = rho.spin().evalf(r_1);
-        double spin_2 = rho.spin().evalf(r_2);
-        double spin_3 = rho.spin().evalf(r_3);
-        double spin_4 = rho.spin().evalf(r_4);
-        rho.clear();
-
-        double R_0 = 1.0;
-        double R_1 = 1.0;
-        double R_2 = 1.0;
-        double R_3 = 1.0;
-        double R_4 = 1.0;
-        for (int m = 0; m < nuclei->size(); m++) {
-            R_0 *= pow(ncf->getS_0((*nuclei)[m])(r_0), 2.0);
-            R_1 *= pow(ncf->getS_0((*nuclei)[m])(r_1), 2.0);
-            R_2 *= pow(ncf->getS_0((*nuclei)[m])(r_2), 2.0);
-            R_3 *= pow(ncf->getS_0((*nuclei)[m])(r_3), 2.0);
-            R_4 *= pow(ncf->getS_0((*nuclei)[m])(r_4), 2.0);
-        }
-
-        println(0, "               R                     rho_tot                  R*rho_tot        ");
-        println(0, "r_0 total" << setw(24) << R_0 << setw(24) << total_0 << setw(24) << R_0 * total_0);
-        println(0, "r_1 total" << setw(24) << R_1 << setw(24) << total_1 << setw(24) << R_1 * total_1);
-        println(0, "r_2 total" << setw(24) << R_2 << setw(24) << total_2 << setw(24) << R_2 * total_2);
-        println(0, "r_3 total" << setw(24) << R_3 << setw(24) << total_3 << setw(24) << R_3 * total_3);
-        println(0, "r_4 total" << setw(24) << R_4 << setw(24) << total_4 << setw(24) << R_4 * total_4);
-        println(0, endl);
-        println(0, "               R                     rho_alpha                R*rho_alpha      ");
-        println(0, "r_0 alpha" << setw(24) << R_0 << setw(24) << alpha_0 << setw(24) << R_0 * alpha_0);
-        println(0, "r_1 alpha" << setw(24) << R_1 << setw(24) << alpha_1 << setw(24) << R_1 * alpha_1);
-        println(0, "r_2 alpha" << setw(24) << R_2 << setw(24) << alpha_2 << setw(24) << R_2 * alpha_2);
-        println(0, "r_3 alpha" << setw(24) << R_3 << setw(24) << alpha_3 << setw(24) << R_3 * alpha_3);
-        println(0, "r_4 alpha" << setw(24) << R_4 << setw(24) << alpha_4 << setw(24) << R_4 * alpha_4);
-        println(0, endl);
-        println(0, "               R                     rho_beta                 R*rho_beta     ");
-        println(0, "r_0 beta" << setw(24) << R_0 << setw(24) << beta_0 << setw(24) << R_0 * beta_0);
-        println(0, "r_1 beta" << setw(24) << R_1 << setw(24) << beta_1 << setw(24) << R_1 * beta_1);
-        println(0, "r_2 beta" << setw(24) << R_2 << setw(24) << beta_2 << setw(24) << R_2 * beta_2);
-        println(0, "r_3 beta" << setw(24) << R_3 << setw(24) << beta_3 << setw(24) << R_3 * beta_3);
-        println(0, "r_4 beta" << setw(24) << R_4 << setw(24) << beta_4 << setw(24) << R_4 * beta_4);
-        println(0, endl);
-        println(0, "               R                     rho_spin                 R*rho_spin     ");
-        println(0, "r_0 spin" << setw(24) << R_0 << setw(24) << spin_0 << setw(24) << R_0 * spin_0);
-        println(0, "r_1 spin" << setw(24) << R_1 << setw(24) << spin_1 << setw(24) << R_1 * spin_1);
-        println(0, "r_2 spin" << setw(24) << R_2 << setw(24) << spin_2 << setw(24) << R_2 * spin_2);
-        println(0, "r_3 spin" << setw(24) << R_3 << setw(24) << spin_3 << setw(24) << R_3 * spin_3);
-        println(0, "r_4 spin" << setw(24) << R_4 << setw(24) << spin_4 << setw(24) << R_4 * spin_4);
-        println(0, endl);
-
-        const string &symbol = nuc.getElement().getSymbol();
-        double P_N = 0.0;
-        if (symbol == "H")  P_N = 533.5514;
-        if (symbol == "Li") P_N = 207.3726;
-        if (symbol == "B")  P_N = 171.2151;
-        if (symbol == "C")  P_N = 134.1903;
-        if (symbol == "N")  P_N =  38.5677;
-        if (symbol == "O")  P_N = -72.3588;
-        if (symbol == "F")  P_N = 502.2248;
-
-        SpinOperator s;
-        s.setup(rel_prec);
-        double coef = (4.0*pi)/3.0;
-        double s_z = s[2].trace(*phi, R);
-        s.clear();
-
-        TelePrompter::printHeader(0, "Hyperfine Coupling Constant");
-        TelePrompter::printDouble(0, "coef", coef);
-        TelePrompter::printDouble(0, "<S_z>", s_z);
-        TelePrompter::printDouble(0, "P_N", P_N);
-        TelePrompter::printDouble(0, "rho(R)", R_0*spin_0);
-        TelePrompter::printSeparator(0, '-', 0);
-        TelePrompter::printDouble(0, "Total HFCC", (coef*P_N*R_0*spin_0)/s_z);
-        TelePrompter::printSeparator(0, '=', 2);
-
-        {
-            Orbital &F_i = phi->getOrbital(0);
-            Orbital *phi_i = (*R)(F_i);
-
-            AnalyticFunction<3> R_ana(ncf->getS_0(nuc), 0);
-
-            double a[3] = {-4.0, -4.0, 0.0};
-            double b[3] = { 4.0,  4.0, 0.0};
-            Plot<3> plt(100*100, a, b);
-            plt.surfPlot(R_ana, "R_analytic");
-            plt.surfPlot(R->real(), "R_numeric");
-            plt.surfPlot(F_i.real(), "F");
-            plt.surfPlot(phi_i->real(), "phi");
-            delete phi_i;
-
-            double nemo_0 = F_i.real().evalf(r_0);
-            double nemo_1 = F_i.real().evalf(r_1);
-            double nemo_2 = F_i.real().evalf(r_2);
-            double nemo_3 = F_i.real().evalf(r_3);
-            double nemo_4 = F_i.real().evalf(r_4);
-
-            const Nucleus &nuc = (*nuclei)[0];
-            double R_0 = ncf->getS_0(nuc)(r_0);
-            double R_1 = ncf->getS_0(nuc)(r_1);
-            double R_2 = ncf->getS_0(nuc)(r_2);
-            double R_3 = ncf->getS_0(nuc)(r_3);
-            double R_4 = ncf->getS_0(nuc)(r_4);
-
-            double phi_0 = R_0*nemo_0;
-            double phi_1 = R_1*nemo_1;
-            double phi_2 = R_2*nemo_2;
-            double phi_3 = R_3*nemo_3;
-            double phi_4 = R_4*nemo_4;
-
-            int n = 1;
-            int l = 0;
-            int m = 0;
-            double Z = (*nuclei)[0].getCharge();
-            HydrogenicFunction s_func(n, l, m, Z, r_0);
-
-            double exact_0 = s_func.evalf(r_0);
-            double exact_1 = s_func.evalf(r_1);
-            double exact_2 = s_func.evalf(r_2);
-            double exact_3 = s_func.evalf(r_3);
-            double exact_4 = s_func.evalf(r_4);
-
-            double error_0 = (exact_0 - phi_0)/exact_0;
-            double error_1 = (exact_1 - phi_1)/exact_1;
-            double error_2 = (exact_2 - phi_2)/exact_2;
-            double error_3 = (exact_3 - phi_3)/exact_3;
-            double error_4 = (exact_4 - phi_4)/exact_4;
-
-            println(0, "         exact                    R                        nemo                     phi                      error      ");
-            println(0, "r_0" << setw(24) << exact_0 << setw(24) << R_0 << setw(24) << nemo_0 << setw(24) << phi_0 << setw(24) << error_0);
-            println(0, "r_1" << setw(24) << exact_1 << setw(24) << R_1 << setw(24) << nemo_1 << setw(24) << phi_1 << setw(24) << error_1);
-            println(0, "r_2" << setw(24) << exact_2 << setw(24) << R_2 << setw(24) << nemo_2 << setw(24) << phi_2 << setw(24) << error_2);
-            println(0, "r_3" << setw(24) << exact_3 << setw(24) << R_3 << setw(24) << nemo_3 << setw(24) << phi_3 << setw(24) << error_3);
-            println(0, "r_4" << setw(24) << exact_4 << setw(24) << R_4 << setw(24) << nemo_4 << setw(24) << phi_4 << setw(24) << error_4);
-            println(0, endl);
+            MatrixXd &fc = hfc.getFermiContactTerm();
+            fc(0,0) = R_K*rho_K;
         }
     }
 }
+
+/* For Fluorine
+        // Define points
+        const double r_0[3] = {0.0, 0.0, 0.0};
+        const double r_1[3] = {0.1, 0.1, 0.1};
+
+        // Evaluate correlation factor
+        const Nucleus &nuc = (*nuclei)[0];
+        double R_0 = ncf->getS_0(nuc)(r_0);
+        double R_1 = ncf->getS_0(nuc)(r_1);
+
+        // Evaluate spin densities
+        double alpha_0 = rho.alpha().evalf(r_0);
+        double alpha_1 = rho.alpha().evalf(r_1);
+        double beta_0 = rho.beta().evalf(r_0);
+        double beta_1 = rho.beta().evalf(r_1);
+        double spin_0 = alpha_0 - beta_0;
+        double spin_1 = alpha_1 - beta_1;
+
+        println(0, "alpha_0" << setw(24) << R_0*R_0*alpha_0);
+        println(0, "beta_0" << setw(24) << R_0*R_0*beta_0);
+        println(0, "spin_0" << setw(24) << R_0*R_0*spin_0 << endl);
+        println(0, "alpha_1" << setw(24) << R_1*R_1*alpha_1);
+        println(0, "beta_1" << setw(24) << R_1*R_1*beta_1);
+        println(0, "spin_1" << setw(24) << R_1*R_1*spin_1);
+        println(0, endl);
+
+        rho.clear();
+        timer.stop();
+        TelePrompter::printFooter(0, timer, 2);
+    }
+*/
+/* For Hydrogen
+    // Define analytic solution
+    int n = 1;
+    int l = 0;
+    int m = 0;
+    double Z = (*nuclei)[0].getCharge();
+    HydrogenicFunction s_func(n, l, m, Z, r_0);
+
+    // Evaluate analytic solution
+    double exact_0 = s_func.evalf(r_0);
+    double exact_1 = s_func.evalf(r_1);
+
+    // Evaluate correlation factor
+    const Nucleus &nuc = (*nuclei)[0];
+    double R_0 = ncf->getS_0(nuc)(r_0);
+    double R_1 = ncf->getS_0(nuc)(r_1);
+
+    // Evaluate NEMO orbital
+    Orbital &F_i = phi->getOrbital(0);
+    double nemo_0 = F_i.real().evalf(r_0);
+    double nemo_1 = F_i.real().evalf(r_1);
+
+    // Evaluate full orbital
+    double phi_0 = R_0*nemo_0;
+    double phi_1 = R_1*nemo_1;
+
+    // Compute relative error
+    double error_0 = abs(exact_0 - phi_0);
+    double error_1 = abs(exact_1 - phi_1);
+
+    println(0, "         exact                    R                        nemo                     phi                      error      ");
+    println(0, "r_0" << setw(24) << exact_0 << setw(24) << R_0 << setw(24) << nemo_0 << setw(24) << phi_0 << setw(24) << error_0);
+    println(0, "r_1" << setw(24) << exact_1 << setw(24) << R_1 << setw(24) << nemo_1 << setw(24) << phi_1 << setw(24) << error_1);
+    println(0, endl);
+*/
 
 void SCFDriver::calcLinearResponseProperties(const ResponseCalculation &rsp_calc) {
     int j = rsp_calc.dir;
