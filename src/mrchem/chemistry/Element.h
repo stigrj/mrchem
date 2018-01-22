@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TelePrompter.h"
+#include "constants.h"
 
 /** Basic chemical element data. */
 class Element {
@@ -16,7 +17,7 @@ public:
     double getMass() const { return this->mass; }
     double getVdw() const { return this->r_vdw; }
     double getCov() const { return this->r_cov; }
-    double getGValue() const { if (this->g_val < 0.0) MSG_ERROR("g-value unavailable"); return this->g_val; }
+    double getGValue() const { if (abs(this->g_val) < MachineZero) MSG_ERROR("g-value unavailable"); return this->g_val; }
 
     friend std::ostream& operator<<(std::ostream &o, const Element &e) {
         o << e.symbol;
