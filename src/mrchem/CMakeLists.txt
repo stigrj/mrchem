@@ -1,8 +1,14 @@
 include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/chemistry)
 include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/properties)
+include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/qmfunctions)
+#include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/qmoperators)
+#include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/scf_solver)
 
 add_subdirectory (initial_guess)
 add_subdirectory (chemistry)
+add_subdirectory (qmfunctions)
+#add_subdirectory (qmoperators)
+#add_subdirectory (src_solver)
 
 #add_library(mrchem STATIC 
     #mrchem.in
