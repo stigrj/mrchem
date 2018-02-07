@@ -1,4 +1,8 @@
+include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/chemistry)
+include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/properties)
+
 add_subdirectory (initial_guess)
+add_subdirectory (chemistry)
 
 #add_library(mrchem STATIC 
     #mrchem.in
