@@ -1,3 +1,5 @@
+include_directories (${CMAKE_SOURCE_DIR}/src/mrchem)
+
 add_library(qmfunctions STATIC 
     QMFunction.cpp
     Density.cpp

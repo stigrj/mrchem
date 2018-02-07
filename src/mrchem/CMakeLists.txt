@@ -11,6 +11,9 @@ add_subdirectory (qmfunctions)
 #add_subdirectory (src_solver)
 
 #add_library(mrchem STATIC 
+#  parallel.cpp
+#)
+#add_library(mrchem STATIC 
     #mrchem.in
     #mrchem.cpp
     #MREnv.cpp

@@ -9,7 +9,7 @@ using namespace mrcpp;
 
 class QMFunction {
 public:
- QMFunction(mrcpp::FunctionTree<3> *r = 0, mrcpp::FunctionTree<3> *i = 0) : re(r), im(i) { }
+ QMFunction(FunctionTree<3> *r = 0, FunctionTree<3> *i = 0) : re(r), im(i) { }
     QMFunction(const QMFunction &func) : re(0), im(0) { }
     QMFunction &operator=(const QMFunction &func) { NOT_IMPLEMENTED_ABORT; }
     virtual ~QMFunction() { clearReal(true); clearImag(true); }
@@ -26,14 +26,14 @@ public:
     void clearReal(bool free);
     void clearImag(bool free);
 
-    void setReal(mrcpp::FunctionTree<3> *real) { this->re = real; }
-    void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
+    void setReal(FunctionTree<3> *real) { this->re = real; }
+    void setImag(FunctionTree<3> *imag) { this->im = imag; }
 
-    mrcpp::FunctionTree<3> &real() { return *this->re; }
-    mrcpp::FunctionTree<3> &imag() { return *this->im; }
+    FunctionTree<3> &real() { return *this->re; }
+    FunctionTree<3> &imag() { return *this->im; }
 
-    const mrcpp::FunctionTree<3> &real() const { return *this->re; }
-    const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
+    const FunctionTree<3> &real() const { return *this->re; }
+    const FunctionTree<3> &imag() const { return *this->im; }
 
     int getNNodes(int type = Total) const;
     double getSquareNorm(int type = Total) const;
@@ -45,7 +45,7 @@ public:
     enum NumType { Total, Real, Imag };
 
 protected:
-    mrcpp::FunctionTree<3> *re;
-    mrcpp::FunctionTree<3> *im;
+    FunctionTree<3> *re;
+    FunctionTree<3> *im;
 };
 
