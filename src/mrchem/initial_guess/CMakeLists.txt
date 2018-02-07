@@ -1,5 +1,3 @@
-include_directories (${CMAKE_SOURCE_DIR}/src/mrchem/chemistry)
-
 add_library(initial_guess STATIC 
             AOBasis.cpp
             AOContraction.cpp
