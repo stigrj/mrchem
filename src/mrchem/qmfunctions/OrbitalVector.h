@@ -9,6 +9,7 @@
 using std::vector;
 
 #include "Orbital.h"
+#include "parallel.h"
 
 class OrbitalVector {
 public:
