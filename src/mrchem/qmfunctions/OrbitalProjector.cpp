@@ -31,7 +31,7 @@ using namespace Eigen;
 //    Printer::setPrecision(oldPrec);
 //}
 
-OrbitalProjector::OrbitalProjector(double prec, int max_scale)
+OrbitalProjector::OrbitalProjector(double prec)
     : projPrec(prec){
 }
 

@@ -11,7 +11,7 @@ class Nuclei;
 
 class OrbitalProjector {
 public:
-    OrbitalProjector(double prec, int max_scale);
+    OrbitalProjector(double prec);
     virtual ~OrbitalProjector() { }
 
     void setPrecision(double prec) { projPrec = prec; }
