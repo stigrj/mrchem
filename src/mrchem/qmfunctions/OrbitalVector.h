@@ -75,7 +75,7 @@ public:
     bool inUse=false;
 
     friend std::ostream& operator<<(std::ostream &o, OrbitalVector &orb_set) {
-        int oldPrec = TelePrompter::setPrecision(15);
+        int oldPrec = Printer::setPrecision(15);
         o << "*OrbitalVector: ";
         o << std::setw(4) << orb_set.size()          << " orbitals  ";
         o << std::setw(4) << orb_set.getNOccupied()  << " occupied  ";
@@ -96,7 +96,7 @@ public:
         }
         o << "------------------------------";
         o << "------------------------------\n";
-        TelePrompter::setPrecision(oldPrec);
+        Printer::setPrecision(oldPrec);
         return o;
     }
 protected:
