@@ -98,6 +98,10 @@ protected:
     string diff_pso;
     string diff_dft;
 
+    string nemo_diff;
+    string nemo_corr_fac;
+    double nemo_param;
+
     // Run parameters
     bool calc_scf_energy;
     bool calc_dipole_moment;

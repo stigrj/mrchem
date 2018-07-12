@@ -61,6 +61,10 @@ SCFDriver::SCFDriver(Getkw &input) {
     diff_orb = input.get<string>("Derivatives.h_orb");
     diff_pso = input.get<string>("Derivatives.h_pso");
 
+    nemo_diff = input.get<string>("NEMO.derivative");
+    nemo_corr_fac = input.get<string>("NEMO.correlation_factor");
+    nemo_param = input.get<double>("NEMO.parameter");
+
     calc_scf_energy = input.get<bool>("Properties.scf_energy");
     calc_dipole_moment = input.get<bool>("Properties.dipole_moment");
     calc_quadrupole_moment = input.get<bool>("Properties.quadrupole_moment");
