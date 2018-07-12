@@ -34,11 +34,13 @@
 
 #include "DipoleMoment.h"
 #include "Magnetizability.h"
+#include "HyperFineCoupling.h"
 
 #include "H_E_dip.h"
 #include "H_B_dip.h"
 #include "H_M_pso.h"
 #include "H_BB_dia.h"
+#include "SpinOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -235,10 +237,6 @@ bool SCFDriver::sanityCheck() const {
     }
     if (calc_spin_spin_coupling) {
         MSG_ERROR("Spin-spin coupling not implemented");
-        return false;
-    }
-    if (calc_hyperfine_coupling) {
-        MSG_ERROR("Hyperfine coupling not implemented");
         return false;
     }
     return true;
@@ -770,6 +768,7 @@ void SCFDriver::calcGroundStateProperties() {
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
+    */
     if (calc_hyperfine_coupling) {
         Printer::printHeader(0, "Calculating HyperFine Coupling Constant");
         Timer timer;
@@ -780,12 +779,29 @@ void SCFDriver::calcGroundStateProperties() {
             const Nuclei &nucs = molecule->getNuclei();
             const Nucleus &nuc = nucs[K];
             const double *r_K = nuc.getCoord();
-            NOT_IMPLEMENTED_ABORT;
+
+            SpinOperator s;
+            s.setup(rel_prec);
+            DoubleMatrix &s_z = hfc.getSpinTerm();
+            s_z(0,0) = s[2].trace(*phi).real();
+            s.clear();
+
+            // Compute correlation factor contribution
+            double R_K = 1.0;
+            //for (int m = 0; m < nuclei->size(); m++) {
+                //R_K *= std::pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
+            //}
+            Density rho_s(*MRA);
+            density::compute(rel_prec, rho_s, *phi, DENSITY::Spin);
+            // Compute NEMO density constribution
+            double rho_K = rho_s.evalf(r_K);
+
+            DoubleMatrix &fc = hfc.getFermiContactTerm();
+            fc(0,0) = R_K*rho_K;
         }
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
-    */
 }
 
 void SCFDriver::calcLinearResponseProperties(const ResponseCalculation &rsp_calc) {
