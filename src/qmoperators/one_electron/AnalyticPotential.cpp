@@ -52,7 +52,7 @@ void AnalyticPotential::setup(double prec) {
 
     int n = this->getNNodes();
     double t = timer.getWallTime();
-    Printer::printTree(1, "Analytic potential", n, t);
+    Printer::printTree(0, "Analytic potential", n, t);
 }
 
 void AnalyticPotential::clear() {
