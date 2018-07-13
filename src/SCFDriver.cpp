@@ -32,6 +32,10 @@
 #include "ElectricFieldOperator.h"
 //#include "MagneticFieldOperator.h"
 
+#include "IdentityCorrelationFunction.h"
+#include "SeeligCorrelationFunction.h"
+#include "SlaterCorrelationFunction.h"
+
 #include "DipoleMoment.h"
 #include "Magnetizability.h"
 #include "HyperFineCoupling.h"
@@ -177,6 +181,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     molecule = 0;
     nuclei = 0;
     phi = 0;
+    ncf = 0;
 
     T = 0;
     V = 0;
@@ -378,6 +383,13 @@ void SCFDriver::setup() {
     // Setting up Fock operator
     T = new KineticOperator(*(useDerivative(diff_kin)));
     V = new NuclearOperator(*nuclei, nuc_prec);
+
+    // Settig up nuclear correlation factor
+    if (nemo_corr_fac == "none")     ncf = 0;
+    if (nemo_corr_fac == "identity") ncf = new IdentityCorrelationFunction();
+    if (nemo_corr_fac == "seelig")   ncf = new SeeligCorrelationFunction();
+    if (nemo_corr_fac == "slater")   ncf = new SlaterCorrelationFunction(nemo_param);
+
     // All cases need kinetic energy and nuclear potential
     fock = new FockOperator(T, V);
     // For Hartree, HF and DFT we need the coulomb part
@@ -443,6 +455,7 @@ void SCFDriver::clear() {
 
     orbital::free(*phi);
     if (phi != 0) delete phi;
+    if (ncf != 0) delete ncf;
     if (molecule != 0) delete molecule;
 
     if (ABGV_55 != 0) delete ABGV_55;
@@ -788,9 +801,9 @@ void SCFDriver::calcGroundStateProperties() {
 
             // Compute correlation factor contribution
             double R_K = 1.0;
-            //for (int m = 0; m < nuclei->size(); m++) {
-                //R_K *= std::pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
-            //}
+            for (int m = 0; m < nuclei->size(); m++) {
+                R_K *= std::pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
+            }
             Density rho_s(*MRA);
             density::compute(rel_prec, rho_s, *phi, DENSITY::Spin);
             // Compute NEMO density constribution

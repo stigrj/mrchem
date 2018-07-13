@@ -32,6 +32,7 @@ class XCOperator;
 class XCFunctional;
 class ElectricFieldOperator;
 class MagneticFieldOperator;
+class NuclearCorrelationFunction;
 
 class ResponseCalculation  final {
 public:
@@ -211,6 +212,7 @@ protected:
     // Unperturbed quantities
     Molecule *molecule;
     Nuclei *nuclei;
+    NuclearCorrelationFunction *ncf;
     OrbitalVector *phi;
     KineticOperator *T;
     NuclearOperator *V;
