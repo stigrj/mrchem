@@ -25,7 +25,7 @@
 
 #include "FockOperator.h"
 #include "KineticOperator.h"
-#include "NuclearOperator.h"
+#include "SmoothedNuclearOperator.h"
 #include "CoulombOperator.h"
 #include "XCOperator.h"
 #include "ExchangeOperator.h"
@@ -384,7 +384,7 @@ void SCFDriver::setup() {
 
     // Setting up Fock operator
     T = new KineticOperator(*(useDerivative(diff_kin)));
-    V = new NuclearOperator(*nuclei, nuc_prec);
+    V = new SmoothedNuclearOperator(*nuclei, nuc_prec);
 
     // Settig up nuclear correlation factor
     if (nemo_corr_fac == "none")     ncf = 0;

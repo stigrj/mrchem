@@ -15,7 +15,7 @@
 #include "Nucleus.h"
 #include "Orbital.h"
 
-#include "NuclearOperator.h"
+#include "SmoothedNuclearOperator.h"
 #include "KineticOperator.h"
 
 using mrcpp::Printer;
@@ -71,7 +71,7 @@ OrbitalVector initial_guess::core::setup(double prec,
     // Make Fock operator contributions
     mrcpp::ABGVOperator<3> D(*MRA, 0.5, 0.5);
     KineticOperator T(D);
-    NuclearOperator V(mol.getNuclei(), prec);
+    SmoothedNuclearOperator V(mol.getNuclei(), prec);
 
     // Project AO basis of hydrogen functions
     OrbitalVector Phi = initial_guess::core::project_ao(prec, mol.getNuclei(), SPIN::Paired, zeta);

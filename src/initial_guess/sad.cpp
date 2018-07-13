@@ -13,7 +13,7 @@
 
 #include "Molecule.h"
 
-#include "NuclearOperator.h"
+#include "SmoothedNuclearOperator.h"
 #include "KineticOperator.h"
 #include "CoulombOperator.h"
 #include "XCOperator.h"
@@ -53,7 +53,7 @@ OrbitalVector initial_guess::sad::setup(double prec,
     xcfun.setFunctional("VWN5C");
     xcfun.evalSetup(1);
     KineticOperator T(D);
-    NuclearOperator V(mol.getNuclei(), prec);
+    SmoothedNuclearOperator V(mol.getNuclei(), prec);
     CoulombOperator J(&P);
     XCOperator XC(&xcfun);
     RankZeroTensorOperator F = T + V + J + XC;
