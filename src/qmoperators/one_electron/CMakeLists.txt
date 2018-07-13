@@ -8,7 +8,6 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/NuclearCorrelationOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/MomentumOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/NablaOperator.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/PositionOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DistanceOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SpinOperator.cpp
     )
