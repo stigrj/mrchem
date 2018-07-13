@@ -6,6 +6,7 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/NuclearOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/NuclearGradientOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SmoothedNuclearOperator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/RegularizedNuclearOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/MomentumOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/NablaOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DistanceOperator.cpp

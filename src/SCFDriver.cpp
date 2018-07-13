@@ -26,6 +26,7 @@
 #include "FockOperator.h"
 #include "KineticOperator.h"
 #include "SmoothedNuclearOperator.h"
+#include "RegularizedNuclearOperator.h"
 #include "CoulombOperator.h"
 #include "XCOperator.h"
 #include "ExchangeOperator.h"
@@ -384,7 +385,6 @@ void SCFDriver::setup() {
 
     // Setting up Fock operator
     T = new KineticOperator(*(useDerivative(diff_kin)));
-    V = new SmoothedNuclearOperator(*nuclei, nuc_prec);
 
     // Settig up nuclear correlation factor
     if (nemo_corr_fac == "none")     ncf = 0;
@@ -394,6 +394,11 @@ void SCFDriver::setup() {
 
     // Setting up regularized potential
     nco = setupNuclearCorrelationOperator(*nuclei, ncf);
+    if (ncf != 0) {
+        V = new RegularizedNuclearOperator(*nuclei, *ncf, *useDerivative(nemo_diff));
+    } else {
+        V = new SmoothedNuclearOperator(*nuclei, nuc_prec);
+    }
 
     // All cases need kinetic energy and nuclear potential
     fock = new FockOperator(T, V);
