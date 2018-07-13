@@ -35,6 +35,7 @@
 #include "IdentityCorrelationFunction.h"
 #include "SeeligCorrelationFunction.h"
 #include "SlaterCorrelationFunction.h"
+#include "NuclearCorrelationOperator.h"
 
 #include "DipoleMoment.h"
 #include "Magnetizability.h"
@@ -182,6 +183,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     nuclei = 0;
     phi = 0;
     ncf = 0;
+    nco = 0;
 
     T = 0;
     V = 0;
@@ -390,6 +392,9 @@ void SCFDriver::setup() {
     if (nemo_corr_fac == "seelig")   ncf = new SeeligCorrelationFunction();
     if (nemo_corr_fac == "slater")   ncf = new SlaterCorrelationFunction(nemo_param);
 
+    // Setting up regularized potential
+    nco = setupNuclearCorrelationOperator(*nuclei, ncf);
+
     // All cases need kinetic energy and nuclear potential
     fock = new FockOperator(T, V);
     // For Hartree, HF and DFT we need the coulomb part
@@ -453,9 +458,12 @@ void SCFDriver::clear() {
     if (V != 0) delete V;
     if (T != 0) delete T;
 
+    if (nco != 0) nco->clear();
+    if (nco != 0) delete nco;
+    if (ncf != 0) delete ncf;
+
     orbital::free(*phi);
     if (phi != 0) delete phi;
-    if (ncf != 0) delete ncf;
     if (molecule != 0) delete molecule;
 
     if (ABGV_55 != 0) delete ABGV_55;
@@ -468,6 +476,19 @@ void SCFDriver::clear() {
     if (kain_x != 0) delete kain_x;
     if (kain_y != 0) delete kain_y;
     if (helmholtz != 0) delete helmholtz;
+}
+
+NuclearCorrelationOperator* SCFDriver::setupNuclearCorrelationOperator(const Nuclei &nucs, const NuclearCorrelationFunction *ncf) {
+    NuclearCorrelationOperator *R = 0;
+    if (ncf != 0) {
+        Timer timer;
+        Printer::printHeader(0, "Setting up nuclear correlation operator");
+        R = new NuclearCorrelationOperator(*nuclei, *ncf);
+        R->setup(rel_prec/100);
+        timer.stop();
+        Printer::printFooter(0, timer, 2);
+    }
+    return R;
 }
 
 /** Setup n+1 Fock operator for energy optimization */

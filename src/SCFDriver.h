@@ -33,6 +33,7 @@ class XCFunctional;
 class ElectricFieldOperator;
 class MagneticFieldOperator;
 class NuclearCorrelationFunction;
+class NuclearCorrelationOperator;
 
 class ResponseCalculation  final {
 public:
@@ -213,6 +214,7 @@ protected:
     Molecule *molecule;
     Nuclei *nuclei;
     NuclearCorrelationFunction *ncf;
+    NuclearCorrelationOperator *nco;
     OrbitalVector *phi;
     KineticOperator *T;
     NuclearOperator *V;
@@ -267,6 +269,7 @@ protected:
     OrbitalOptimizer *setupOrbitalOptimizer();
     EnergyOptimizer *setupEnergyOptimizer();
     LinearResponseSolver* setupLinearResponseSolver(bool dynamic);
+    NuclearCorrelationOperator* setupNuclearCorrelationOperator(const Nuclei &nucs, const NuclearCorrelationFunction *ncf);
 
     void setup_np1();
     void clear_np1();
