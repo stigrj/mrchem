@@ -830,9 +830,9 @@ void SCFDriver::calcGroundStateProperties() {
             for (int m = 0; m < nuclei->size(); m++) {
                 R_K *= std::pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
             }
+            // Compute NEMO density constribution
             Density rho_s(*MRA);
             density::compute(rel_prec, rho_s, *phi, DENSITY::Spin);
-            // Compute NEMO density constribution
             double rho_K = rho_s.evalf(r_K);
 
             DoubleMatrix &fc = hfc.getFermiContactTerm();

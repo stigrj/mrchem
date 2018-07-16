@@ -19,9 +19,12 @@ namespace mrchem {
  * Then the functional is set up for subsequent calculations, fixing some internals of
  * xcfun when F.evalSetup is invoked.
  */
-XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
+XCPotential::XCPotential(mrdft::XCFunctional *F,
+                         OrbitalVector *Phi,
+                         RankZeroTensorOperator *R)
         : QMPotential(1),
           orbitals(Phi),
+          nuc_corr_fac(R),
           functional(F) {
 }
 
@@ -61,23 +64,24 @@ void XCPotential::setupDensity() {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
 
+    RankZeroTensorOperator *R = this->nuc_corr_fac;
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
         Density &rho_a = this->functional->getDensity(mrdft::DensityType::Alpha);
-        density::compute(-1.0, rho_a, Phi, DENSITY::Alpha);
+        density::compute(-1.0, rho_a, Phi, DENSITY::Alpha, R);
         time_a.stop();
         Printer::printTree(0, "XC alpha density", rho_a.getNNodes(), time_a.getWallTime());
 
         Timer time_b;
         Density &rho_b = this->functional->getDensity(mrdft::DensityType::Beta);
-        density::compute(-1.0, rho_b, Phi, DENSITY::Beta);
+        density::compute(-1.0, rho_b, Phi, DENSITY::Beta, R);
         time_b.stop();
         Printer::printTree(0, "XC beta density", rho_b.getNNodes(), time_b.getWallTime());
     } else {
         Timer time_t;
         Density &rho_t = this->functional->getDensity(mrdft::DensityType::Total);
-        density::compute(-1.0, rho_t, Phi, DENSITY::Total);
+        density::compute(-1.0, rho_t, Phi, DENSITY::Total, R);
         time_t.stop();
         Printer::printTree(0, "XC total density", rho_t.getNNodes(), time_t.getWallTime());
     }

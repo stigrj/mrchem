@@ -22,10 +22,13 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * the vector can change throughout the calculation. The density and (*this)
  * QMPotential is uninitialized at this point and will be computed at setup.
  */
-CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
+CoulombPotential::CoulombPotential(PoissonOperator *P,
+                                   OrbitalVector *Phi,
+                                   RankZeroTensorOperator *R)
         : QMPotential(1),
           density(*MRA),
           orbitals(Phi),
+          nuc_corr_fac(R),
           poisson(P) {
 }
 
@@ -65,11 +68,12 @@ void CoulombPotential::setupDensity(double prec) {
     if (hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
 
+    RankZeroTensorOperator *R = this->nuc_corr_fac;
     OrbitalVector &Phi = *this->orbitals;
     Density &rho = this->density;
 
     Timer timer;
-    density::compute(prec, rho, Phi, DENSITY::Total);
+    density::compute(prec, rho, Phi, DENSITY::Total, R);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes();

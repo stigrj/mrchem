@@ -8,6 +8,7 @@ namespace SPIN { enum type { Paired, Alpha, Beta }; }
 namespace NUMBER { enum type { Total, Real, Imag }; }
 namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 
+class RankZeroTensorOperator;
 
 class Orbital;
 typedef std::vector<Orbital> OrbitalVector;
@@ -78,8 +79,8 @@ typedef mrcpp::FunctionTree<3> Density;
 typedef mrcpp::FunctionTreeVector<3> DensityVector;
 namespace density {
 
-void compute(double prec, Density &rho, Orbital phi, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
+void compute(double prec, Density &rho, Orbital phi, int spin, RankZeroTensorOperator *R = nullptr);
+void compute(double prec, Density &rho, OrbitalVector &Phi, int spin, RankZeroTensorOperator *R = nullptr);
 
 } //namespace density
 

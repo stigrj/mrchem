@@ -7,6 +7,7 @@
 
 #include "qmfunctions.h"
 #include "Orbital.h"
+#include "RankZeroTensorOperator.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;
@@ -805,7 +806,11 @@ void print(const OrbitalVector &vec) {
  * Density related standalone functions *
  ****************************************/
 
-void density::compute(double prec, Density &rho, Orbital phi, int spin) {
+void density::compute(double prec,
+                      Density &rho,
+                      Orbital phi,
+                      int spin,
+                      RankZeroTensorOperator *R) {
     double occ_a(0.0), occ_b(0.0), occ_p(0.0);
     if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
     if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
@@ -822,25 +827,34 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
         return;
     }
 
+    // get total orbital in case there's a correlation factor
+    Orbital Rphi = phi;
+    if (R != nullptr) Rphi = (*R)(phi);
+
     FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal()) {
+    if (Rphi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*real_2, rho);
-        mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real());
+        mrcpp::multiply(prec, *real_2, occ, Rphi.real(), Rphi.real());
         sum_vec.push_back(std::make_tuple(1.0, real_2));
     }
-    if (phi.hasImag()) {
+    if (Rphi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*imag_2, rho);
-        mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag());
+        mrcpp::multiply(prec, *imag_2, occ, Rphi.imag(), Rphi.imag());
         sum_vec.push_back(std::make_tuple(1.0, imag_2));
     }
+    if (R != nullptr) Rphi.free();
     mrcpp::build_grid(rho, sum_vec);
     mrcpp::add(-1.0, rho, sum_vec, 0);
     mrcpp::clear(sum_vec, true);
 }
 
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
+void density::compute(double prec,
+                      Density &rho,
+                      OrbitalVector &Phi,
+                      int spin,
+                      RankZeroTensorOperator *R) {
     double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
     double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
 
@@ -848,7 +862,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     for (int i = 0; i < Phi.size(); i++) {
         Density *rho_i = new Density(*MRA);
         mrcpp::copy_grid(*rho_i, rho);
-        density::compute(mult_prec, *rho_i, Phi[i], spin);
+        density::compute(mult_prec, *rho_i, Phi[i], spin, R);
         dens_vec.push_back(std::make_tuple(1.0, rho_i));
     }
 
