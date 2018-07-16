@@ -9,7 +9,7 @@ namespace mrchem {
 
 /** Compute the position matrix <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
  */
-RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
+RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi, NuclearCorrelationOperator *R) {
     this->N = Phi.size();
     if (this->N < 2) MSG_ERROR("Cannot localize less than two orbitals");
 
@@ -89,9 +89,9 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
         for (int j = 0; j <= i; j++) {
             if (Phi[i].spin() != Phi[j].spin())
                 MSG_ERROR("Spins must be separated before localization");
-            this->r_i_orig(i,j          ) = r_x(Phi[i], Phi[j]).real();
-            this->r_i_orig(i,j+  this->N) = r_y(Phi[i], Phi[j]).real();
-            this->r_i_orig(i,j+2*this->N) = r_z(Phi[i], Phi[j]).real();
+            this->r_i_orig(i,j          ) = r_x(Phi[i], Phi[j], R).real();
+            this->r_i_orig(i,j+  this->N) = r_y(Phi[i], Phi[j], R).real();
+            this->r_i_orig(i,j+2*this->N) = r_z(Phi[i], Phi[j], R).real();
 
             this->r_i_orig(j,i          ) = this->r_i_orig(i,j          );
             this->r_i_orig(j,i+  this->N) = this->r_i_orig(i,j+  this->N);
@@ -104,22 +104,22 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     r_z.clear();
 
     //rotate R matrices into orthonormal basis
-    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi, R);
 
     this->total_U = S_m12.real()*this->total_U;
-    DoubleMatrix R(this->N, this->N);
+    DoubleMatrix Rmat(this->N, this->N);
     for(int d = 0; d < 3; d++){
         for (int j = 0; j < this->N; j++) {
             for (int i = 0; i <= j; i++) {
-                R(i,j) = this->r_i_orig(i,j+d*this->N);
-                R(j,i) = this->r_i_orig(i,j+d*this->N);//Enforce symmetry
+                Rmat(i,j) = this->r_i_orig(i,j+d*this->N);
+                Rmat(j,i) = this->r_i_orig(i,j+d*this->N);//Enforce symmetry
             }
         }
-        R = this->total_U.transpose()*R*this->total_U;
+        Rmat = this->total_U.transpose()*Rmat*this->total_U;
         for (int j = 0; j < this->N; j++) {
             for (int i = 0; i <= j; i++) {
-                this->r_i(i,j+d*this->N)=R(i,j);
-                this->r_i(j,i+d*this->N)=R(i,j);//Enforce symmetry
+                this->r_i(i,j+d*this->N)=Rmat(i,j);
+                this->r_i(j,i+d*this->N)=Rmat(i,j);//Enforce symmetry
             }
         }
     }

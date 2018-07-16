@@ -14,7 +14,7 @@ namespace mrchem {
 
 class RRMaximizer final : public NonlinearMaximizer {
 public:
-    RRMaximizer(double prec, OrbitalVector &Phi);
+    RRMaximizer(double prec, OrbitalVector &Phi, NuclearCorrelationOperator *R = nullptr);
     const DoubleMatrix &getTotalU() const { return this->total_U; }
 
 protected:
