@@ -20,8 +20,10 @@ namespace mrchem {
 
 class ExchangePotential final : public QMOperator {
 public:
-    ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &phi, bool s);
-    ~ExchangePotential() { }
+    ExchangePotential(mrcpp::PoissonOperator &P,
+                      OrbitalVector &phi,
+                      NuclearCorrelationOperator *R = nullptr,
+                      bool s = true);
 
     void rotate(const ComplexMatrix &U);
 
@@ -34,8 +36,9 @@ protected:
     OrbitalVector exchange;     ///< Precomputed exchange orbitals from the occupied orbital set
 
     // Pointers to external objects, ownership outside this class
-    OrbitalVector *orbitals;         ///< Orbitals defining the exchange operator
-    mrcpp::PoissonOperator *poisson; ///< Poisson operator to compute orbital contributions
+    OrbitalVector *orbitals;                  ///< Orbitals defining the exchange operator
+    NuclearCorrelationOperator *nuc_corr_fac; ///< Nuclear correlation factor
+    mrcpp::PoissonOperator *poisson;          ///< Poisson operator to compute orbital contributions
 
     void setup(double prec);
     void clear();

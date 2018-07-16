@@ -15,8 +15,10 @@ namespace mrchem {
     
 class XCOperator final : public RankZeroTensorOperator {
 public:
-    XCOperator(mrdft::XCFunctional *F, OrbitalVector *Phi = nullptr)
-            : potential(F, Phi) {
+    XCOperator(mrdft::XCFunctional *F,
+               OrbitalVector *Phi = nullptr,
+               NuclearCorrelationOperator *R = nullptr)
+            : potential(F, Phi, R) {
         RankZeroTensorOperator &XC = (*this);
         XC = this->potential;
     }

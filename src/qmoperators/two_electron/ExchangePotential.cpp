@@ -19,10 +19,15 @@ namespace mrchem {
  * @param[in] P Poisson operator (does not take ownership)
  * @param[in] Phi vector of orbitals which define the exchange operator
  */
-ExchangePotential::ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &Phi, bool s)
+ExchangePotential::ExchangePotential(mrcpp::PoissonOperator &P,
+                                     OrbitalVector &Phi,
+                                     NuclearCorrelationOperator *R,
+                                     bool s)
             : screen(s),
               orbitals(&Phi),
+              nuc_corr_fac(R),
               poisson(&P) {
+    if (this->nuc_corr_fac != nullptr) NOT_IMPLEMENTED_ABORT;
     this->tot_norms = DoubleVector::Zero(Phi.size());
     this->part_norms = DoubleMatrix::Zero(Phi.size(), Phi.size());
 }

@@ -30,13 +30,13 @@ class XCPotential final : public QMPotential {
 public:
     XCPotential(mrdft::XCFunctional *F,
                 OrbitalVector *Phi = nullptr,
-                RankZeroTensorOperator *R = nullptr);
+                NuclearCorrelationOperator *R = nullptr);
 
     friend class XCOperator;
 
 protected:
     OrbitalVector *orbitals;                   ///< External set of orbitals used to build the density
-    RankZeroTensorOperator *nuc_corr_fac;      ///< Nuclear correlation factor
+    NuclearCorrelationOperator *nuc_corr_fac;  ///< Nuclear correlation factor
     mrdft::XCFunctional *functional;           ///< External XC functional to be used
 
     double energy;                             ///< XC energy

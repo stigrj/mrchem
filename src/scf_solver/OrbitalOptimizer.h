@@ -21,7 +21,10 @@ class OrbitalOptimizer final : public GroundStateSolver {
 public:
     OrbitalOptimizer(HelmholtzVector &h, Accelerator *k = 0);
 
-    void setup(FockOperator &fock, OrbitalVector &phi, ComplexMatrix &F);
+    void setup(FockOperator &fock,
+               OrbitalVector &phi,
+               ComplexMatrix &F,
+               NuclearCorrelationOperator *R = nullptr);
     void clear();
 
     bool optimize();

@@ -26,27 +26,30 @@ public:
         }
         return out;
     }
-    ComplexVector operator()(Orbital bra, Orbital ket) {
+    ComplexVector operator()(Orbital bra, Orbital ket, NuclearCorrelationOperator *R = nullptr) {
         RankOneTensorOperator &O = *this;
         ComplexVector out(I);
         for (int i = 0; i < I; i++) {
-            out(i) = O[i](bra, ket);
+            out(i) = O[i](bra, ket, R);
         }
         return out;
     }
-    ComplexVector trace(OrbitalVector &phi) {
+    ComplexVector trace(OrbitalVector &phi, NuclearCorrelationOperator *R = nullptr) {
         RankOneTensorOperator &O = *this;
         ComplexVector out = ComplexVector::Zero(I);
         for (int i = 0; i < I; i++) {
-            out(i) = O[i].trace(phi);
+            out(i) = O[i].trace(phi, R);
         }
         return out;
     }
-    ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+    ComplexVector trace(OrbitalVector &phi,
+                        OrbitalVector &x,
+                        OrbitalVector &y,
+                        NuclearCorrelationOperator *R = nullptr) {
         RankOneTensorOperator &O = *this;
         ComplexVector out = ComplexVector::Zero(I);
         for (int i = 0; i < I; i++) {
-            out(i) = O[i].trace(phi, x, y);
+            out(i) = O[i].trace(phi, x, y, R);
         }
         return out;
     }

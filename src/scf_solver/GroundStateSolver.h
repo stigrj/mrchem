@@ -21,9 +21,10 @@ public:
 protected:
     std::vector<SCFEnergy> energy;
 
-    ComplexMatrix *fMat_n;          ///< Fock matrix (pointer to external object)
-    FockOperator  *fOper_n;         ///< Fock operator (pointer to external object)
-    OrbitalVector *orbitals_n;      ///< Orbtials (pointer to external object)
+    ComplexMatrix *fMat_n;                ///< Fock matrix (pointer to external object)
+    FockOperator  *fOper_n;               ///< Fock operator (pointer to external object)
+    OrbitalVector *orbitals_n;            ///< Nuclear correlation factor
+    NuclearCorrelationOperator *nuc_corr_fac; ///< Orbitals (pointer to external object)
 
     OrbitalVector setupHelmholtzArguments(FockOperator &fock,
                                           const ComplexMatrix &M,

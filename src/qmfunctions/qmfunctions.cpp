@@ -7,7 +7,7 @@
 
 #include "qmfunctions.h"
 #include "Orbital.h"
-#include "RankZeroTensorOperator.h"
+#include "NuclearCorrelationOperator.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;
@@ -30,19 +30,24 @@ namespace orbital {
  *  position is already complex conjugated.
  *
  */
-ComplexDouble dot(Orbital bra, Orbital ket) {
+ComplexDouble dot(Orbital bra, Orbital ket, NuclearCorrelationOperator *R) {
     if ((bra.spin() == SPIN::Alpha) and (ket.spin() == SPIN::Beta)) return 0.0;
     if ((bra.spin() == SPIN::Beta) and (ket.spin() == SPIN::Alpha)) return 0.0;
+
+
+    Orbital RRket = ket;
+    if (R != nullptr) RRket = R->getR2()(ket);
 
     double bra_conj(1.0), ket_conj(1.0);
     if (bra.conjugate()) bra_conj = -1.0;
     if (ket.conjugate()) ket_conj = -1.0;
 
     double rr(0.0), ri(0.0), ir(0.0), ii(0.0);
-    if (bra.hasReal() and ket.hasReal()) rr = mrcpp::dot(bra.real(), ket.real());
-    if (bra.hasReal() and ket.hasImag()) ri = mrcpp::dot(bra.real(), ket.imag());
-    if (bra.hasImag() and ket.hasReal()) ir = mrcpp::dot(bra.imag(), ket.real());
-    if (bra.hasImag() and ket.hasImag()) ii = mrcpp::dot(bra.imag(), ket.imag());
+    if (bra.hasReal() and ket.hasReal()) rr = mrcpp::dot(bra.real(), RRket.real());
+    if (bra.hasReal() and ket.hasImag()) ri = mrcpp::dot(bra.real(), RRket.imag());
+    if (bra.hasImag() and ket.hasReal()) ir = mrcpp::dot(bra.imag(), RRket.real());
+    if (bra.hasImag() and ket.hasImag()) ii = mrcpp::dot(bra.imag(), RRket.imag());
+    if (R != nullptr) RRket.free();
 
     double real_part = rr + bra_conj*ket_conj*ii;
     double imag_part = ket_conj*ri - bra_conj*ir;
@@ -454,11 +459,13 @@ void orthogonalize(OrbitalVector &vec, OrbitalVector &inp) {
     }
 }
 
-ComplexMatrix calc_overlap_matrix(OrbitalVector &braket) {
-    return orbital::calc_overlap_matrix(braket, braket);
+ComplexMatrix calc_overlap_matrix(OrbitalVector &braket, NuclearCorrelationOperator *R) {
+    return orbital::calc_overlap_matrix(braket, braket, R);
 }
 
-ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix calc_overlap_matrix(OrbitalVector &bra,
+                                  OrbitalVector &ket,
+                                  NuclearCorrelationOperator *R) {
     int Ni = bra.size();
     int Nj = ket.size();
     ComplexMatrix S(Ni, Nj);
@@ -466,7 +473,7 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
 
     for (int i = 0; i < Ni; i++) {
         for (int j = 0; j < Nj; j++) {
-            S(i,j) = orbital::dot(bra[i], ket[j]);
+            S(i,j) = orbital::dot(bra[i], ket[j], R);
         }
     }
     return S;
@@ -478,11 +485,11 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
  *
  * Computes the inverse square root of the orbital overlap matrix S^(-1/2)
  */
-ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi) {
+ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi, NuclearCorrelationOperator *R) {
     Timer timer;
     printout(1, "Calculating Löwdin orthonormalization matrix      ");
 
-    ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
+    ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi, R);
     ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0/2.0);
 
     timer.stop();
@@ -500,7 +507,9 @@ ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi) {
  * The resulting transformation includes the orthonormalization of the orbitals.
  * Orbitals are rotated in place, and the transformation matrix is returned.
  */
-ComplexMatrix localize(double prec, OrbitalVector &Phi) {
+ComplexMatrix localize(double prec,
+                       OrbitalVector &Phi,
+                       NuclearCorrelationOperator *R) {
     Printer::printHeader(0, "Localizing orbitals");
     Timer timer;
 
@@ -508,7 +517,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
     int n_it = 0;
     if (Phi.size() > 1) {
         Timer rr_t;
-        RRMaximizer rr(prec, Phi);
+        RRMaximizer rr(prec, Phi, R);
         n_it = rr.maximize();
         rr_t.stop();
         Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime(), 5);
@@ -525,7 +534,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
 
     if (n_it <= 0) {
         Timer orth_t;
-        U = orbital::calc_lowdin_matrix(Phi);
+        U = orbital::calc_lowdin_matrix(Phi, R);
         orth_t.stop();
         Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
     }
@@ -551,12 +560,15 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
  * Orbitals are rotated in place and Fock matrix is diagonalized in place.
  * The transformation matrix is returned.
  */
-ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
+ComplexMatrix diagonalize(double prec,
+                          OrbitalVector &Phi,
+                          ComplexMatrix &F,
+                          NuclearCorrelationOperator *R) {
     Printer::printHeader(0, "Digonalizing Fock matrix");
     Timer timer;
 
     Timer orth_t;
-    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi, R);
     F = S_m12.transpose()*F*S_m12;
     orth_t.stop();
     Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
@@ -592,8 +604,10 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
  * Orthonormalizes the orbitals by multiplication of the Löwdin matrix S^(-1/2).
  * Orbitals are rotated in place, and the transformation matrix is returned.
  */
-ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi) {
-    ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
+ComplexMatrix orthonormalize(double prec,
+                             OrbitalVector &Phi,
+                             NuclearCorrelationOperator *R) {
+    ComplexMatrix U = orbital::calc_lowdin_matrix(Phi, R);
     OrbitalVector Psi = orbital::multiply(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
@@ -810,7 +824,7 @@ void density::compute(double prec,
                       Density &rho,
                       Orbital phi,
                       int spin,
-                      RankZeroTensorOperator *R) {
+                      NuclearCorrelationOperator *R) {
     double occ_a(0.0), occ_b(0.0), occ_p(0.0);
     if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
     if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
@@ -854,7 +868,7 @@ void density::compute(double prec,
                       Density &rho,
                       OrbitalVector &Phi,
                       int spin,
-                      RankZeroTensorOperator *R) {
+                      NuclearCorrelationOperator *R) {
     double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
     double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
 

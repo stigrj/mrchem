@@ -37,6 +37,7 @@
 #include "SeeligCorrelationFunction.h"
 #include "SlaterCorrelationFunction.h"
 #include "NuclearCorrelationOperator.h"
+#include "AnalyticPotential.h"
 
 #include "DipoleMoment.h"
 #include "Magnetizability.h"
@@ -404,23 +405,23 @@ void SCFDriver::setup() {
     fock = new FockOperator(T, V);
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "Hartree" or wf_method == "HF" or wf_method == "DFT") {
-        J = new CoulombOperator(P, phi);
+        J = new CoulombOperator(P, phi, nco);
         fock->setCoulombOperator(J);
     }
     // For HF we need the full HF exchange
     if (wf_method == "HF") {
-        K = new ExchangeOperator(*P, *phi);
+        K = new ExchangeOperator(*P, *phi, nco);
         fock->setExchangeOperator(K);
     }
     //For hybrid DFT we need a partial HF exchange
     if (wf_method == "DFT" and (dft_x_fac > mrcpp::MachineZero)) {
-        K = new ExchangeOperator(*P, *phi, dft_x_fac);
+        K = new ExchangeOperator(*P, *phi, nco, dft_x_fac);
         fock->setExchangeOperator(K);
     }
     //For DFT we need the XC operator
     if (wf_method == "DFT") {
         xcfun = setupFunctional(1);
-        XC = new XCOperator(xcfun, phi);
+        XC = new XCOperator(xcfun, phi, nco);
         fock->setXCOperator(XC);
     }
     //HACK we need a better way to decide whether to initialize the external potential operator
@@ -489,7 +490,7 @@ NuclearCorrelationOperator* SCFDriver::setupNuclearCorrelationOperator(const Nuc
         Timer timer;
         Printer::printHeader(0, "Setting up nuclear correlation operator");
         R = new NuclearCorrelationOperator(*nuclei, *ncf);
-        R->setup(rel_prec/100);
+        R->setup(rel_prec/10);
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
@@ -544,6 +545,36 @@ void SCFDriver::setupInitialGroundState() {
     else if (scf_start == "SAD_QZ") *phi = initial_guess::sad::setup(prec, *molecule, wf_restricted, 4);
     else if (scf_start == "MW")     *phi = orbital::load_orbitals(file_start_orbitals);
     else MSG_FATAL("Invalid initial guess");
+
+    // Divide initial guess by nuclear correlation factor
+    if (ncf != nullptr) {
+        std::vector<DoubleFunction> funcs;
+        for (int k = 0; k < nuclei->size(); k++) {
+            funcs.push_back(ncf->getS_m1((*nuclei)[k]));
+        }
+        auto f = [funcs] (const double *r) -> double {
+            double result = 1.0;
+            for (int i = 0; i < funcs.size(); i++) {
+                result *= funcs[i](r);
+            }
+            return result;
+        };
+
+        AnalyticPotentialOperator R_m1;
+        R_m1.setReal(f);
+        R_m1.setup(rel_prec/10);
+
+        OrbitalVector Psi;
+        for (int i = 0; i < phi->size(); i++) {
+            Orbital F_i = R_m1((*phi)[i]);
+            Psi.push_back(F_i);
+        }
+        orbital::free(*phi);
+        *phi = Psi;
+
+        R_m1.clear();
+    }
+
     orbital::print(*phi);
 }
 
@@ -679,13 +710,13 @@ bool SCFDriver::runGroundState() {
     // Optimize orbitals
     if (scf_run) {
         OrbitalOptimizer *solver = setupOrbitalOptimizer();
-        solver->setup(*fock, *phi, F);
+        solver->setup(*fock, *phi, F, nco);
         converged = solver->optimize();
         solver->clear();
         delete solver;
     } else {
         fock->setup(rel_prec);
-        F = (*fock)(*phi, *phi);
+        F = (*fock)(*phi, *phi, nco);
         fock->clear();
     }
 
@@ -743,7 +774,7 @@ void SCFDriver::calcGroundStateProperties() {
         Printer::printHeader(0, "Calculating SCF energy");
         Timer timer;
         SCFEnergy &energy = molecule->getSCFEnergy();
-        energy = fock->trace(*phi, F);
+        energy = fock->trace(*phi, F, nco);
         timer.stop();
         Printer::printFooter(0, timer, 2);
         fock->clear();
@@ -756,7 +787,7 @@ void SCFDriver::calcGroundStateProperties() {
         H_E_dip mu(r_O);
         mu.setup(rel_prec);
         nuc = mu.trace(*nuclei).real();
-        el = mu.trace(*phi).real();
+        el = mu.trace(*phi, nco).real();
         mu.clear();
         timer.stop();
         Printer::printFooter(0, timer, 2);
@@ -767,7 +798,7 @@ void SCFDriver::calcGroundStateProperties() {
         DoubleMatrix &dia = molecule->getMagnetizability().getDiamagnetic();
         H_BB_dia h(r_O);
         h.setup(rel_prec);
-        dia = -h.trace(*phi).real();
+        dia = -h.trace(*phi, nco).real();
         h.clear();
         timer.stop();
         Printer::printFooter(0, timer, 2);
@@ -822,13 +853,15 @@ void SCFDriver::calcGroundStateProperties() {
             SpinOperator s;
             s.setup(rel_prec);
             DoubleMatrix &s_z = hfc.getSpinTerm();
-            s_z(0,0) = s[2].trace(*phi).real();
+            s_z(0,0) = s[2].trace(*phi, nco).real();
             s.clear();
 
             // Compute correlation factor contribution
             double R_K = 1.0;
-            for (int m = 0; m < nuclei->size(); m++) {
-                R_K *= std::pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
+            if (ncf != nullptr) {
+                for (int m = 0; m < nuclei->size(); m++) {
+                    R_K *= std::pow(ncf->getS_0((*nuclei)[m])(r_K), 2.0);
+                }
             }
             // Compute NEMO density constribution
             Density rho_s(*MRA);
@@ -851,7 +884,7 @@ void SCFDriver::calcLinearResponseProperties(const ResponseCalculation &rsp_calc
         Timer timer;
         DoubleMatrix &para = molecule->getMagnetizability().getParamagnetic();
         h_B->setup(rel_prec);
-        para.row(j) = -h_B->trace(*phi, *phi_x, *phi_y).real();
+        para.row(j) = -h_B->trace(*phi, *phi_x, *phi_y, nco).real();
         h_B->clear();
         timer.stop();
         Printer::printFooter(0, timer, 2);

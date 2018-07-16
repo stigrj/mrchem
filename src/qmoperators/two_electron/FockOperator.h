@@ -55,7 +55,7 @@ public:
     void setup(double prec);
     void clear();
     
-    SCFEnergy trace(OrbitalVector &Phi, const ComplexMatrix &F);
+    SCFEnergy trace(OrbitalVector &Phi, const ComplexMatrix &F, NuclearCorrelationOperator *R = nullptr);
 
 protected:
     RankZeroTensorOperator T;     ///< Total kinetic energy operator

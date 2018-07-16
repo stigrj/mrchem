@@ -24,7 +24,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  */
 CoulombPotential::CoulombPotential(PoissonOperator *P,
                                    OrbitalVector *Phi,
-                                   RankZeroTensorOperator *R)
+                                   NuclearCorrelationOperator *R)
         : QMPotential(1),
           density(*MRA),
           orbitals(Phi),
@@ -68,7 +68,7 @@ void CoulombPotential::setupDensity(double prec) {
     if (hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
 
-    RankZeroTensorOperator *R = this->nuc_corr_fac;
+    NuclearCorrelationOperator *R = this->nuc_corr_fac;
     OrbitalVector &Phi = *this->orbitals;
     Density &rho = this->density;
 

@@ -21,7 +21,7 @@ namespace mrchem {
  */
 XCPotential::XCPotential(mrdft::XCFunctional *F,
                          OrbitalVector *Phi,
-                         RankZeroTensorOperator *R)
+                         NuclearCorrelationOperator *R)
         : QMPotential(1),
           orbitals(Phi),
           nuc_corr_fac(R),
@@ -64,7 +64,7 @@ void XCPotential::setupDensity() {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
 
-    RankZeroTensorOperator *R = this->nuc_corr_fac;
+    NuclearCorrelationOperator *R = this->nuc_corr_fac;
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;

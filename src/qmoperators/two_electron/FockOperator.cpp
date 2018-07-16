@@ -110,7 +110,7 @@ void FockOperator::rotate(const ComplexMatrix &U) {
  * the corresponding Fock matrix. Tracing the kinetic energy operator is avoided
  * by tracing the Fock matrix and subtracting all other contributions.
  */
-SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
+SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F, NuclearCorrelationOperator *R) {
     double E_nuc = 0.0; // Nuclear repulsion
     double E_el  = 0.0; // Electronic energy
     double E_orb = 0.0; // Orbital energy
@@ -140,12 +140,12 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     }
 
     // Electronic part
-    if (this->nuc  != 0) E_en  =  this->nuc->trace(Phi).real();
-    if (this->coul != 0) E_ee  =  this->coul->trace(Phi).real();
-    if (this->ex   != 0) E_x   = -this->ex->trace(Phi).real();
+    if (this->nuc  != 0) E_en  =  this->nuc->trace(Phi, R).real();
+    if (this->coul != 0) E_ee  =  this->coul->trace(Phi, R).real();
+    if (this->ex   != 0) E_x   = -this->ex->trace(Phi, R).real();
     if (this->xc   != 0) E_xc  =  this->xc->getEnergy();
-    if (this->xc   != 0) E_xc2 =  this->xc->trace(Phi).real();
-    if (this->ext  != 0) E_ext =  this->ext->trace(Phi).real();
+    if (this->xc   != 0) E_xc2 =  this->xc->trace(Phi, R).real();
+    if (this->ext  != 0) E_ext =  this->ext->trace(Phi, R).real();
 
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;

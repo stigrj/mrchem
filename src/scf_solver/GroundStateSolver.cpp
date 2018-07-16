@@ -23,9 +23,10 @@ namespace mrchem {
  */
 GroundStateSolver::GroundStateSolver(HelmholtzVector &h)
         : SCF(h),
-          fMat_n(0),
-          fOper_n(0),
-          orbitals_n(0) {
+          fMat_n(nullptr),
+          fOper_n(nullptr),
+          orbitals_n(nullptr),
+          nuc_corr_fac(nullptr) {
 }
 
 /** @brief Computes the Helmholtz argument for the all orbitals.
@@ -147,8 +148,9 @@ double GroundStateSolver::calcProperty() {
     ComplexMatrix &F = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
     OrbitalVector &Phi = *this->orbitals_n;
+    NuclearCorrelationOperator *R = this->nuc_corr_fac;
 
-    SCFEnergy E = fock.trace(Phi, F);
+    SCFEnergy E = fock.trace(Phi, F, R);
     this->energy.push_back(E);
 
     timer.stop();

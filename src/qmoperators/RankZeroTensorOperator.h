@@ -41,10 +41,10 @@ class Nuclei;
  
 class RankZeroTensorOperator {
 public:
-    RankZeroTensorOperator() { }
+    RankZeroTensorOperator() = default;
     RankZeroTensorOperator(QMOperator &O) { *this = O; }
     RankZeroTensorOperator(const RankZeroTensorOperator &O) { *this = O; }
-    virtual ~RankZeroTensorOperator() { }
+    virtual ~RankZeroTensorOperator() = default;
 
     void setup(double prec);
     void clear();
@@ -55,14 +55,14 @@ public:
     OrbitalVector operator()(OrbitalVector &inp);
     OrbitalVector dagger(OrbitalVector &inp);
 
-    ComplexDouble operator()(Orbital bra, Orbital ket);
-    ComplexDouble dagger(Orbital bra, Orbital ket);
+    ComplexDouble operator()(Orbital bra, Orbital ket, NuclearCorrelationOperator *R = nullptr);
+    ComplexDouble dagger(Orbital bra, Orbital ket, NuclearCorrelationOperator *R = nullptr);
 
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket, NuclearCorrelationOperator *R = nullptr);
+    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket, NuclearCorrelationOperator *R = nullptr);
 
-    ComplexDouble trace(OrbitalVector &Phi);
-    ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y);
+    ComplexDouble trace(OrbitalVector &Phi, NuclearCorrelationOperator *R = nullptr);
+    ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, NuclearCorrelationOperator *R = nullptr);
     
     RankZeroTensorOperator& operator=(QMOperator &O);
     RankZeroTensorOperator& operator+=(QMOperator &O);

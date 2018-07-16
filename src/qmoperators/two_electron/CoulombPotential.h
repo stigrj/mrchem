@@ -26,15 +26,15 @@ class CoulombPotential final : public QMPotential {
 public:
     CoulombPotential(mrcpp::PoissonOperator *P,
                      OrbitalVector *Phi = nullptr,
-                     RankZeroTensorOperator *R = nullptr);
+                     NuclearCorrelationOperator *R = nullptr);
 
     friend class CoulombOperator;
 
 protected:
-    Density density;                        ///< Electron density defining the potential
-    OrbitalVector *orbitals;                ///< Orbitals defining the electron density
-    RankZeroTensorOperator *nuc_corr_fac;   ///< Nuclear correlation factor
-    mrcpp::PoissonOperator *poisson;        ///< Operator used to compute the potential
+    Density density;                          ///< Electron density defining the potential
+    OrbitalVector *orbitals;                  ///< Orbitals defining the electron density
+    NuclearCorrelationOperator *nuc_corr_fac; ///< Nuclear correlation factor
+    mrcpp::PoissonOperator *poisson;          ///< Operator used to compute the potential
 
     Density &getDensity() { return this->density; }
     bool hasDensity() const { return (this->density.getSquareNorm() < 0.0) ? false : true; }

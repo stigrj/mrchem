@@ -26,19 +26,22 @@ public:
         }
         return out;
     }
-    ComplexMatrix trace(OrbitalVector &phi) {
+    ComplexMatrix trace(OrbitalVector &phi, NuclearCorrelationOperator *R = nullptr) {
         RankTwoTensorOperator &O = *this;
         ComplexMatrix out(I,J);
         for (int i = 0; i < I; i++) {
-            out.row(i) = O[i].trace(phi);
+            out.row(i) = O[i].trace(phi, R);
         }
         return out;
     }
-    ComplexMatrix trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+    ComplexMatrix trace(OrbitalVector &phi,
+                        OrbitalVector &x,
+                        OrbitalVector &y,
+                        NuclearCorrelationOperator *R = nullptr) {
         RankTwoTensorOperator &O = *this;
         ComplexMatrix out(I,J);
         for (int i = 0; i < I; i++) {
-            out.row(i) = O[i].trace(phi, x, y);
+            out.row(i) = O[i].trace(phi, x, y, R);
         }
         return out;
     }

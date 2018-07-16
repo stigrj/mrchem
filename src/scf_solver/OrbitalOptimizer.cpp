@@ -41,10 +41,12 @@ OrbitalOptimizer::OrbitalOptimizer(HelmholtzVector &h, Accelerator *k)
  */
 void OrbitalOptimizer::setup(FockOperator &fock,
                              OrbitalVector &Phi,
-                             ComplexMatrix &F) {
+                             ComplexMatrix &F,
+                             NuclearCorrelationOperator *R) {
     this->fMat_n = &F;
     this->fOper_n = &fock;
     this->orbitals_n = &Phi;
+    this->nuc_corr_fac = R;
 }
 
 /** @brief Clear solver after optimization
@@ -54,9 +56,10 @@ void OrbitalOptimizer::setup(FockOperator &fock,
  * Solver can be re-used after another setup.
  */
 void OrbitalOptimizer::clear() {
-    this->fMat_n = 0;
-    this->fOper_n = 0;
-    this->orbitals_n = 0;
+    this->fMat_n = nullptr;
+    this->fOper_n = nullptr;
+    this->orbitals_n = nullptr;
+    this->nuc_corr_fac = nullptr;
     if (this->kain != 0) this->kain->clear();
     resetPrecision();
 }
@@ -88,6 +91,7 @@ bool OrbitalOptimizer::optimize() {
     ComplexMatrix &F = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
     OrbitalVector &Phi_n = *this->orbitals_n;
+    NuclearCorrelationOperator *R = this->nuc_corr_fac;
     HelmholtzVector &H = *this->helmholtz;
 
     double orb_prec = this->orbPrec[0];
@@ -96,7 +100,7 @@ bool OrbitalOptimizer::optimize() {
     double err_p = 1.0;
 
     fock.setup(orb_prec);
-    F = fock(Phi_n, Phi_n);
+    F = fock(Phi_n, Phi_n, R);
 
     int nIter = 0;
     bool converged = false;
@@ -108,12 +112,12 @@ bool OrbitalOptimizer::optimize() {
 
         // Rotate orbitals
         if (needLocalization(nIter)) {
-            ComplexMatrix U = orbital::localize(orb_prec, Phi_n);
+            ComplexMatrix U = orbital::localize(orb_prec, Phi_n, R);
             fock.rotate(U);
             F = U*F*U.adjoint();
             if (this->kain != 0) this->kain->clear();
         } else if (needDiagonalization(nIter)) {
-            ComplexMatrix U = orbital::diagonalize(orb_prec, Phi_n, F);
+            ComplexMatrix U = orbital::diagonalize(orb_prec, Phi_n, F, R);
             fock.rotate(U);
             if (this->kain != 0) this->kain->clear();
         }
@@ -132,7 +136,7 @@ bool OrbitalOptimizer::optimize() {
         orbital::free(Psi_n);
         H.clear();
 
-        ComplexMatrix U = orbital::orthonormalize(orb_prec, Phi_np1);
+        ComplexMatrix U = orbital::orthonormalize(orb_prec, Phi_np1, R);
         F = U*F*U.adjoint();
 
         // Compute orbital updates
@@ -158,12 +162,12 @@ bool OrbitalOptimizer::optimize() {
         orbital::free(dPhi_n);
         Phi_n = Phi_np1;
 
-        orbital::orthonormalize(orb_prec, Phi_n);
+        orbital::orthonormalize(orb_prec, Phi_n, R);
         orbital::set_errors(Phi_n, errors);
 
         // Compute Fock matrix
         fock.setup(orb_prec);
-        F = fock(Phi_n, Phi_n);
+        F = fock(Phi_n, Phi_n, R);
 
         // Finalize SCF cycle
         timer.stop();
@@ -178,9 +182,9 @@ bool OrbitalOptimizer::optimize() {
     fock.clear();
 
     if (this->canonical) {
-        orbital::diagonalize(orb_prec/10, Phi_n, F);
+        orbital::diagonalize(orb_prec/10, Phi_n, F, R);
     } else {
-        ComplexMatrix U = orbital::localize(orb_prec/10, Phi_n);
+        ComplexMatrix U = orbital::localize(orb_prec/10, Phi_n, R);
         F = U*F*U.adjoint();
     }
 

@@ -8,14 +8,14 @@ namespace SPIN { enum type { Paired, Alpha, Beta }; }
 namespace NUMBER { enum type { Total, Real, Imag }; }
 namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 
-class RankZeroTensorOperator;
+class NuclearCorrelationOperator;
 
 class Orbital;
 typedef std::vector<Orbital> OrbitalVector;
 
 namespace orbital {
 
-ComplexDouble dot(Orbital bra, Orbital ket);
+ComplexDouble dot(Orbital bra, Orbital ket, NuclearCorrelationOperator *R = nullptr);
 
 bool compare(const Orbital &orb_a, const Orbital &orb_b);
 int compare_occ(const Orbital &orb_a, const Orbital &orb_b);
@@ -42,13 +42,13 @@ void normalize(OrbitalVector &vec);
 void orthogonalize(OrbitalVector &vec);
 void orthogonalize(OrbitalVector &vec, OrbitalVector &inp);
 
-ComplexMatrix calc_overlap_matrix(OrbitalVector &braket);
-ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket);
-ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi);
+ComplexMatrix calc_overlap_matrix(OrbitalVector &braket, NuclearCorrelationOperator *R = nullptr);
+ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket, NuclearCorrelationOperator *R = nullptr);
+ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi, NuclearCorrelationOperator *R = nullptr);
 
-ComplexMatrix localize(double prec, OrbitalVector &Phi);
-ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
-ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi);
+ComplexMatrix localize(double prec, OrbitalVector &Phi, NuclearCorrelationOperator *R = nullptr);
+ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F, NuclearCorrelationOperator *R = nullptr);
+ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi, NuclearCorrelationOperator *R = nullptr);
 
 int size_empty(const OrbitalVector &vec);
 int size_occupied(const OrbitalVector &vec);
@@ -79,8 +79,8 @@ typedef mrcpp::FunctionTree<3> Density;
 typedef mrcpp::FunctionTreeVector<3> DensityVector;
 namespace density {
 
-void compute(double prec, Density &rho, Orbital phi, int spin, RankZeroTensorOperator *R = nullptr);
-void compute(double prec, Density &rho, OrbitalVector &Phi, int spin, RankZeroTensorOperator *R = nullptr);
+void compute(double prec, Density &rho, Orbital phi, int spin, NuclearCorrelationOperator *R = nullptr);
+void compute(double prec, Density &rho, OrbitalVector &Phi, int spin, NuclearCorrelationOperator *R = nullptr);
 
 } //namespace density
 
