@@ -3,6 +3,7 @@
 #include "RankZeroTensorOperator.h"
 #include "AnalyticPotential.h"
 #include "NuclearCorrelationFunction.h"
+#include "Nucleus.h"
 
 namespace mrchem {
 
@@ -14,21 +15,43 @@ public:
             funcs.push_back(S.getS_0(nucs[k]));
         }
 
-        auto f = [funcs] (const double *r) -> double {
+        auto f1 = [funcs] (const double *r) -> double {
             double result = 1.0;
             for (int i = 0; i < funcs.size(); i++) {
                 result *= funcs[i](r);
             }
             return result;
         };
-        this->ncp.setReal(f);
+        this->R.setReal(f1);
 
-        RankZeroTensorOperator &R = (*this);
-        R = ncp;
+        auto f2 = [funcs] (const double *r) -> double {
+            double result = 1.0;
+            for (int i = 0; i < funcs.size(); i++) {
+                result *= std::pow(funcs[i](r), 2.0);
+            }
+            return result;
+        };
+        this->R2.setReal(f2);
+
+        RankZeroTensorOperator &V = (*this);
+        V = R;
+    }
+
+    RankZeroTensorOperator getR2() { return this->R*this->R; }
+
+    void setup(double prec) {
+        RankZeroTensorOperator::setup(prec);
+        this->R2.setup(prec);
+    }
+
+    void clear() {
+        RankZeroTensorOperator::clear();
+        this->R2.clear();
     }
 
 protected:
-    AnalyticPotential ncp;
+    AnalyticPotential R;
+    AnalyticPotential R2;
 };
 
 } //namespace mrchem
