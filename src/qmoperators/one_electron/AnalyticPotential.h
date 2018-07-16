@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QMPotential.h"
+#include "RankZeroTensorOperator.h"
 
 namespace mrchem {
 
@@ -18,6 +19,21 @@ public:
 protected:
     mrcpp::AnalyticFunction<3> *real_func;
     mrcpp::AnalyticFunction<3> *imag_func;
+};
+
+class AnalyticPotentialOperator : public RankZeroTensorOperator {
+public:
+    AnalyticPotentialOperator() {
+        RankZeroTensorOperator &v = (*this);
+        v = pot;
+    }
+
+    void setReal(const DoubleFunction &func) { this->pot.setReal(func); }
+    void setImag(const DoubleFunction &func) { this->pot.setImag(func); }
+
+
+protected:
+    AnalyticPotential pot;
 };
 
 } //namespace mrchem
