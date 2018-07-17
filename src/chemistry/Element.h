@@ -18,7 +18,7 @@ public:
     double getMass() const { return this->mass; }
     double getVdw() const { return this->r_vdw; }
     double getCov() const { return this->r_cov; }
-    double getGValue() const { if (this->g_val < 0.0) std::abort(); return this->g_val; }
+    double getGValue() const { return this->g_val; }
 
     friend std::ostream& operator<<(std::ostream &o, const Element &e) {
         o << e.symbol;
