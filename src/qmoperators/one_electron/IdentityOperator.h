@@ -8,7 +8,6 @@ namespace mrchem {
 class QMIdentity final : public QMOperator {
 public:
     QMIdentity() : QMOperator() { }
-    ~QMIdentity() { }
 
 protected:
     void setup(double prec) { setApplyPrec(prec); }
@@ -24,13 +23,12 @@ public:
         RankZeroTensorOperator &h = (*this);
         h = I;
     }
-    ~IdentityOperator() { }
 
-    ComplexDouble operator()(Orbital bra, Orbital ket);
-    ComplexDouble dagger(Orbital bra, Orbital ket);
+    ComplexDouble operator()(Orbital bra, Orbital ket, NuclearCorrelationOperator *R = nullptr);
+    ComplexDouble dagger(Orbital bra, Orbital ket, NuclearCorrelationOperator *R = nullptr);
 
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket, NuclearCorrelationOperator *R = nullptr);
+    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket, NuclearCorrelationOperator *R = nullptr);
 
     // Necessary in order to pick up base class definitions for overloaded functions
     using RankZeroTensorOperator::operator();

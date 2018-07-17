@@ -17,7 +17,10 @@ namespace mrchem {
  * operator is applied both to the left and right, thus taking advantage
  * of symmetry and getting away with only first-derivative operators.
  */
-ComplexDouble KineticOperator::operator()(Orbital bra, Orbital ket) {
+ComplexDouble KineticOperator::operator()(Orbital bra,
+                                          Orbital ket,
+                                          NuclearCorrelationOperator *R) {
+    if (R != nullptr) return RankZeroTensorOperator::operator()(bra, ket, R);
     RankZeroTensorOperator &p_x = this->p[0];
     RankZeroTensorOperator &p_y = this->p[1];
     RankZeroTensorOperator &p_z = this->p[2];
@@ -50,7 +53,9 @@ ComplexDouble KineticOperator::operator()(Orbital bra, Orbital ket) {
  *
  * NOT IMPLEMENTED
  */
-ComplexDouble KineticOperator::dagger(Orbital bra, Orbital ket) {
+ComplexDouble KineticOperator::dagger(Orbital bra,
+                                      Orbital ket,
+                                      NuclearCorrelationOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 
@@ -63,7 +68,10 @@ ComplexDouble KineticOperator::dagger(Orbital bra, Orbital ket) {
  * operator is applied both to the left and right, thus taking advantage
  * of symmetry and getting away with only first-derivative operators.
  */
-ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix KineticOperator::operator()(OrbitalVector &bra,
+                                          OrbitalVector &ket,
+                                          NuclearCorrelationOperator *R) {
+    if (R != nullptr) return RankZeroTensorOperator::operator()(bra, ket, R);
     Timer timer;
     Printer::printHeader(1, "Compute Kinetic Matrix Elements");
 
@@ -134,7 +142,9 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
  *
  * NOT IMPLEMENTED
  */
-ComplexMatrix KineticOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix KineticOperator::dagger(OrbitalVector &bra,
+                                      OrbitalVector &ket,
+                                      NuclearCorrelationOperator *R) {
     NOT_IMPLEMENTED_ABORT;
 }
 

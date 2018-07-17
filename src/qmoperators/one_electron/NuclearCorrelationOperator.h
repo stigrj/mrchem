@@ -1,5 +1,8 @@
 #pragma once
 
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
 #include "RankZeroTensorOperator.h"
 #include "AnalyticPotential.h"
 #include "NuclearCorrelationFunction.h"
@@ -9,7 +12,8 @@ namespace mrchem {
 
 class NuclearCorrelationOperator final : public RankZeroTensorOperator {
 public:
-    NuclearCorrelationOperator(const Nuclei &nucs, const NuclearCorrelationFunction &S) {
+    NuclearCorrelationOperator(const Nuclei &nucs, const NuclearCorrelationFunction &S)
+            : R(1), R2(1) {
         std::vector<DoubleFunction> funcs;
         for (int k = 0; k < nucs.size(); k++) {
             funcs.push_back(S.getS_0(nucs[k]));

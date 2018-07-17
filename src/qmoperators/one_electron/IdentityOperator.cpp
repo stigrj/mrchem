@@ -18,32 +18,40 @@ Orbital QMIdentity::dagger(Orbital inp) {
 }
 
 /** Overwrite default deep copy by more efficient dot product */
-ComplexDouble IdentityOperator::operator()(Orbital bra, Orbital ket) {
+ComplexDouble IdentityOperator::operator()(Orbital bra,
+                                           Orbital ket,
+                                           NuclearCorrelationOperator *R) {
     if (this->I.prec() < 0.0) MSG_ERROR("Uninitialized operator");
-    return orbital::dot(bra, ket);
+    return orbital::dot(bra, ket, R);
 }
 
 /** Overwrite default deep copy by more efficient dot product */
-ComplexDouble IdentityOperator::dagger(Orbital bra, Orbital ket) {
+ComplexDouble IdentityOperator::dagger(Orbital bra,
+                                       Orbital ket,
+                                       NuclearCorrelationOperator *R) {
     return operator()(bra, ket);
 }
 
 /** Overwrite default deep copy by calculation of overlap matrix */
-ComplexMatrix IdentityOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix IdentityOperator::operator()(OrbitalVector &bra,
+                                           OrbitalVector &ket,
+                                           NuclearCorrelationOperator *R) {
     if (this->I.prec() < 0.0) MSG_ERROR("Uninitialized operator");
 
     ComplexMatrix S;
     if (&bra == &ket) {
         // In MPI it is beneficial to assume <bra| == |ket>
-        S = orbital::calc_overlap_matrix(bra);
+        S = orbital::calc_overlap_matrix(bra, R);
     } else {
-        S = orbital::calc_overlap_matrix(bra, ket);
+        S = orbital::calc_overlap_matrix(bra, ket, R);
     }
     return S;
 }
 
 /** Overwrite default deep copy by calculation of overlap matrix */
-ComplexMatrix IdentityOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix IdentityOperator::dagger(OrbitalVector &bra,
+                                       OrbitalVector &ket,
+                                       NuclearCorrelationOperator *R) {
     return operator()(bra, ket);
 }
 
