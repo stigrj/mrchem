@@ -7,7 +7,7 @@ namespace mrchem {
 
 class AnalyticPotential : public QMPotential {
 public:
-    AnalyticPotential(const DoubleFunction *f_r = nullptr, const DoubleFunction *f_i = nullptr);
+    AnalyticPotential(int adap = 1);
     virtual ~AnalyticPotential();
 
     void setReal(const DoubleFunction &func);

@@ -8,13 +8,10 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-AnalyticPotential::AnalyticPotential(const DoubleFunction *f_r,
-                                     const DoubleFunction *f_i)
-        : QMPotential(1),
+AnalyticPotential::AnalyticPotential(int adap)
+        : QMPotential(adap),
           real_func(nullptr),
           imag_func(nullptr) {
-    if (f_r != nullptr) setReal(*f_r);
-    if (f_i != nullptr) setImag(*f_i);
 }
 
 AnalyticPotential::~AnalyticPotential() {
