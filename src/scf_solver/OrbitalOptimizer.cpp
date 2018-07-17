@@ -8,6 +8,7 @@
 #include "FockOperator.h"
 #include "Accelerator.h"
 #include "Orbital.h"
+#include "NuclearCorrelationOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -100,7 +101,13 @@ bool OrbitalOptimizer::optimize() {
     double err_p = 1.0;
 
     fock.setup(orb_prec);
-    F = fock(Phi_n, Phi_n, R);
+    if (R != nullptr) {
+        OrbitalVector Psi_n = (*R)(Phi_n);
+        F = fock(Psi_n, Psi_n);
+        orbital::free(Psi_n);
+    } else {
+        F = fock(Phi_n, Phi_n);
+    }
 
     int nIter = 0;
     bool converged = false;
@@ -167,7 +174,13 @@ bool OrbitalOptimizer::optimize() {
 
         // Compute Fock matrix
         fock.setup(orb_prec);
-        F = fock(Phi_n, Phi_n, R);
+        if (R != nullptr) {
+            OrbitalVector Psi_n = (*R)(Phi_n);
+            F = fock(Psi_n, Psi_n);
+            orbital::free(Psi_n);
+        } else {
+            F = fock(Phi_n, Phi_n);
+        }
 
         // Finalize SCF cycle
         timer.stop();

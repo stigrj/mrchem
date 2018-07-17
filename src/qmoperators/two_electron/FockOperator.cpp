@@ -32,12 +32,14 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  */
 FockOperator::FockOperator(KineticOperator  *t,
                            NuclearOperator  *v,
+                           NuclearOperator  *u,
                            CoulombOperator  *j,
                            ExchangeOperator *k,
                            XCOperator       *xc,
                            ElectricFieldOperator *ext)
         : kin(t),
-          nuc(v),
+          nuc_full(v),
+          nuc_R(u),
           coul(j),
           ex(k),
           xc(xc),
@@ -48,12 +50,12 @@ FockOperator::FockOperator(KineticOperator  *t,
  * 
  */
 void FockOperator::build() {
-    if (this->kin  != 0) this->T  = *this->kin;
-    if (this->nuc  != 0) this->V  = *this->nuc;
-    if (this->coul != 0) this->V += *this->coul;
-    if (this->ex   != 0) this->V -= *this->ex;
-    if (this->xc   != 0) this->V += *this->xc;
-    if (this->ext  != 0) this->V += *this->ext;
+    if (this->kin   != 0) this->T  = *this->kin;
+    if (this->nuc_R != 0) this->V  = *this->nuc_R;
+    if (this->coul  != 0) this->V += *this->coul;
+    if (this->ex    != 0) this->V -= *this->ex;
+    if (this->xc    != 0) this->V += *this->xc;
+    if (this->ext   != 0) this->V += *this->ext;
     RankZeroTensorOperator &F = (*this);
     F = this->T + this->V;
 }
@@ -73,6 +75,7 @@ void FockOperator::setup(double prec) {
     this->T.setup(prec);
     this->V.setup(prec);
     this->H_1.setup(prec);
+    if (this->nuc_full != nullptr) this->nuc_full->setup(prec);
     if (this->ex != 0) this->ex->setupInternal(prec);
     timer.stop();
     Printer::printFooter(0, timer, 2);
@@ -87,6 +90,7 @@ void FockOperator::clear() {
     this->T.clear();
     this->V.clear();
     this->H_1.clear();
+    if (this->nuc_full != nullptr) this->nuc_full->clear();
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -99,6 +103,62 @@ void FockOperator::clear() {
  */
 void FockOperator::rotate(const ComplexMatrix &U) {
     if (this->ex != 0) this->ex->rotate(U);
+}
+
+ComplexMatrix FockOperator::operator()(OrbitalVector &bra,
+                                       OrbitalVector &ket,
+                                       NuclearCorrelationOperator *R) {
+    Printer::printHeader(0, "Calculating Fock matrix");
+    Timer timer;
+
+    ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
+    ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
+    ComplexMatrix J = ComplexMatrix::Zero(bra.size(), ket.size());
+    ComplexMatrix K = ComplexMatrix::Zero(bra.size(), ket.size());
+    ComplexMatrix XC = ComplexMatrix::Zero(bra.size(), ket.size());
+    if (this->kin != nullptr) {
+        Timer t;
+        T = (*kin)(bra, ket);
+        t.stop();
+        Printer::printDouble(0, "Kinetic", t.getWallTime(), 5);
+    }
+
+    if (this->nuc_full != nullptr) {
+        Timer t;
+        V = (*nuc_full)(bra, ket);
+        t.stop();
+        Printer::printDouble(0, "Nuclear", t.getWallTime(), 5);
+    }
+
+    if (this->coul != nullptr) {
+        Timer t;
+        J = (*coul)(bra, ket);
+        t.stop();
+        Printer::printDouble(0, "Coulomb", t.getWallTime(), 5);
+    }
+
+    if (this->xc != nullptr) {
+        Timer t;
+        XC = (*xc)(bra, ket);
+        t.stop();
+        Printer::printDouble(0, "XC", t.getWallTime(), 5);
+    }
+
+    //ComplexMatrix out = RankZeroTensorOperator::operator()(bra, ket, R);
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
+    return T + V + J + K + XC;
+}
+
+ComplexMatrix FockOperator::dagger(OrbitalVector &bra,
+                                   OrbitalVector &ket,
+                                   NuclearCorrelationOperator *R) {
+    Printer::printHeader(0, "Calculating adjoint Fock matrix");
+    Timer timer;
+    ComplexMatrix out = RankZeroTensorOperator::dagger(bra, ket, R);
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
+    return out;
 }
 
 /** @brief compute the SCF energy
@@ -124,8 +184,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F, Nuclea
     double E_nex = 0.0; // External field contribution to the nuclear energy
 
     // Nuclear part
-    if (this->nuc != 0) {
-        Nuclei &nucs = this->nuc->getNuclei();
+    if (this->nuc_R != 0) {
+        Nuclei &nucs = this->nuc_R->getNuclei();
         E_nuc = compute_nuclear_repulsion(nucs);
         if (this->ext  != 0) {
             E_nex = this->ext->trace(nucs).real();
@@ -140,7 +200,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F, Nuclea
     }
 
     // Electronic part
-    if (this->nuc  != 0) E_en  =  this->nuc->trace(Phi, R).real();
+    if (this->nuc_R  != 0) E_en  =  this->nuc_R->trace(Phi, R).real();
     if (this->coul != 0) E_ee  =  this->coul->trace(Phi, R).real();
     if (this->ex   != 0) E_x   = -this->ex->trace(Phi, R).real();
     if (this->xc   != 0) E_xc  =  this->xc->getEnergy();

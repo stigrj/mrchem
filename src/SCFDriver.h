@@ -218,6 +218,7 @@ protected:
     OrbitalVector *phi;
     KineticOperator *T;
     NuclearOperator *V;
+    NuclearOperator *U;
     CoulombOperator *J;
     ExchangeOperator *K;
     XCOperator *XC;

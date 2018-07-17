@@ -189,6 +189,7 @@ SCFDriver::SCFDriver(Getkw &input) {
 
     T = 0;
     V = 0;
+    U = 0;
     J = 0;
     K = 0;
     XC = 0;
@@ -395,14 +396,15 @@ void SCFDriver::setup() {
 
     // Setting up regularized potential
     nco = setupNuclearCorrelationOperator(*nuclei, ncf);
+    V = new SmoothedNuclearOperator(*nuclei, nuc_prec);
     if (ncf != 0) {
-        V = new RegularizedNuclearOperator(*nuclei, *ncf, *useDerivative(nemo_diff));
+        U = new RegularizedNuclearOperator(*nuclei, *ncf, *useDerivative(nemo_diff));
     } else {
-        V = new SmoothedNuclearOperator(*nuclei, nuc_prec);
+        U = new SmoothedNuclearOperator(*nuclei, nuc_prec);
     }
 
     // All cases need kinetic energy and nuclear potential
-    fock = new FockOperator(T, V);
+    fock = new FockOperator(T, V, U);
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "Hartree" or wf_method == "HF" or wf_method == "DFT") {
         J = new CoulombOperator(P, phi, nco);
@@ -462,6 +464,7 @@ void SCFDriver::clear() {
     if (K != 0) delete K;
     if (J != 0) delete J;
     if (V != 0) delete V;
+    if (U != 0) delete U;
     if (T != 0) delete T;
 
     if (nco != 0) nco->clear();
@@ -490,7 +493,7 @@ NuclearCorrelationOperator* SCFDriver::setupNuclearCorrelationOperator(const Nuc
         Timer timer;
         Printer::printHeader(0, "Setting up nuclear correlation operator");
         R = new NuclearCorrelationOperator(*nuclei, *ncf);
-        R->setup(rel_prec/10);
+        R->setup(rel_prec/100);
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
@@ -518,7 +521,7 @@ void SCFDriver::setup_np1() {
         MSG_ERROR("Invalid method");
     }
 
-    fock_np1 = new FockOperator(0, V, J_np1, K_np1, XC_np1);
+    fock_np1 = new FockOperator(0, V, 0, J_np1, K_np1, XC_np1);
     fock_np1->build();
 }
 
@@ -562,7 +565,7 @@ void SCFDriver::setupInitialGroundState() {
 
         AnalyticPotentialOperator R_m1;
         R_m1.setReal(f);
-        R_m1.setup(rel_prec/10);
+        R_m1.setup(rel_prec/100);
 
         OrbitalVector Psi;
         for (int i = 0; i < phi->size(); i++) {
@@ -667,7 +670,7 @@ void SCFDriver::setupPerturbedOperators(const ResponseCalculation &rsp_calc) {
         NOT_IMPLEMENTED_ABORT;
     }
 
-    d_fock = new FockOperator(0, 0, dJ, dK, dXC);
+    d_fock = new FockOperator(0, 0, 0, dJ, dK, dXC);
     d_fock->perturbation() += dH[d];
 }
 
