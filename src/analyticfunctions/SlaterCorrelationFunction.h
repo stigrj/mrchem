@@ -45,8 +45,12 @@ public:
             const double *R = nuc.getCoord();
             double r_R = math_utils::calc_distance(r, R);
             double Z = nuc.getCharge();
-            double nomin = 2.0*(a - 1.0)*(1.0 - std::exp(a*r_R*Z)) - a*a*r_R*Z;
-            double denom = 2.0*r_R*(1.0 + (a - 1.0)*std::exp(a*r_R*Z));
+            double nomin = -1.0;
+            double denom = r_R;
+            if (r_R < 16.0) {
+                nomin = 2.0*(a - 1.0)*(1.0 - std::exp(a*r_R*Z)) - a*a*r_R*Z;
+                denom = 2.0*r_R*(1.0 + (a - 1.0)*std::exp(a*r_R*Z));
+            }
             return -Z*nomin/denom;
         };
         return f;
