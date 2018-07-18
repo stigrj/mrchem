@@ -111,43 +111,48 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra,
     Printer::printHeader(0, "Calculating Fock matrix");
     Timer timer;
 
-    ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
-    ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
-    ComplexMatrix J = ComplexMatrix::Zero(bra.size(), ket.size());
-    ComplexMatrix K = ComplexMatrix::Zero(bra.size(), ket.size());
-    ComplexMatrix XC = ComplexMatrix::Zero(bra.size(), ket.size());
-    if (this->kin != nullptr) {
-        Timer t;
-        T = (*kin)(bra, ket);
-        t.stop();
-        Printer::printDouble(0, "Kinetic", t.getWallTime(), 5);
+    ComplexMatrix out;
+    if (R != nullptr) {
+        out = RankZeroTensorOperator::operator()(bra, ket, R);
+    } else {
+        ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix J = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix K = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix XC = ComplexMatrix::Zero(bra.size(), ket.size());
+        if (this->kin != nullptr) {
+            Timer t;
+            T = (*kin)(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "Kinetic", t.getWallTime(), 5);
+        }
+
+        if (this->nuc_full != nullptr) {
+            Timer t;
+            V = (*nuc_full)(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "Nuclear", t.getWallTime(), 5);
+        }
+
+        if (this->coul != nullptr) {
+            Timer t;
+            J = (*coul)(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "Coulomb", t.getWallTime(), 5);
+        }
+
+        if (this->xc != nullptr) {
+            Timer t;
+            XC = (*xc)(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "XC", t.getWallTime(), 5);
+        }
+        out = T + V + J + K + XC;
     }
 
-    if (this->nuc_full != nullptr) {
-        Timer t;
-        V = (*nuc_full)(bra, ket);
-        t.stop();
-        Printer::printDouble(0, "Nuclear", t.getWallTime(), 5);
-    }
-
-    if (this->coul != nullptr) {
-        Timer t;
-        J = (*coul)(bra, ket);
-        t.stop();
-        Printer::printDouble(0, "Coulomb", t.getWallTime(), 5);
-    }
-
-    if (this->xc != nullptr) {
-        Timer t;
-        XC = (*xc)(bra, ket);
-        t.stop();
-        Printer::printDouble(0, "XC", t.getWallTime(), 5);
-    }
-
-    //ComplexMatrix out = RankZeroTensorOperator::operator()(bra, ket, R);
     timer.stop();
     Printer::printFooter(0, timer, 2);
-    return T + V + J + K + XC;
+    return out;
 }
 
 ComplexMatrix FockOperator::dagger(OrbitalVector &bra,
@@ -155,7 +160,45 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra,
                                    NuclearCorrelationOperator *R) {
     Printer::printHeader(0, "Calculating adjoint Fock matrix");
     Timer timer;
-    ComplexMatrix out = RankZeroTensorOperator::dagger(bra, ket, R);
+    ComplexMatrix out;
+    if (R != nullptr) {
+        out = RankZeroTensorOperator::dagger(bra, ket, R);
+    } else {
+        ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix J = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix K = ComplexMatrix::Zero(bra.size(), ket.size());
+        ComplexMatrix XC = ComplexMatrix::Zero(bra.size(), ket.size());
+        if (this->kin != nullptr) {
+            Timer t;
+            T = kin->dagger(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "Kinetic", t.getWallTime(), 5);
+        }
+
+        if (this->nuc_full != nullptr) {
+            Timer t;
+            V = nuc_full->dagger(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "Nuclear", t.getWallTime(), 5);
+        }
+
+        if (this->coul != nullptr) {
+            Timer t;
+            J = coul->dagger(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "Coulomb", t.getWallTime(), 5);
+        }
+
+        if (this->xc != nullptr) {
+            Timer t;
+            XC = xc->dagger(bra, ket);
+            t.stop();
+            Printer::printDouble(0, "XC", t.getWallTime(), 5);
+        }
+        out = T + V + J + K + XC;
+    }
+
     timer.stop();
     Printer::printFooter(0, timer, 2);
     return out;
