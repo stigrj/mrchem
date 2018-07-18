@@ -805,7 +805,7 @@ void print(const OrbitalVector &vec) {
     printout(0, std::setw(4) << size_occupied(vec)  << " occupied  ");
     printout(0, std::setw(4) << get_electron_number(vec) << " electrons\n");
     printout(0, "------------------------------------------------------------\n");
-    printout(0, "   n  RankID           Norm          Spin Occ      Error    \n");
+    printout(0, "   n   Rank        Norm          Nodes  Spin Occ     Error  \n");
     printout(0, "------------------------------------------------------------\n");
     for (int i = 0; i < vec.size(); i++) {
         println(0, std::setw(4) << i << vec[i]);

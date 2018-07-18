@@ -296,11 +296,12 @@ char Orbital::printSpin() const {
 std::ostream& Orbital::print(std::ostream &o) const {
     int oldprec = mrcpp::Printer::setPrecision(12);
     o << std::setw(6)  << this->rankID();
-    o << std::setw(25) << this->norm();
+    o << std::setw(21) << this->norm();
+    o << std::setw(7)  << this->getNNodes();
     o << std::setw(5)  << this->printSpin();
     o << std::setw(4)  << this->occ();
-    mrcpp::Printer::setPrecision(5);
-    o << std::setw(15) << this->error();
+    mrcpp::Printer::setPrecision(2);
+    o << std::setw(12) << this->error();
     mrcpp::Printer::setPrecision(oldprec);
     return o;
 }
