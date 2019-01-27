@@ -103,6 +103,21 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
     return out;
 }
 
+OrbitalVector HelmholtzVector::operator()(const ComplexMatrix &F_mat, OrbitalVector &Phi) const {
+    Timer t_tot;
+    Printer::printHeader(0, "Rotating Helmholtz argument");
+    ComplexMatrix L_mat = getLambdaMatrix();
+
+    Timer rot_t;
+    OrbitalVector Psi = orbital::rotate(L_mat - F_mat, Phi);
+    rot_t.stop();
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
+
+    t_tot.stop();
+    Printer::printFooter(0, t_tot, 2);
+    return Psi;
+}
+
 /** @brief Apply Helmholtz operator component wise on OrbitalVector
  *
  * This will construct a separate Helmholtz operator for each of the entries

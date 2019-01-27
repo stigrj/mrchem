@@ -438,14 +438,8 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ke
  * Computes the inverse square root of the orbital overlap matrix S^(-1/2)
  */
 ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
-    Timer timer;
-    printout(1, "Calculating Löwdin orthonormalization matrix      ");
-
     ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
     ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0 / 2.0);
-
-    timer.stop();
-    println(1, timer.getWallTime());
     return S_m12;
 }
 
@@ -579,8 +573,21 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
  * Orbitals are rotated in place, and the transformation matrix is returned.
  */
 ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi) {
+    Printer::printHeader(0, "Lowdin orthonormalization");
+    Timer timer;
+
+    Timer orth_t;
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
+    orth_t.stop();
+    Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
+
+    Timer rot_t;
     Phi = orbital::rotate(U, Phi, prec);
+    rot_t.stop();
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
+
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
     return U;
 }
 
