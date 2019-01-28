@@ -99,7 +99,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
         mrcpp::clear(rho_atomic, true);
     }
     // MPI grand master distributes the full density
-    mpi::broadcast_density(rho_j, mpi::comm_orb);
+    mpi::broadcast_function(rho_j, mpi::comm_orb);
 
     // Compute XC density
     if (restricted) {

@@ -13,8 +13,7 @@ CoulombPotentialD2::CoulombPotentialD2(mrcpp::PoissonOperator *P,
                                        OrbitalVector *Phi,
                                        OrbitalVector *X,
                                        OrbitalVector *Y)
-        : CoulombPotential(P)
-        , orbitals(Phi)
+        : CoulombPotential(P, Phi)
         , orbitals_x(X)
         , orbitals_y(Y) {}
 

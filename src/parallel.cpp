@@ -250,7 +250,7 @@ void mpi::share_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 }
 
 /** @brief Add all mpi densities in rank zero density */
-void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
+void mpi::reduce_function(double prec, QMFunction &func, MPI_Comm comm) {
 #ifdef HAVE_MPI
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
@@ -261,23 +261,23 @@ void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
     Timer timer;
     if (comm_rank == 0) {
         for (int src = 1; src < comm_size; src++) {
-            Density rho_i(false);
+            QMFunction func_i(false);
             int tag = 3333 + src;
-            mpi::recv_function(rho_i, src, tag, comm);
-            rho.add(1.0, rho_i); // add in place using union grid
-            rho.crop(prec);
+            mpi::recv_function(func_i, src, tag, comm);
+            func.add(1.0, func_i); // add in place using union grid
+            func.crop(prec);
         }
     } else {
         int tag = 3333 + comm_rank;
-        mpi::send_function(rho, 0, tag, comm);
+        mpi::send_function(func, 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();
-    Printer::printDouble(0, "Reduce density", timer.getWallTime(), 5);
+    Printer::printDouble(0, "Reduce function", timer.getWallTime(), 5);
 #endif
 }
 
-void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
+void mpi::broadcast_function(QMFunction &func, MPI_Comm comm) {
 #ifdef HAVE_MPI
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
@@ -289,15 +289,15 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
     if (comm_rank == 0) {
         for (int dst = 1; dst < comm_size; dst++) {
             int tag = 4334 + dst;
-            mpi::send_function(rho, dst, tag, comm);
+            mpi::send_function(func, dst, tag, comm);
         }
     } else {
         int tag = 4334 + comm_rank;
-        mpi::recv_function(rho, 0, tag, comm);
+        mpi::recv_function(func, 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();
-    Printer::printDouble(0, "Broadcast density", timer.getWallTime(), 5);
+    Printer::printDouble(0, "Broadcast function", timer.getWallTime(), 5);
 #endif
 }
 
