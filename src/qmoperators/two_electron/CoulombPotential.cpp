@@ -26,8 +26,9 @@ namespace mrchem {
 
 CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
         : QMPotential(1, mpi::share_coul_pot)
-        , orbitals(Phi)
+        , local(mpi::local_coul_pot)
         , density(mpi::share_coul_dens)
+        , orbitals(Phi)
         , poisson(P) {}
 
 /** @brief prepare operator for application
@@ -45,9 +46,14 @@ CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
 void CoulombPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
-    setupLocalDensity(prec);
-    QMFunction V = setupLocalPotential(prec);
-    allreducePotential(prec, V);
+    if (useLocal()) {
+        setupLocalDensity(prec);
+        QMFunction V = setupLocalPotential(prec);
+        allreducePotential(prec, V);
+    } else {
+        setupDensity(prec);
+        setupPotential(prec);
+    }
 }
 
 /** @brief clear operator after application

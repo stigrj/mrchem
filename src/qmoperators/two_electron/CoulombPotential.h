@@ -31,12 +31,16 @@ public:
     friend class CoulombOperator;
 
 protected:
+    bool local;                      ///< Compute local (MPI) potential before broadcast
     Density density;                 ///< Ground-state electron density
     OrbitalVector *orbitals;         ///< Unperturbed orbitals defining the ground-state electron density
     mrcpp::PoissonOperator *poisson; ///< Operator used to compute the potential
 
     Density &getDensity() { return this->density; }
     bool hasDensity() const { return (this->density.squaredNorm() < 0.0) ? false : true; }
+
+    bool useLocal() const { return this->local; }
+    bool useGlobal() const { return not(this->local); }
 
     void setup(double prec);
     void clear();

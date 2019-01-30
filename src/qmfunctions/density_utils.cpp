@@ -107,9 +107,9 @@ void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, int s
         if (mpi::my_orb(phi_i)) {
             Density rho_i = density::compute(mult_prec, phi_i, spin);
             rho.add(1.0, rho_i);
+            rho.crop(add_prec);
         }
     }
-    //rho.crop(add_prec);
 }
 
 /** @brief Compute density as the sum of squared orbitals

@@ -42,6 +42,7 @@ void initialize(int argc, char **argv) {
     mpi::share_nuc_pot = Input.get<bool>("MPI.share_nuclear_potential");
     mpi::share_coul_dens = Input.get<bool>("MPI.share_coulomb_density");
     mpi::share_coul_pot = Input.get<bool>("MPI.share_coulomb_potential");
+    mpi::local_coul_pot = Input.get<bool>("MPI.local_coulomb_potential");
     mpi::share_xc_dens = Input.get<bool>("MPI.share_xc_density");
     mpi::share_xc_pot = Input.get<bool>("MPI.share_xc_potential");
     mpi::shared_memory_size = Input.get<int>("MPI.shared_memory_size");
