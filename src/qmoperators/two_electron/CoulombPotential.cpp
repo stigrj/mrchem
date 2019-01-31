@@ -130,7 +130,9 @@ QMFunction CoulombPotential::setupLocalPotential(double prec) {
 }
 
 void CoulombPotential::allreducePotential(double prec, QMFunction &V_loc) {
-    QMPotential &V_tot = *this;
+    Timer t_com;
+
+    QMFunction &V_tot = *this;
     OrbitalVector &Phi = *this->orbitals;
 
     double abs_prec = prec / orbital::get_electron_number(Phi);
@@ -157,6 +159,8 @@ void CoulombPotential::allreducePotential(double prec, QMFunction &V_loc) {
         mrcpp::copy_grid(V_tot.real(), V_loc.real());
         mrcpp::copy_func(V_tot.real(), V_loc.real());
     }
+    t_com.stop();
+    Printer::printTree(0, "Allreduce potential", V_tot.getNNodes(NUMBER::Total), t_com.getWallTime());
 }
 
 } //namespace mrchem

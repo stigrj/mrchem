@@ -274,7 +274,7 @@ void mpi::reduce_function(double prec, QMFunction &func, MPI_Comm comm) {
     }
     MPI_Barrier(comm);
     timer.stop();
-    Printer::printDouble(0, "Reduce function", timer.getWallTime(), 5);
+    Printer::printDouble(1, "Reduce function", timer.getWallTime(), 5);
 #endif
 }
 
@@ -298,7 +298,7 @@ void mpi::broadcast_function(QMFunction &func, MPI_Comm comm) {
     }
     MPI_Barrier(comm);
     timer.stop();
-    Printer::printDouble(0, "Broadcast function", timer.getWallTime(), 5);
+    Printer::printDouble(1, "Broadcast function", timer.getWallTime(), 5);
 #endif
 }
 

@@ -283,6 +283,7 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
             rho_loc.crop(part_prec);
         }
     }
+    Timer t_com;
 
     // Add up shared contributions into the grand master
     mpi::reduce_function(part_prec, rho_loc, mpi::comm_orb);
@@ -305,6 +306,8 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
         // MPI grand master distributes to all ranks
         mpi::broadcast_function(rho, mpi::comm_orb);
     }
+    t_com.stop();
+    Printer::printTree(0, "Allreduce density", rho.getNNodes(NUMBER::Total), t_com.getWallTime());
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {

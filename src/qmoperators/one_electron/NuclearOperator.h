@@ -20,6 +20,8 @@ public:
 
 private:
     NuclearFunction func;
+
+    void allreducePotential(double prec, QMFunction &V_loc);
 };
 
 class NuclearOperator final : public RankZeroTensorOperator {
