@@ -33,7 +33,7 @@ int orb_rank = 0;
 int orb_size = 1;
 int share_rank = 0;
 int share_size = 1;
-int sh_group_rank = 0;
+int sh_group_rank=0;
 
 MPI_Comm comm_orb;
 MPI_Comm comm_share;
@@ -250,52 +250,82 @@ void mpi::share_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #endif
 }
 
-/** @brief Add all mpi densities in rank zero density */
+/** @brief Add all mpi function into rank zero */
 void mpi::reduce_function(double prec, QMFunction &func, MPI_Comm comm) {
+/* 1) Each odd rank send to the left rank
+   2) All odd ranks are "deleted" (can exit routine)
+   3) new "effective" ranks are defined within the non-deleted ranks
+      effective rank = rank/fac , where fac are powers of 2
+   4) repeat
+ */
 #ifdef HAVE_MPI
+    Timer timer;
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
     MPI_Comm_size(comm, &comm_size);
-
     if (comm_size == 1) return;
 
-    Timer timer;
-    if (comm_rank == 0) {
-        for (int src = 1; src < comm_size; src++) {
-            QMFunction func_i(false);
-            int tag = 3333 + src;
-            mpi::recv_function(func_i, src, tag, comm);
-            func.add(1.0, func_i); // add in place using union grid
-            func.crop(prec);
+    int fac = 1; // powers of 2
+    while(fac<comm_size){
+        if ((comm_rank/fac) % 2 == 0) {
+            //receive
+            int src = comm_rank + fac;
+            if (src < comm_size) {
+                QMFunction func_i(false);
+                int tag = 3333 + src;
+                mpi::recv_function(func_i, src, tag, comm);
+                func.add(1.0, func_i); // add in place using union grid
+                func.crop(prec);
+            }
         }
-    } else {
-        int tag = 3333 + comm_rank;
-        mpi::send_function(func, 0, tag, comm);
+        if ((comm_rank/fac) % 2 == 1) {
+            //send
+            int dest = comm_rank - fac;
+            if (dest >= 0 ) {
+                int tag = 3333 + comm_rank;
+                mpi::send_function(func, dest, tag, comm);
+                break; //once data is sent we are done
+            }
+        }
+        fac *= 2;
     }
+
     MPI_Barrier(comm);
     timer.stop();
-    Printer::printDouble(1, "Reduce function", timer.getWallTime(), 5);
+    Printer::printDouble(1, "Reduce log function", timer.getWallTime(), 5);
 #endif
 }
 
+/** @brief Distribute rank zero function to all ranks */
 void mpi::broadcast_function(QMFunction &func, MPI_Comm comm) {
+/* use same strategy as a reduce, but in reverse order */
 #ifdef HAVE_MPI
+    Timer timer;
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
     MPI_Comm_size(comm, &comm_size);
-
     if (comm_size == 1) return;
 
-    Timer timer;
-    if (comm_rank == 0) {
-        for (int dst = 1; dst < comm_size; dst++) {
-            int tag = 4334 + dst;
-            mpi::send_function(func, dst, tag, comm);
+    int fac = 1; // powers of 2
+    while(fac < comm_size) fac *= 2;
+    fac /= 2;
+
+    while (fac > 0) {
+        if (comm_rank % fac == 0 and (comm_rank / fac) % 2 == 1) {
+            //receive
+            int src = comm_rank - fac;
+            int tag = 4334 + comm_rank;
+            mpi::recv_function(func, src, tag, comm);
         }
-    } else {
-        int tag = 4334 + comm_rank;
-        mpi::recv_function(func, 0, tag, comm);
+        if (comm_rank % fac == 0 and (comm_rank / fac) % 2 == 0 ){
+            //send
+            int dst = comm_rank + fac;
+            int tag = 4334 + dst;
+            if(dst < comm_size)mpi::send_function(func, dst, tag, comm);
+        }
+        fac /= 2;
     }
+
     MPI_Barrier(comm);
     timer.stop();
     Printer::printDouble(1, "Broadcast function", timer.getWallTime(), 5);
