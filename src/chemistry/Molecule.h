@@ -41,6 +41,7 @@
 #include <MRCPP/Printer>
 #include <nlohmann/json.hpp>
 
+#include "Cavity.h"
 #include "Nucleus.h"
 #include "properties/DipoleMoment.h"
 #include "properties/Magnetizability.h"
@@ -87,6 +88,7 @@ public:
     auto &getOrbitals() { return *this->orbitals_0; }
     auto &getOrbitalsX() { return *this->orbitals_x; }
     auto &getOrbitalsY() { return *this->orbitals_y; }
+    auto &getCavity() { return *this->cav; }
     auto &getFockMatrix() { return this->fock_matrix; }
 
     const auto &getNuclei() const { return this->nuclei; }
@@ -98,6 +100,7 @@ public:
     auto getOrbitals_p() const { return this->orbitals_0; }
     auto getOrbitalsX_p() const { return this->orbitals_x; }
     auto getOrbitalsY_p() const { return this->orbitals_y; }
+    auto getCavity_p() const { return this->cav; }
 
     nlohmann::json json() const;
     void printGeometry() const;
@@ -126,6 +129,7 @@ protected:
     Nuclei nuclei{};
     ComplexMatrix fock_matrix{};
 
+    std::shared_ptr<Cavity> cav{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_0{std::make_shared<OrbitalVector>()};
     std::shared_ptr<OrbitalVector> orbitals_x{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_y{nullptr};

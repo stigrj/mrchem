@@ -278,6 +278,7 @@ def write_molecule(user_dict):
     # Translate into program syntax
     coords_raw = user_dict["Molecule"]["coords"]
     coords_dict = []
+    cav_coords_dict = []
     for line in coords_raw.split('\n'):
         sp = line.split()
         if len(sp) > 0:
@@ -330,11 +331,36 @@ def write_molecule(user_dict):
         # Translate coords
         for coord in coords_dict:
             coord["xyz"] = [r - o for r,o in zip(coord["xyz"], CoM)]
+    #point of bug possibly
+    if user_dict["Cavity"]["mol_coords"]:
+        for atom in coords_dict:
+            radius = float(PT[atom["atom"]].radius)
+            cav_coords_dict.append({
+                "center": atom["xyz"],
+                "radius": radius
+            })
+    else:
+        cav_coords_raw = user_dict["Cavity"]["coords"]
+        for line in cav_coords_raw.split('\n'):
+            sp = line.split()
+            if len(sp) > 0:
+                center = list(map(float, sp[:-1]))
+                radius = float(sp[-1])
+            if len(xyz) != 3:
+                print("Invalid coordinate: " + atom.upper() + " " + str(xyz))
+                sys.exit(1)
+            cav_coords_dict.append({
+                "center": center,
+                "radius": radius
+            })
 
     mol_dict = {
         "multiplicity": user_dict["Molecule"]["multiplicity"],
         "charge": user_dict["Molecule"]["charge"],
         "coords": coords_dict
+        "cavity_coords": cav_coords_dict,
+        "cav_width": user_dict["Cavity"]["width"],
+        "cav_AA": user_dict["Cavity"]["angstrom"]
     }
     return mol_dict
 
@@ -431,6 +457,14 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
             "r_O": origin
         }
 
+    if user_dict["Properties"]["reaction_energy"]:
+        fock_dict["reaction_operator"] = {
+            "poisson_prec": user_dict["world_prec"],
+            "reaction_history": user_dict["SolventEffect"]["kain"],
+            "eps_in": user_dict["Cavity"]["epsilon_in"],
+            "eps_out": user_dict["Cavity"]["epsilon_out"],
+            "cav_lin": user_dict["Cavity"]["linear"]
+        }
     return fock_dict
 
 
