@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
 
 /** @file core.h
@@ -44,6 +45,7 @@ namespace core {
 
 OrbitalVector setup(double prec, const Molecule &mol, bool restricted, int zeta);
 OrbitalVector project_ao(double prec, const Nuclei &nucs, int spin, int zeta);
+OrbitalVector rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin);
 
 } // namespace core
 } // namespace initial_guess

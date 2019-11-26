@@ -38,7 +38,6 @@
 
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
@@ -57,7 +56,6 @@ namespace initial_guess {
 namespace sad {
 
 ComplexMatrix diagonalize_fock(KineticOperator &T, RankZeroTensorOperator &V, OrbitalVector &Phi, int spin);
-OrbitalVector rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin);
 void project_atomic_densities(double prec, Density &rho_tot, const Molecule &mol);
 
 } // namespace sad
@@ -152,15 +150,15 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
         if (mult != 1) MSG_ABORT("Restricted open-shell not available");
         int Np = Nd / 2; // paired orbitals
         ComplexMatrix U = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Paired);
-        Psi = initial_guess::sad::rotate_orbitals(prec, U, Phi, Np, SPIN::Paired);
+        Psi = initial_guess::core::rotate_orbitals(prec, U, Phi, Np, SPIN::Paired);
     } else {
         int Na = Nd / 2 + (mult - 1); // alpha orbitals
         int Nb = Nd / 2;              // beta orbitals
         ComplexMatrix U_a = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Alpha);
-        OrbitalVector Psi_a = initial_guess::sad::rotate_orbitals(prec, U_a, Phi, Na, SPIN::Alpha);
+        OrbitalVector Psi_a = initial_guess::core::rotate_orbitals(prec, U_a, Phi, Na, SPIN::Alpha);
         mrcpp::print::separator(2, '-');
         ComplexMatrix U_b = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Beta);
-        OrbitalVector Psi_b = initial_guess::sad::rotate_orbitals(prec, U_b, Phi, Nb, SPIN::Beta);
+        OrbitalVector Psi_b = initial_guess::core::rotate_orbitals(prec, U_b, Phi, Nb, SPIN::Beta);
 
         Psi = orbital::adjoin(Psi_a, Psi_b);
     }
@@ -191,34 +189,6 @@ ComplexMatrix initial_guess::sad::diagonalize_fock(KineticOperator &T,
     mrcpp::print::time(1, "Diagonalizing Fock matrix", t2);
 
     return U;
-}
-
-OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
-    Timer t_tot;
-    OrbitalVector Psi;
-    for (int i = 0; i < N; i++) Psi.push_back(Orbital(spin));
-    mpi::distribute(Psi);
-
-    OrbitalIterator iter(Phi);
-    while (iter.next()) {
-        for (int i = 0; i < Psi.size(); i++) {
-            if (not mpi::my_orb(Psi[i])) continue;
-            QMFunctionVector func_vec;
-            ComplexVector coef_vec(iter.get_size());
-            for (int j = 0; j < iter.get_size(); j++) {
-                int idx_j = iter.idx(j);
-                Orbital &recv_j = iter.orbital(j);
-                coef_vec[j] = U(i, idx_j);
-                func_vec.push_back(recv_j);
-            }
-            Orbital tmp_i = Psi[i].paramCopy();
-            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
-            Psi[i].add(1.0, tmp_i); // In place addition
-            Psi[i].crop(prec);
-        }
-    }
-    mrcpp::print::time(1, "Rotating orbitals", t_tot);
-    return Psi;
 }
 
 void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot, const Molecule &mol) {

@@ -39,6 +39,7 @@
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
@@ -155,34 +156,13 @@ OrbitalVector initial_guess::core::setup(double prec, const Molecule &mol, bool 
     OrbitalVector Psi;
     if (restricted) {
         if (mult != 1) MSG_ABORT("Restricted open-shell not available");
-
         int Np = Nd / 2; // paired orbitals
-        for (int i = 0; i < Np; i++) {
-            ComplexVector v_i = U.row(i);
-            Orbital psi_i(SPIN::Paired);
-            qmfunction::linear_combination(psi_i, v_i, funcs, prec);
-            Psi.push_back(psi_i);
-        }
+        Psi = initial_guess::core::rotate_orbitals(prec, U, Phi, Np, SPIN::Paired);
     } else {
         int Na = Nd / 2 + (mult - 1); // alpha orbitals
         int Nb = Nd / 2;              // beta orbitals
-
-        OrbitalVector Psi_a;
-        for (int i = 0; i < Na; i++) {
-            ComplexVector v_i = U.row(i);
-            Orbital psi_i(SPIN::Alpha);
-            qmfunction::linear_combination(psi_i, v_i, funcs, prec);
-            Psi_a.push_back(psi_i);
-        }
-
-        OrbitalVector Psi_b;
-        for (int i = 0; i < Nb; i++) {
-            ComplexVector v_i = U.row(i);
-            Orbital psi_i(SPIN::Beta);
-            qmfunction::linear_combination(psi_i, v_i, funcs, prec);
-            Psi_b.push_back(psi_i);
-        }
-
+        OrbitalVector Psi_a = initial_guess::core::rotate_orbitals(prec, U, Phi, Na, SPIN::Alpha);
+        OrbitalVector Psi_b = initial_guess::core::rotate_orbitals(prec, U, Phi, Nb, SPIN::Beta);
         Psi = orbital::adjoin(Psi_a, Psi_b);
     }
     mrcpp::print::time(1, "Rotating orbitals", t_lap);
@@ -274,6 +254,34 @@ OrbitalVector initial_guess::core::project_ao(double prec, const Nuclei &nucs, i
     }
     mrcpp::print::footer(2, t_tot, 2);
     return Phi;
+}
+
+OrbitalVector initial_guess::core::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
+    Timer t_tot;
+    OrbitalVector Psi;
+    for (int i = 0; i < N; i++) Psi.push_back(Orbital(spin));
+    mpi::distribute(Psi);
+
+    OrbitalIterator iter(Phi);
+    while (iter.next()) {
+        for (int i = 0; i < Psi.size(); i++) {
+            if (not mpi::my_orb(Psi[i])) continue;
+            QMFunctionVector func_vec;
+            ComplexVector coef_vec(iter.get_size());
+            for (int j = 0; j < iter.get_size(); j++) {
+                int idx_j = iter.idx(j);
+                Orbital &recv_j = iter.orbital(j);
+                coef_vec[j] = U(i, idx_j);
+                func_vec.push_back(recv_j);
+            }
+            Orbital tmp_i = Psi[i].paramCopy();
+            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
+            Psi[i].add(1.0, tmp_i); // In place addition
+            Psi[i].crop(prec);
+        }
+    }
+    mrcpp::print::time(1, "Rotating orbitals", t_tot);
+    return Psi;
 }
 
 } // namespace mrchem
