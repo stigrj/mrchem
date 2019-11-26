@@ -168,7 +168,7 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double
             for (int j = 0; j < iter.get_size(); j++) {
                 int idx_j = iter.idx(j);
                 Orbital &recv_j = iter.orbital(j);
-                coef_vec[j] = U(i, idx_j);
+                coef_vec[j] = std::conj(U(i, idx_j));
                 func_vec.push_back(recv_j);
             }
             Orbital tmp_i = out[i].paramCopy();

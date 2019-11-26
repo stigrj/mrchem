@@ -152,7 +152,7 @@ void diagonalize_block(ComplexMatrix &A, ComplexMatrix &U, int nstart, int nsize
     es.compute(A.block(nstart, nstart, nsize, nsize));
     ComplexMatrix ei_vec = es.eigenvectors();
     ComplexVector ei_val = es.eigenvalues().cast<ComplexDouble>();
-    U.block(nstart, nstart, nsize, nsize) = ei_vec.transpose();
+    U.block(nstart, nstart, nsize, nsize) = ei_vec.adjoint();
     A.block(nstart, nstart, nsize, nsize) = ei_val.asDiagonal();
 }
 
