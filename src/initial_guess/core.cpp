@@ -164,6 +164,7 @@ OrbitalVector initial_guess::core::setup(double prec, const Molecule &mol, bool 
         OrbitalVector Psi_a = initial_guess::core::rotate_orbitals(prec, U, Phi, Na, SPIN::Alpha);
         OrbitalVector Psi_b = initial_guess::core::rotate_orbitals(prec, U, Phi, Nb, SPIN::Beta);
         Psi = orbital::adjoin(Psi_a, Psi_b);
+        orbital::normalize(Psi);
     }
     mrcpp::print::time(1, "Rotating orbitals", t_lap);
     mrcpp::print::footer(2, t_diag, 2);

@@ -23,8 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "parallel.h"
 
@@ -36,7 +36,6 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief constructor
  *
@@ -238,7 +237,7 @@ void Accelerator::solveLinearSystem() {
     this->c.clear();
     int N = this->A.size();
     for (int n = 0; n < N; n++) {
-        DoubleVector tmpC = this->A[n].colPivHouseholderQr().solve(this->b[n]);
+        ComplexVector tmpC = this->A[n].colPivHouseholderQr().solve(this->b[n]);
         this->c.push_back(tmpC);
     }
     mrcpp::print::time(2, "Solve linear system", t_tot);
@@ -330,20 +329,20 @@ void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
  * If orbitals are not separated these are added up to one final A matrix and
  * b vector, otherwise all individual entries are kept.
  */
-void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices, std::vector<DoubleVector> &b_vectors) {
+void Accelerator::sortLinearSystem(std::vector<ComplexMatrix> &A_matrices, std::vector<ComplexVector> &b_vectors) {
     int nOrbs = b_vectors.size();
     int nHist = b_vectors[0].size();
 
     if (this->sepOrbitals) {
         for (int i = 0; i < nOrbs; i++) {
-            DoubleMatrix tmpA(A_matrices[i]);
-            DoubleVector tmpB(b_vectors[i]);
+            ComplexMatrix tmpA(A_matrices[i]);
+            ComplexVector tmpB(b_vectors[i]);
             this->A.push_back(tmpA);
             this->b.push_back(tmpB);
         }
     } else {
-        DoubleMatrix tmpA(nHist, nHist);
-        DoubleVector tmpB(nHist);
+        ComplexMatrix tmpA(nHist, nHist);
+        ComplexVector tmpB(nHist);
         tmpA.setZero();
         tmpB.setZero();
         for (int i = 0; i < nOrbs; i++) {

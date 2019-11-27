@@ -235,6 +235,7 @@ def write_initial_guess(program_dict, user_dict):
         "restricted": user_dict["WaveFunction"]["restricted"],
         "guess_prec": user_dict["SCF"]["guess_prec"],
         "method": method,
+        "complex": False,
         "zeta": zeta,
         "start_orbitals": "orbitals/phi",
         "final_orbitals": "orbitals/phi",

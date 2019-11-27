@@ -161,6 +161,15 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             // Prepare for next iteration
             X_n = orbital::add(1.0, X_n, 1.0, dX_n);
+
+            DoubleMatrix norms = DoubleMatrix::Zero(X_n.size(), 3);
+            for (int n = 0; n < X_n.size(); n++) {
+                norms(n, 0) = X_n[n].norm();
+                if (X_n[n].hasReal()) norms(n, 1) = std::sqrt(X_n[n].real().getSquareNorm());
+                if (X_n[n].hasImag()) norms(n, 2) = std::sqrt(X_n[n].imag().getSquareNorm());
+            }
+            mpi::allreduce_matrix(norms, mpi::comm_orb);
+            println(0, norms);
         }
 
         if (dynamic and plevel == 1) mrcpp::print::separator(1, '-');
@@ -209,6 +218,15 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             // Prepare for next iteration
             Y_n = orbital::add(1.0, Y_n, 1.0, dY_n);
+
+            DoubleMatrix norms = DoubleMatrix::Zero(Y_n.size(), 3);
+            for (int n = 0; n < Y_n.size(); n++) {
+                norms(n, 0) = Y_n[n].norm();
+                if (Y_n[n].hasReal()) norms(n, 1) = std::sqrt(Y_n[n].real().getSquareNorm());
+                if (Y_n[n].hasImag()) norms(n, 2) = std::sqrt(Y_n[n].imag().getSquareNorm());
+            }
+            mpi::allreduce_matrix(norms, mpi::comm_orb);
+            println(0, norms);
         }
 
         // Compute property
@@ -238,6 +256,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
         mrcpp::print::separator(2, '=', 2);
         printProperty();
         printMemory();
+
         mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 

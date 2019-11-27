@@ -142,6 +142,7 @@ bool driver::run_guess(const json &json_guess, Molecule &mol) {
     auto &Phi = mol.getOrbitals();
     auto &F_mat = mol.getFockMatrix();
 
+    auto complex = json_guess["complex"].get<bool>();
     auto method = json_guess["method"].get<std::string>();
     if (method == "mw") {
         auto start_orbs = json_guess["start_orbitals"].get<std::string>();
@@ -176,6 +177,22 @@ bool driver::run_guess(const json &json_guess, Molecule &mol) {
         return false;
     }
     orbital::print(Phi);
+
+    if (complex) {
+        DoubleMatrix norms = DoubleMatrix::Zero(Phi.size(), 3);
+        for (int n = 0; n < Phi.size(); n++) {
+            double theta = (n + 1.0) * mrcpp::pi / 17.0;
+            ComplexDouble phase(std::cos(theta), std::sin(theta));
+            println(0, phase);
+            Phi[n].rescale(phase);
+
+            norms(n, 0) = Phi[n].norm();
+            if (Phi[n].hasReal()) norms(n, 1) = std::sqrt(Phi[n].real().getSquareNorm());
+            if (Phi[n].hasImag()) norms(n, 2) = std::sqrt(Phi[n].imag().getSquareNorm());
+        }
+        mpi::allreduce_matrix(norms, mpi::comm_orb);
+        println(0, norms);
+    }
 
     auto write_orbs = json_guess["write_orbitals"].get<bool>();
     auto final_orbs = json_guess["final_orbitals"].get<std::string>();

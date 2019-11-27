@@ -83,9 +83,9 @@ protected:
     int maxHistory;   ///< Oldest iteration is discarded when history exceeds this size
     bool sepOrbitals; ///< Use separate subspace for each orbital
 
-    std::vector<DoubleMatrix> A; ///< Vector of A matrices
-    std::vector<DoubleVector> b; ///< Vector of b vectors
-    std::vector<DoubleVector> c; ///< Vector of c vectors
+    std::vector<ComplexMatrix> A; ///< Vector of A matrices
+    std::vector<ComplexVector> b; ///< Vector of b vectors
+    std::vector<ComplexVector> c; ///< Vector of c vectors
 
     std::deque<OrbitalVector> orbitals;  ///< Orbital history
     std::deque<OrbitalVector> dOrbitals; ///< Orbital update history
@@ -103,10 +103,7 @@ protected:
 
     void solveLinearSystem();
     void clearLinearSystem();
-    // clang-format off
-    void sortLinearSystem(std::vector<DoubleMatrix> &A_mat,
-                          std::vector<DoubleVector> &b_vec);
-    // clang-format on
+    void sortLinearSystem(std::vector<ComplexMatrix> &A_mat, std::vector<ComplexVector> &b_vec);
 
     virtual void setupLinearSystem() = 0;
     virtual void expandSolution(double prec,

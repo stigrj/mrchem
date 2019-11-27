@@ -161,6 +161,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
         OrbitalVector Psi_b = initial_guess::core::rotate_orbitals(prec, U_b, Phi, Nb, SPIN::Beta);
 
         Psi = orbital::adjoin(Psi_a, Psi_b);
+        orbital::normalize(Psi);
     }
     T.clear();
     V.clear();

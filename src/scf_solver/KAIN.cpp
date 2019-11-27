@@ -23,8 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "parallel.h"
 
@@ -53,13 +53,13 @@ void KAIN::setupLinearSystem() {
     int nHistory = this->orbitals.size() - 1;
     if (nHistory < 1) MSG_ABORT("Not enough history to setup system of equations");
 
-    std::vector<DoubleMatrix> A_matrices;
-    std::vector<DoubleVector> b_vectors;
+    std::vector<ComplexMatrix> A_matrices;
+    std::vector<ComplexVector> b_vectors;
 
     int nOrbitals = this->orbitals[nHistory].size();
     for (int n = 0; n < nOrbitals; n++) {
-        DoubleMatrix orbA = DoubleMatrix::Zero(nHistory, nHistory);
-        DoubleVector orbB = DoubleVector::Zero(nHistory);
+        ComplexMatrix orbA = ComplexMatrix::Zero(nHistory, nHistory);
+        ComplexVector orbB = ComplexVector::Zero(nHistory);
 
         Orbital &phi_m = this->orbitals[nHistory][n];
         Orbital &fPhi_m = this->dOrbitals[nHistory][n];
@@ -80,9 +80,9 @@ void KAIN::setupLinearSystem() {
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
-                    orbA(i, j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
+                    orbA(i, j) -= orbital::dot(dPhi_im, dfPhi_jm);
                 }
-                orbB(i) += orbital::dot(dPhi_im, fPhi_m).real();
+                orbB(i) += orbital::dot(dPhi_im, fPhi_m);
             }
         }
         A_matrices.push_back(orbA);
@@ -147,7 +147,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
 
             Orbital &phi_m = this->orbitals[nHistory][n];
             Orbital &fPhi_m = this->dOrbitals[nHistory][n];
-            totCoefs.push_back(1.0);
+            totCoefs.push_back({1.0, 0.0});
             totOrbs.push_back(fPhi_m);
 
             // Ref. Harrisons KAIN paper the following has the wrong sign,
@@ -157,20 +157,20 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
                 ComplexVector partCoefs(4);
                 QMFunctionVector partOrbs;
 
-                partCoefs(0) = 1.0;
+                partCoefs(0) = {1.0, 0.0};
                 Orbital &phi_j = this->orbitals[j][n];
                 if (not mpi::my_orb(phi_j)) MSG_ABORT("MPI rank mismatch: phi_j");
                 partOrbs.push_back(phi_j);
 
-                partCoefs(1) = 1.0;
+                partCoefs(1) = {1.0, 0.0};
                 Orbital &fPhi_j = this->dOrbitals[j][n];
                 if (not mpi::my_orb(fPhi_j)) MSG_ABORT("MPI rank mismatch: fPhi_j");
                 partOrbs.push_back(fPhi_j);
 
-                partCoefs(2) = -1.0;
+                partCoefs(2) = {-1.0, 0.0};
                 partOrbs.push_back(phi_m);
 
-                partCoefs(3) = -1.0;
+                partCoefs(3) = {-1.0, 0.0};
                 partOrbs.push_back(fPhi_m);
 
                 Orbital partStep = phi_m.paramCopy();
