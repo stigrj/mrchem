@@ -164,6 +164,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             DoubleMatrix norms = DoubleMatrix::Zero(X_n.size(), 3);
             for (int n = 0; n < X_n.size(); n++) {
+                if (not mpi::my_orb(X_n[n])) continue;
                 norms(n, 0) = X_n[n].norm();
                 if (X_n[n].hasReal()) norms(n, 1) = std::sqrt(X_n[n].real().getSquareNorm());
                 if (X_n[n].hasImag()) norms(n, 2) = std::sqrt(X_n[n].imag().getSquareNorm());
@@ -221,6 +222,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             DoubleMatrix norms = DoubleMatrix::Zero(Y_n.size(), 3);
             for (int n = 0; n < Y_n.size(); n++) {
+                if (not mpi::my_orb(Y_n[n])) continue;
                 norms(n, 0) = Y_n[n].norm();
                 if (Y_n[n].hasReal()) norms(n, 1) = std::sqrt(Y_n[n].real().getSquareNorm());
                 if (Y_n[n].hasImag()) norms(n, 2) = std::sqrt(Y_n[n].imag().getSquareNorm());

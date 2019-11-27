@@ -155,6 +155,8 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
         int Na = Nd / 2 + (mult - 1); // alpha orbitals
         int Nb = Nd / 2;              // beta orbitals
         ComplexMatrix U_a = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Alpha);
+        ComplexDouble i{0.0, 1.0};
+        for (int j = 0; j < U_a.cols(); j++) U_a(7, j) += i*U_a(8, j);
         OrbitalVector Psi_a = initial_guess::core::rotate_orbitals(prec, U_a, Phi, Na, SPIN::Alpha);
         mrcpp::print::separator(2, '-');
         ComplexMatrix U_b = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Beta);

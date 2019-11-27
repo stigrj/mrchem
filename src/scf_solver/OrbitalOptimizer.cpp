@@ -165,6 +165,13 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
             kain.clear();
         }
 
+        if (mpi::my_orb(Phi_n[7])) {
+            double r_norm = std::sqrt(Phi_n[7].real().getSquareNorm());
+            double i_norm = std::sqrt(Phi_n[7].imag().getSquareNorm());
+            Phi_n[7].real().rescale(std::sqrt(2.0)/(2.0*r_norm));
+            Phi_n[7].imag().rescale(std::sqrt(2.0)/(2.0*i_norm));
+        }
+
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
         printOrbitals(F_mat.real().diagonal(), errors, Phi_n, 0);
@@ -176,9 +183,10 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
 
         DoubleMatrix norms = DoubleMatrix::Zero(Phi_n.size(), 3);
         for (int n = 0; n < Phi_n.size(); n++) {
-            norms(n, 0) += Phi_n[n].norm();
-            if (Phi_n[n].hasReal()) norms(n, 1) += std::sqrt(Phi_n[n].real().getSquareNorm());
-            if (Phi_n[n].hasImag()) norms(n, 2) += std::sqrt(Phi_n[n].imag().getSquareNorm());
+            if (not mpi::my_orb(Phi_n[n])) continue;
+            norms(n, 0) = Phi_n[n].norm();
+            if (Phi_n[n].hasReal()) norms(n, 1) = std::sqrt(Phi_n[n].real().getSquareNorm());
+            if (Phi_n[n].hasImag()) norms(n, 2) = std::sqrt(Phi_n[n].imag().getSquareNorm());
         }
         mpi::allreduce_matrix(norms, mpi::comm_orb);
         println(0, norms);

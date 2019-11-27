@@ -181,6 +181,7 @@ bool driver::run_guess(const json &json_guess, Molecule &mol) {
     if (complex) {
         DoubleMatrix norms = DoubleMatrix::Zero(Phi.size(), 3);
         for (int n = 0; n < Phi.size(); n++) {
+            if (not mpi::my_orb(Phi[n])) continue;
             double theta = (n + 1.0) * mrcpp::pi / 17.0;
             ComplexDouble phase(std::cos(theta), std::sin(theta));
             println(0, phase);
