@@ -36,6 +36,7 @@ import tempfile
 from io import StringIO
 from shutil import copyfile
 from pathlib import Path
+from parselglossy.api import parse, validate #added now
 
 # FIXME This will pick up modules when installed
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
@@ -316,6 +317,12 @@ def write_molecule(user_dict):
                 print("WARNING: Atoms are very close")
                 print(" " + A["atom"] + " : " + str(A["xyz"]))
                 print(" " + B["atom"] + " : " + str(B["xyz"]))
+
+#    if user_dict["Cavity"]["angstrom"]:
+#        AA = 1.889725989
+#        for coord in cav_coords_dict:
+#            coord["center"] = [AA * r for r in coord["center"]]
+#            coord["radius"] *= AA
 
     # Translate center of mass to origin
     if user_dict["Molecule"]["translate"]:
