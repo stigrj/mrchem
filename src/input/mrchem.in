@@ -365,7 +365,7 @@ def write_molecule(user_dict):
     mol_dict = {
         "multiplicity": user_dict["Molecule"]["multiplicity"],
         "charge": user_dict["Molecule"]["charge"],
-        "coords": coords_dict
+        "coords": coords_dict,
         "cavity_coords": cav_coords_dict,
         "cav_width": user_dict["Cavity"]["width"],
         "cav_AA": user_dict["Cavity"]["angstrom"]
