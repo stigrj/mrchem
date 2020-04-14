@@ -318,11 +318,6 @@ def write_molecule(user_dict):
                 print(" " + A["atom"] + " : " + str(A["xyz"]))
                 print(" " + B["atom"] + " : " + str(B["xyz"]))
 
-#    if user_dict["Cavity"]["angstrom"]:
-#        AA = 1.889725989
-#        for coord in cav_coords_dict:
-#            coord["center"] = [AA * r for r in coord["center"]]
-#            coord["radius"] *= AA
 
     # Translate center of mass to origin
     if user_dict["Molecule"]["translate"]:
@@ -362,12 +357,21 @@ def write_molecule(user_dict):
                 "radius": radius
             })
 
+    if user_dict["Cavity"]["angstrom"]:
+        AA = 1.889725989
+        for coord in cav_coords_dict:
+            coord["center"] = [AA * r for r in coord["center"]]
+            coord["radius"] *= AA
+        width = user_dict["Cavity"]["width"]*AA
+    else:
+        width = user_dict["Cavity"]["width"]
+
     mol_dict = {
         "multiplicity": user_dict["Molecule"]["multiplicity"],
         "charge": user_dict["Molecule"]["charge"],
         "coords": coords_dict,
         "cavity_coords": cav_coords_dict,
-        "cav_width": user_dict["Cavity"]["width"],
+        "cav_width": width,
         "cav_AA": user_dict["Cavity"]["angstrom"]
     }
     return mol_dict
@@ -475,14 +479,6 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
             "r_O": origin
         }
 
-    if user_dict["Properties"]["reaction_energy"]:
-        fock_dict["reaction_operator"] = {
-            "poisson_prec": user_dict["world_prec"],
-            "reaction_history": user_dict["SolventEffect"]["kain"],
-            "eps_in": user_dict["Cavity"]["epsilon_in"],
-            "eps_out": user_dict["Cavity"]["epsilon_out"],
-            "cav_lin": user_dict["Cavity"]["linear"]
-        }
     return fock_dict
 
 
