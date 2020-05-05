@@ -1,6 +1,6 @@
 ![MRChem logo](https://github.com/MRChemSoft/mrchem/raw/master/doc/gfx/logo_full.png)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3606659.svg)](https://doi.org/10.5281/zenodo.3606659)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3606658.svg)](https://doi.org/10.5281/zenodo.3606658)
 [![License](https://img.shields.io/badge/license-%20LGPLv3-blue.svg)](../master/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/mrchem/badge/?version=latest)](http://mrchem.readthedocs.io/en/latest/?badge=latest)
 ![Build and test MRChem](https://github.com/MRChemSoft/mrchem/workflows/Build%20and%20test%20MRChem/badge.svg)
