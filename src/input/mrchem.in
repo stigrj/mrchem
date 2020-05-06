@@ -335,15 +335,15 @@ def write_molecule(user_dict):
             coord["xyz"] = [r - o for r,o in zip(coord["xyz"], CoM)]
 
 #point of bug possibly
-    if len(user_dict["Cavity"]["coords"]) > 0:
-        cav_coords_raw = user_dict["Cavity"]["coords"]
+    if len(user_dict["Environment"]["Cavity"]["coords"]) > 0:
+        cav_coords_raw = user_dict["Environment"]["Cavity"]["coords"]
         for line in cav_coords_raw.split('\n'):
             sp = line.split()
             if len(sp) > 0:
                 center = list(map(float, sp[:-1]))
                 radius = float(sp[-1])
                 if len(center) != 3:
-                    print("Invalid coordinate: " + atom.upper() + " " + str(center))
+                    print("Invalid coordinate: " +  " " + str(center))
                     sys.exit(1)
             cav_coords_dict.append({
                 "center": center,
@@ -357,22 +357,21 @@ def write_molecule(user_dict):
                 "radius": radius
             })
 
-    if user_dict["Cavity"]["angstrom"]:
+    if user_dict["Environment"]["Cavity"]["angstrom"]:
         AA = 1.889725989
         for coord in cav_coords_dict:
             coord["center"] = [AA * r for r in coord["center"]]
             coord["radius"] *= AA
-        width = user_dict["Cavity"]["width"]*AA
+        cavity_width = user_dict["Environment"]["Cavity"]["cavity_width"]*AA
     else:
-        width = user_dict["Cavity"]["width"]
+        cavity_width = user_dict["Environment"]["Cavity"]["cavity_width"]
 
     mol_dict = {
         "multiplicity": user_dict["Molecule"]["multiplicity"],
         "charge": user_dict["Molecule"]["charge"],
         "coords": coords_dict,
         "cavity_coords": cav_coords_dict,
-        "cav_width": width,
-        "cav_AA": user_dict["Cavity"]["angstrom"]
+        "cavity_width": cavity_width
     }
     return mol_dict
 
@@ -425,14 +424,15 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
         "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
     }
 
-    if user_dict["Properties"]["reaction_energy"]:
+    # Reaction
+    if user_dict["Environment"]["run_SCRF"]:
         fock_dict["reaction_operator"] = {
             "poisson_prec": user_dict["world_prec"],
-            "reaction_history": user_dict["SolventEffect"]["kain"],
-            "run_variational": user_dict["SolventEffect"]["variational"],
-            "eps_in": user_dict["Cavity"]["epsilon_in"],
-            "eps_out": user_dict["Cavity"]["epsilon_out"],
-            "cav_lin": user_dict["Cavity"]["linear"]
+            "kain_history": user_dict["Environment"]["kain_history"],
+            "run_variational": user_dict["Environment"]["run_variational"],
+            "epsilon_in": user_dict["Environment"]["Permittivity"]["epsilon_in"],
+            "epsilon_out": user_dict["Environment"]["Permittivity"]["epsilon_out"],
+            "linear": user_dict["Environment"]["Permittivity"]["linear"]
     }
 
     # Coulomb
