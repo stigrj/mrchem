@@ -72,10 +72,6 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
     readCoordinateString(coord_str);
 }
 
-void Molecule::initNuclearProperties(int nNucs) {
-    for (auto k = 0; k < nNucs; k++) nmr.push_back(nullptr);
-}
-
 void Molecule::initPerturbedOrbitals(bool dynamic) {
     if (dynamic) {
         this->orbitals_x = std::make_shared<OrbitalVector>();
@@ -84,54 +80,6 @@ void Molecule::initPerturbedOrbitals(bool dynamic) {
         this->orbitals_x = std::make_shared<OrbitalVector>();
         this->orbitals_y = this->orbitals_x;
     }
-}
-
-/** @brief Return property SCFEnergy */
-SCFEnergy &Molecule::getSCFEnergy() {
-    if (energy == nullptr) energy = std::make_unique<SCFEnergy>();
-    return *energy;
-}
-
-/** @brief Return property DipoleMoment */
-DipoleMoment &Molecule::getDipoleMoment() {
-    if (dipole == nullptr) dipole = std::make_unique<DipoleMoment>();
-    return *dipole;
-}
-
-/** @brief Return property QuadrupoleMoment */
-QuadrupoleMoment &Molecule::getQuadrupoleMoment() {
-    if (quadrupole == nullptr) quadrupole = std::make_unique<QuadrupoleMoment>();
-    return *quadrupole;
-}
-
-/** @brief Return property Magnetizability */
-Magnetizability &Molecule::getMagnetizability() {
-    if (magnetizability == nullptr) magnetizability = std::make_unique<Magnetizability>();
-    return *magnetizability;
-}
-
-/** @brief Return property NMRShielding */
-NMRShielding &Molecule::getNMRShielding(int k) {
-    if (nmr.size() == 0) initNuclearProperties(getNNuclei());
-    if (nmr[k] == nullptr) nmr[k] = std::make_unique<NMRShielding>(k, nuclei[k]);
-    return *nmr[k];
-}
-
-/** @brief Return property Polarizability */
-Polarizability &Molecule::getPolarizability(double omega) {
-    auto idx = -1;
-    for (auto i = 0; i < polarizability.size(); i++) {
-        auto omega_i = polarizability[i]->getFrequency();
-        if (std::abs(omega_i - omega) < mrcpp::MachineZero) {
-            idx = i;
-            break;
-        }
-    }
-    if (idx < 0) {
-        polarizability.push_back(std::make_unique<Polarizability>(omega));
-        idx = polarizability.size() - 1;
-    }
-    return *polarizability[idx];
 }
 
 /** @brief Return number of electrons */
@@ -253,10 +201,16 @@ void Molecule::printGeometry() const {
         o_sym << std::setw(w2) << nuc.getElement().getSymbol();
         print_utils::coord(0, o_sym.str(), nuc.getCoord());
     }
+
     mrcpp::print::separator(0, '-');
     print_utils::coord(0, "Center of mass", calcCenterOfMass());
     print_utils::coord(0, "Gauge origin", getGaugeOrigin());
     mrcpp::print::separator(0, '=', 2);
+}
+
+void Molecule::printEnergies(const std::string &txt) const {
+    energy.print(txt);
+    epsilon.print(txt);
 }
 
 /** @brief Pretty output of molecular properties
@@ -264,20 +218,43 @@ void Molecule::printGeometry() const {
  * Only properties that have been initialized will be printed.
  */
 void Molecule::printProperties() const {
-    const auto &Phi = getOrbitals();
-    const auto &F_mat = getFockMatrix();
-    orbital::print_eigenvalues(Phi, F_mat);
+    // For each std::map entry (first = id string, second = property)
+    // this will print the property with its id appearing in the header
+    for (const auto &dip : dipole) dip.second.print(dip.first);
+    for (const auto &qua : quadrupole) qua.second.print(qua.first);
+    for (const auto &pol : polarizability) pol.second.print(pol.first);
+    for (const auto &mag : magnetizability) mag.second.print(mag.first);
+    for (const auto &nmr : nmr_shielding) nmr.second.print(nmr.first);
+}
 
-    if (this->energy != nullptr) this->energy->print();
-    if (this->dipole != nullptr) this->dipole->print();
-    if (this->quadrupole != nullptr) this->quadrupole->print();
-    for (auto &pol : this->polarizability) {
-        if (pol != nullptr) pol->print();
+nlohmann::json Molecule::json() const {
+    nlohmann::json json_out;
+    json_out["geometry"] = {};
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        nlohmann::json json_atom;
+        json_atom["symbol"] = nuc.getElement().getSymbol();
+        json_atom["xyz"] = nuc.getCoord();
+        json_out["geometry"].push_back(json_atom);
     }
-    if (this->magnetizability != nullptr) this->magnetizability->print();
-    for (auto &nmr_k : this->nmr) {
-        if (nmr_k != nullptr) nmr_k->print();
-    }
+    json_out["charge"] = getCharge();
+    json_out["multiplicity"] = getMultiplicity();
+    json_out["center_of_mass"] = calcCenterOfMass();
+
+    json_out["scf_energy"] = energy.json();
+    json_out["orbital_energies"] = epsilon.json();
+    if (not dipole.empty()) json_out["dipole_moment"] = {};
+    if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
+    if (not polarizability.empty()) json_out["polarizability"] = {};
+    if (not magnetizability.empty()) json_out["magnetizability"] = {};
+    if (not nmr_shielding.empty()) json_out["nmr_shielding"] = {};
+    for (const auto &dip : dipole) json_out["dipole_moment"][dip.first] = dip.second.json();
+    for (const auto &qua : quadrupole) json_out["quadrupole_moment"][qua.first] = qua.second.json();
+    for (const auto &pol : polarizability) json_out["polarizability"][pol.first] = pol.second.json();
+    for (const auto &mag : magnetizability) json_out["magnetizability"][mag.first] = mag.second.json();
+    for (const auto &nmr : nmr_shielding) json_out["nmr_shielding"][nmr.first] = nmr.second.json();
+
+    return json_out;
 }
 
 } // namespace mrchem

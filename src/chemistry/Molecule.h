@@ -38,12 +38,14 @@
 #include <string>
 #include <vector>
 
-#include "MRCPP/Printer"
+#include <MRCPP/Printer>
+#include <nlohmann/json.hpp>
 
 #include "Nucleus.h"
 #include "properties/DipoleMoment.h"
 #include "properties/Magnetizability.h"
 #include "properties/NMRShielding.h"
+#include "properties/OrbitalEnergies.h"
 #include "properties/Polarizability.h"
 #include "properties/QuadrupoleMoment.h"
 #include "properties/SCFEnergy.h"
@@ -60,6 +62,8 @@
 
 namespace mrchem {
 
+template <typename P> using PropertyMap = std::map<std::string, P>;
+
 class Molecule final {
 public:
     explicit Molecule(int c = 0, int m = 1);
@@ -75,7 +79,7 @@ public:
 
     void setCharge(int c) { this->charge = c; }
     void setMultiplicity(int m) { this->multiplicity = m; }
-    void setGaugeOrigin(mrcpp::Coord<3> &o) { this->origin = o; }
+    void setGaugeOrigin(const mrcpp::Coord<3> &o) { this->origin = o; }
 
     mrcpp::Coord<3> getGaugeOrigin() const { return this->origin; }
     mrcpp::Coord<3> calcCenterOfMass() const;
@@ -97,17 +101,26 @@ public:
     auto getOrbitalsX_p() const { return this->orbitals_x; }
     auto getOrbitalsY_p() const { return this->orbitals_y; }
 
+    nlohmann::json json() const;
     void printGeometry() const;
+    void printEnergies(const std::string &txt) const;
     void printProperties() const;
 
     void initPerturbedOrbitals(bool dynamic);
 
-    SCFEnergy &getSCFEnergy();
-    DipoleMoment &getDipoleMoment();
-    QuadrupoleMoment &getQuadrupoleMoment();
-    Magnetizability &getMagnetizability();
-    NMRShielding &getNMRShielding(int k);
-    Polarizability &getPolarizability(double omega);
+    SCFEnergy &getSCFEnergy() { return this->energy; }
+    OrbitalEnergies &getOrbitalEnergies() { return this->epsilon; }
+    DipoleMoment &getDipoleMoment(const std::string &id) { return this->dipole.at(id); }
+    QuadrupoleMoment &getQuadrupoleMoment(const std::string &id) { return this->quadrupole.at(id); }
+    Polarizability &getPolarizability(const std::string &id) { return this->polarizability.at(id); }
+    Magnetizability &getMagnetizability(const std::string &id) { return this->magnetizability.at(id); }
+    NMRShielding &getNMRShielding(const std::string &id) { return this->nmr_shielding.at(id); }
+
+    PropertyMap<DipoleMoment> &getDipoleMoments() { return this->dipole; }
+    PropertyMap<QuadrupoleMoment> &getQuadrupoleMoments() { return this->quadrupole; }
+    PropertyMap<Polarizability> &getPolarizabilities() { return this->polarizability; }
+    PropertyMap<Magnetizability> &getMagnetizabilities() { return this->magnetizability; }
+    PropertyMap<NMRShielding> &getNMRShieldings() { return this->nmr_shielding; }
 
 protected:
     int charge{0};
@@ -121,14 +134,14 @@ protected:
     std::shared_ptr<OrbitalVector> orbitals_y{nullptr};
 
     // Properties
-    std::unique_ptr<SCFEnergy> energy{nullptr};
-    std::unique_ptr<DipoleMoment> dipole{nullptr};
-    std::unique_ptr<QuadrupoleMoment> quadrupole{nullptr};
-    std::unique_ptr<Magnetizability> magnetizability{nullptr};
-    std::vector<std::unique_ptr<Polarizability>> polarizability{};
-    std::vector<std::unique_ptr<NMRShielding>> nmr{};
+    SCFEnergy energy{};
+    OrbitalEnergies epsilon{};
+    PropertyMap<DipoleMoment> dipole{};
+    PropertyMap<QuadrupoleMoment> quadrupole{};
+    PropertyMap<Polarizability> polarizability{};
+    PropertyMap<Magnetizability> magnetizability{};
+    PropertyMap<NMRShielding> nmr_shielding{};
 
-    void initNuclearProperties(int nNucs);
     void readCoordinateFile(const std::string &file);
     void readCoordinateString(const std::vector<std::string> &coord_str);
 };

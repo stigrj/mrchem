@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "mrchem.h"
 #include "utils/print_utils.h"
 
@@ -39,10 +41,10 @@ namespace mrchem {
 // clang-format off
 class SCFEnergy final {
 public:
-    SCFEnergy() = default;
-    SCFEnergy(double kin, double nn, double en,
-              double ee, double x, double xc,
-              double next, double eext) :
+    explicit SCFEnergy(double kin = 0.0, double nn = 0.0,
+                       double en = 0.0, double ee = 0.0,
+                       double x = 0.0, double xc = 0.0,
+                       double next = 0.0, double eext = 0.0) :
         E_kin(kin), E_nn(nn), E_en(en), E_ee(ee),
         E_x(x), E_xc(xc), E_next(next), E_eext(eext) {
             E_nuc = E_nn + E_next;
@@ -54,25 +56,30 @@ public:
     double getElectronicEnergy() const { return this->E_el; }
 
     double getKineticEnergy() const { return this->E_kin; }
+    double getNuclearNuclearEnergy() const { return this->E_nn; }
     double getElectronNuclearEnergy() const { return this->E_en; }
     double getElectronElectronEnergy() const { return this->E_ee; }
+    double getElectronExternalEnergy() const { return this->E_eext; }
+    double getNuclearExternalEnergy() const { return this->E_next; }
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
 
-    void print() const {
+    void print(const std::string &id) const {
         auto E_au = E_nuc + E_el;
         auto E_eV = E_au * PHYSCONST::eV;
         auto E_kJ = E_au * PHYSCONST::kJ;
         auto E_kcal = E_au * PHYSCONST::kcal;
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
-        mrcpp::print::header(0, "Molecular Energy");
+        mrcpp::print::header(0, "Molecular Energy (" + id + ")");
         print_utils::scalar(0, "Kinetic energy   ", E_kin,  "(au)", pprec, false);
         print_utils::scalar(0, "E-N energy       ", E_en,   "(au)", pprec, false);
         print_utils::scalar(0, "Coulomb energy   ", E_ee,   "(au)", pprec, false);
         print_utils::scalar(0, "Exchange energy  ", E_x,    "(au)", pprec, false);
         print_utils::scalar(0, "X-C energy       ", E_xc,   "(au)", pprec, false);
         print_utils::scalar(0, "Ext. field (el)  ", E_eext, "(au)", pprec, false);
+        mrcpp::print::separator(0, '-');
+        print_utils::scalar(0, "N-N energy       ", E_nn,   "(au)", pprec, false);
         print_utils::scalar(0, "Ext. field (nuc) ", E_next, "(au)", pprec, false);
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);
@@ -83,6 +90,22 @@ public:
         print_utils::scalar(0, "                 ", E_kJ,   "(kJ/mol)", pprec, true);
         print_utils::scalar(0, "                 ", E_eV,   "(eV)", pprec, true);
         mrcpp::print::separator(0, '=', 2);
+    }
+
+    nlohmann::json json() const {
+        return {
+            {"E_kin", E_kin},
+            {"E_nn", E_nn},
+            {"E_en", E_en},
+            {"E_ee", E_ee},
+            {"E_next", E_next},
+            {"E_eext", E_eext},
+            {"E_x", E_x},
+            {"E_xc", E_xc},
+            {"E_el", E_el},
+            {"E_nuc", E_nuc},
+            {"E_tot", E_nuc + E_el}
+        };
     }
 
 private:

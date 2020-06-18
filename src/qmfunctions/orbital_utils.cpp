@@ -23,9 +23,9 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-#include "MRCPP/utils/details.h"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+#include <MRCPP/utils/details.h>
 
 #include "parallel.h"
 #include "utils/RRMaximizer.h"
@@ -103,15 +103,15 @@ ComplexDouble orbital::node_norm_dot(Orbital bra, Orbital ket, bool exact) {
     return qmfunction::node_norm_dot(bra, ket, exact);
 }
 
-/** @brief Compare spin and occupancy of two orbitals
+/** @brief Compare spin and occupation of two orbitals
  *
  *  Returns true if orbital parameters are the same.
  *
  */
 bool orbital::compare(const Orbital &phi_a, const Orbital &phi_b) {
     bool comp = true;
-    if (compare_occ(phi_a, phi_b) < 0) {
-        MSG_WARN("Different occupancy");
+    if (compare_occupation(phi_a, phi_b) < 0) {
+        MSG_WARN("Different occupation");
         comp = false;
     }
     if (compare_spin(phi_a, phi_b) < 0) {
@@ -121,12 +121,12 @@ bool orbital::compare(const Orbital &phi_a, const Orbital &phi_b) {
     return comp;
 }
 
-/** @brief Compare occupancy of two orbitals
+/** @brief Compare occupation of two orbitals
  *
- *  Returns the common occupancy if they match, -1 if they differ.
+ *  Returns the common occupation if they match, -1 if they differ.
  *
  */
-int orbital::compare_occ(const Orbital &phi_a, const Orbital &phi_b) {
+int orbital::compare_occupation(const Orbital &phi_a, const Orbital &phi_b) {
     int comp = -1;
     if (phi_a.occ() == phi_b.occ()) comp = phi_a.occ();
     return comp;
@@ -143,7 +143,7 @@ int orbital::compare_spin(const Orbital &phi_a, const Orbital &phi_b) {
     return comp;
 }
 
-/** @brief Compare spin and occupancy of two orbital vector
+/** @brief Compare spin and occupation of two orbital vector
  *
  *  Returns true if orbital parameters are the same, orbital ordering
  *  NOT taken into account.
@@ -870,20 +870,20 @@ void orbital::set_spins(OrbitalVector &Phi, const IntVector &spins) {
     for (int i = 0; i < Phi.size(); i++) Phi[i].setSpin(spins(i));
 }
 
-/** @brief Returns a vector containing the orbital occupancies */
-IntVector orbital::get_occupancies(const OrbitalVector &Phi) {
+/** @brief Returns a vector containing the orbital occupations */
+IntVector orbital::get_occupations(const OrbitalVector &Phi) {
     int nOrbs = Phi.size();
     IntVector occ = IntVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) occ(i) = Phi[i].occ();
     return occ;
 }
 
-/** @brief Assigns spin to each orbital
+/** @brief Assigns occupation to each orbital
  *
  * Length of input vector must match the number of orbitals in the set.
  *
  */
-void orbital::set_occupancies(OrbitalVector &Phi, const IntVector &occ) {
+void orbital::set_occupations(OrbitalVector &Phi, const IntVector &occ) {
     if (Phi.size() != occ.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < Phi.size(); i++) Phi[i].setOcc(occ(i));
 }
@@ -995,60 +995,36 @@ void orbital::print(const OrbitalVector &Phi) {
     mrcpp::print::separator(0, '=', 2);
 }
 
-void orbital::print_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat) {
-    if (Phi.size() == 0) return;
+DoubleVector orbital::calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat) {
     if (F_mat.cols() != Phi.size()) MSG_ABORT("Invalid Fock matrix");
+    if (not orbital::orbital_vector_is_sane(Phi)) MSG_ABORT("Insane orbital vector");
 
-    // First compute eigenvalues without rotating the orbitals
     DoubleVector epsilon = DoubleVector::Zero(Phi.size());
     int np = orbital::size_paired(Phi);
     int na = orbital::size_alpha(Phi);
     int nb = orbital::size_beta(Phi);
     if (np > 0) {
+        Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(np);
         es.compute(F_mat.block(0, 0, np, np));
         epsilon.segment(0, np) = es.eigenvalues();
+        mrcpp::print::time(1, "Diagonalize Fock matrix", timer);
     }
     if (na > 0) {
+        Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(na);
         es.compute(F_mat.block(np, np, na, na));
         epsilon.segment(np, na) = es.eigenvalues();
+        mrcpp::print::time(1, "Diagonalize Fock matrix (alpha)", timer);
     }
     if (nb > 0) {
+        Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nb);
         es.compute(F_mat.block(np + na, np + na, nb, nb));
         epsilon.segment(np + na, nb) = es.eigenvalues();
+        mrcpp::print::time(1, "Diagonalize Fock matrix (beta)", timer);
     }
-
-    auto pprec = Printer::getPrecision();
-    auto w0 = Printer::getWidth() - 1;
-    auto w1 = 5;
-    auto w2 = 2 * w0 / 9;
-    auto w3 = w0 - 3 * w1 - 3 * w2;
-
-    std::stringstream o_head;
-    o_head << std::setw(w1) << "n";
-    o_head << std::setw(w1) << "Occ";
-    o_head << std::setw(w1) << "Spin";
-    o_head << std::string(w3 - 1, ' ') << ':';
-    o_head << std::setw(3 * w2) << "Epsilon";
-
-    mrcpp::print::header(0, "Orbital Energies");
-    println(0, o_head.str());
-    mrcpp::print::separator(0, '-');
-
-    auto sum_eps = 0.0;
-    for (int i = 0; i < epsilon.size(); i++) {
-        std::stringstream o_txt;
-        o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w1) << Phi[i].occ();
-        o_txt << std::setw(w1) << Phi[i].printSpin();
-        print_utils::scalar(0, o_txt.str(), epsilon(i), "(au)", 2 * pprec);
-        sum_eps += Phi[i].occ() * epsilon(i);
-    }
-    mrcpp::print::separator(0, '-');
-    print_utils::scalar(0, "Sum occupied", sum_eps, "(au)", 2 * pprec);
-    mrcpp::print::separator(0, '=', 2);
+    return epsilon;
 }
 
 /** @brief Prints statistics about the size of orbitals in an OrbitalVector
