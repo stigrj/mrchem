@@ -1,5 +1,20 @@
 # Change log
 
+## Version 1.0.0-alpha2 2020-06-29
+
+### Added
+
+- New JSON output
+
+### Changed
+
+- Improved mrchem launcher script
+- Improved documentation
+- Input keywords for v1 defined and fixed
+- Updated MRCPP to v1.2.0
+- Updated XCFun to v2.0.1
+- Updated nlohmann/json to v3.6.1
+
 ## Version 1.0.0-alpha1 2020-05-05
 
 ### Features

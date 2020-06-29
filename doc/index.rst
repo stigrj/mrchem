@@ -81,6 +81,5 @@ Upcoming features:
    :maxdepth: 2
 
    installation
-   mrchem_manual
-   input_reference
-   code_reference/classes-and-functions
+   users/manual
+   programmers/manual
