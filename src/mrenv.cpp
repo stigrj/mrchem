@@ -100,8 +100,7 @@ void mrenv::init_mra(const json &json_mra) {
     int max_scale = json_mra["max_scale"];
     auto corner = json_mra["corner"];
     auto boxes = json_mra["boxes"];
-    auto sfac = json_mra["scaling_factor"];
-    mrcpp::BoundingBox<3> world(min_scale, corner, boxes, sfac);
+    mrcpp::BoundingBox<3> world(min_scale, corner, boxes);
 
     // Initialize scaling basis
     auto order = json_mra["basis_order"];
@@ -233,9 +232,10 @@ void mrenv::dump_json(const json &json_inp, const json &json_out) {
     json_tot["input"] = json_inp;
     json_tot["output"] = json_out;
 
+    const auto file_name = json_inp["printer"]["file_name"].get<std::string>();
     if (mpi::grand_master()) {
         std::ofstream ofs;
-        ofs.open("mrchem.json", std::ios::out);
+        ofs.open(file_name + ".json", std::ios::out);
         ofs << json_tot.dump(2) << std::endl;
         ofs.close();
     }

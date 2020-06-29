@@ -121,11 +121,9 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
 
     auto charge = json_mol["charge"];
     auto multiplicity = json_mol["multiplicity"];
-    auto gauge_origin = json_mol["gauge_origin"];
 
     mol.setCharge(charge);
     mol.setMultiplicity(multiplicity);
-    mol.setGaugeOrigin(gauge_origin);
 
     auto &nuclei = mol.getNuclei();
     for (const auto &coord : json_mol["coords"]) {
@@ -262,7 +260,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol);
-        if (json_scf.contains("cube_plot")) scf::plot_quantities(json_scf["cube_plot"], mol);
+        if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
 
     return json_out;
@@ -485,17 +483,24 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
 void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
     Timer t_tot, t_lap;
 
-    auto path = json_plot["plotter"]["path_plots"].get<std::string>();
+    auto path = json_plot["plotter"]["path"].get<std::string>();
+    auto type = json_plot["plotter"]["type"].get<std::string>();
     auto npts = json_plot["plotter"]["points"];
     auto O = json_plot["plotter"]["O"];
     auto A = json_plot["plotter"]["A"];
     auto B = json_plot["plotter"]["B"];
     auto C = json_plot["plotter"]["C"];
     auto dens_plot = json_plot["density"];
-    auto orb_idx = json_plot["orbital"];
+    auto orb_idx = json_plot["orbitals"];
+
+    auto line = (type == "line") ? true : false;
+    auto surf = (type == "surf") ? true : false;
+    auto cube = (type == "cube") ? true : false;
 
     print_utils::headline(1, "Plotting Ground State Quantities");
-    mrcpp::print::header(1, "CubePlot");
+    if (line) mrcpp::print::header(1, "LinePlot");
+    if (surf) mrcpp::print::header(1, "SurfPlot");
+    if (cube) mrcpp::print::header(1, "CubePlot");
 
     auto &Phi = mol.getOrbitals();
     MolPlotter plt(mol, O);
@@ -507,7 +512,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         t_lap.start();
         std::string fname = path + "/rho_t";
         density::compute(-1.0, rho, Phi, DensityType::Total);
-        plt.cubePlot(npts, rho, fname);
+        if (line) plt.linePlot(npts, rho, fname);
+        if (surf) plt.surfPlot(npts, rho, fname);
+        if (cube) plt.cubePlot(npts, rho, fname);
         rho.free(NUMBER::Total);
         mrcpp::print::time(1, fname, t_lap);
 
@@ -515,21 +522,27 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             t_lap.start();
             fname = path + "/rho_s";
             density::compute(-1.0, rho, Phi, DensityType::Spin);
-            plt.cubePlot(npts, rho, fname);
+            if (line) plt.linePlot(npts, rho, fname);
+            if (surf) plt.surfPlot(npts, rho, fname);
+            if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
             rho.free(NUMBER::Total);
 
             t_lap.start();
             fname = path + "/rho_a";
             density::compute(-1.0, rho, Phi, DensityType::Alpha);
-            plt.cubePlot(npts, rho, fname);
+            if (line) plt.linePlot(npts, rho, fname);
+            if (surf) plt.surfPlot(npts, rho, fname);
+            if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
             rho.free(NUMBER::Total);
 
             t_lap.start();
             fname = path + "/rho_b";
             density::compute(-1.0, rho, Phi, DensityType::Beta);
-            plt.cubePlot(npts, rho, fname);
+            if (line) plt.linePlot(npts, rho, fname);
+            if (surf) plt.surfPlot(npts, rho, fname);
+            if (cube) plt.cubePlot(npts, rho, fname);
             rho.free(NUMBER::Total);
             mrcpp::print::time(1, fname, t_lap);
         }
@@ -544,7 +557,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
                 t_lap.start();
                 std::stringstream name;
                 name << path << "/phi_" << i;
-                plt.cubePlot(npts, Phi[i], name.str());
+                if (line) plt.linePlot(npts, Phi[i], name.str());
+                if (surf) plt.surfPlot(npts, Phi[i], name.str());
+                if (cube) plt.cubePlot(npts, Phi[i], name.str());
                 mrcpp::print::time(1, name.str(), t_lap);
             }
         } else {
@@ -554,7 +569,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
                 t_lap.start();
                 std::stringstream name;
                 name << path << "/phi_" << i;
-                plt.cubePlot(npts, Phi[i], name.str());
+                if (line) plt.linePlot(npts, Phi[i], name.str());
+                if (surf) plt.surfPlot(npts, Phi[i], name.str());
+                if (cube) plt.cubePlot(npts, Phi[i], name.str());
                 mrcpp::print::time(1, name.str(), t_lap);
             }
         }
@@ -894,22 +911,16 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     double exx = 1.0;
     if (json_fock.contains("xc_operator")) {
-        auto grid_prec = json_fock["xc_operator"]["grid_prec"];
         auto shared_memory = json_fock["xc_operator"]["shared_memory"];
         auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
         auto xc_spin = json_xcfunc["spin"];
-        auto xc_gamma = json_xcfunc["gamma"];
-        auto xc_log_grad = json_xcfunc["log_grad"];
         auto xc_cutoff = json_xcfunc["cutoff"];
-        auto xc_diff = json_xcfunc["derivative"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
         xc_factory.setOrder(xc_order);
-        xc_factory.setUseGamma(xc_gamma);
-        xc_factory.setLogGradient(xc_log_grad);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {
             auto name = f["name"];

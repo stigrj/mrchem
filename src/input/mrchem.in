@@ -34,6 +34,7 @@ import subprocess
 import sys
 import tempfile
 from io import StringIO
+from shutil import copyfile
 from pathlib import Path
 
 # FIXME This will pick up modules when installed
@@ -43,28 +44,32 @@ sys.path.append('@PROJECT_SOURCE_DIR@/src/chemistry')
 from parselglossy.api import parse, validate
 from periodictable import PeriodicTable as PT
 
+origin = [0.0, 0.0, 0.0] # global gauge origin in bohrs
 
 def main():
     this_path = Path(__file__).parent
 
     # Parse command line
-    executable, dryrun, inp_json, inp_file_cmd = parse_cmdline()
+    launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
-    in_path = Path(inp_file_cmd)
-    tmpl_path = Path('@PROJECT_SOURCE_DIR@/src/input/template.yml')
+    tmpl_file = Path('@PROJECT_SOURCE_DIR@/src/input/template.yml')
+
+    inp_file = Path(inp_name + '.inp')
+    out_file = Path(inp_name + '.out')
+    json_file = Path(inp_name + '.json')
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
     if inp_json:
-        user_dict = validate(infile=in_path, template=tmpl_path)
+        user_dict = validate(infile=inp_file, template=tmpl_file)
     else:
-        user_dict = parse(infile=in_path, template=tmpl_path, grammar='getkw')
+        user_dict = parse(infile=inp_file, template=tmpl_file, grammar='getkw')
 
     # create necessary directories
     for d in [user_dict["SCF"]["path_checkpoint"],
               user_dict["SCF"]["path_orbitals"],
               user_dict["Response"]["path_checkpoint"],
               user_dict["Response"]["path_orbitals"],
-              user_dict["Plotter"]["path_plots"]]:
+              user_dict["Plotter"]["path"]]:
         if not os.path.exists(d):
             os.mkdir(d)
 
@@ -73,24 +78,43 @@ def main():
     # we can translate user input into program input
     program_dict = {}
     program_dict["input"] = translate_input(user_dict)
+    program_dict["input"]["printer"]["file_name"] = inp_name
 
-    inp_name, ext_ext = os.path.splitext(inp_file_cmd)
-    xfile = inp_name + '.json'
-    with open(xfile, 'w') as fd:
+    with open(json_file, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
 
-    if not dryrun:
-        cmd = executable + ' ' + xfile
-        if program_dict["input"]["printer"]["print_input"]:
-            subprocess.call('cat ' + inp_file_cmd, shell=True)
+    print_mpi =  program_dict["input"]["printer"]["print_mpi"]
+    print_level =  program_dict["input"]["printer"]["print_level"]
+    if stdout or print_mpi or print_level < 0:
+        cmd = launcher + ' ' + executable + ' ' + str(json_file)
+    else:
+        cmd = launcher + ' ' + executable + ' ' + str(json_file) + ' > ' + str(out_file)
+
+    if dryrun:
+        print("launch command: " + cmd)
+    else:
         subprocess.call(cmd, shell=True)
 
-
 def parse_cmdline():
-    usage = "usage: %prog [options] [config] inp_file"
+    usage = "usage: %prog [options] [config] inp_name"
     version = "@MRCHEM_VERSION@"
     cmdln = optparse.OptionParser(
         usage=usage, version="%prog {0}".format(version))
+    cmdln.add_option(
+        '--launcher',
+        action='store',
+        dest='launcher',
+        type='string',
+        default='',
+        help='Set program launcher string')
+    cmdln.add_option(
+        '-x',
+        '--executable',
+        action='store',
+        dest='executable',
+        type='string',
+        default='@MRCHEM_EXECUTABLE@',
+        help='Set executable name')
     cmdln.add_option(
         '-D',
         '--dryrun',
@@ -99,13 +123,11 @@ def parse_cmdline():
         default=False,
         help='Only process input')
     cmdln.add_option(
-        '-x',
-        '--executable',
-        action='store',
-        dest='executable',
-        type='string',
-        default='@MRCHEM_EXECUTABLE@',
-        help='set executable name')
+        '--stdout',
+        action='store_true',
+        dest='stdout',
+        default=False,
+        help='Print to stdout')
     cmdln.add_option(
         '-j',
         '--json',
@@ -117,20 +139,22 @@ def parse_cmdline():
 
     opts, args = cmdln.parse_args()
 
+    launcher = opts.launcher
     executable = opts.executable
     dryrun = opts.dryrun
+    stdout = opts.stdout
     inp_json = opts.inp_json
 
     if (len(args) == 0):
         cmdln.error('No input file passed!')
         sys.exit(1)
     elif (len(args) == 1):
-        inp_file = args[0]
+        inp_name = args[0]
     else:
         cmdln.error('Incorrect number of files')
         sys.exit(1)
 
-    return executable, dryrun, inp_json, inp_file
+    return launcher, executable, dryrun, stdout, inp_json, inp_name
 
 
 def parse_wf_method(user_dict):
@@ -217,12 +241,16 @@ def write_mra(user_dict, mol_dict):
         # Compute auto box
         max_coord = 0.0 # single (coord + Z) with largest abs value
         for coord in mol_dict["coords"]:
-            Z_i = max(6.0, float(PT[coord["atom"]].Z))
-            max_coord = max(max_coord, abs(max(coord["xyz"], key=abs)) + Z_i)
+            Z_i = max(5.0, float(PT[coord["atom"]].Z))
+            max_coord = max(max_coord, abs(max(coord["xyz"], key=abs)) + 2.0*Z_i)
 
         min_scale = 0
         while 2.0**(-min_scale) < max_coord:
             min_scale = min_scale - 1
+    else:
+        # Approximately scale world angstrom -> bohr
+        if user_dict["world_unit"] == "angstrom":
+            min_scale -= 1
 
     max_scale = 20
     if (max_scale - min_scale) > 30:
@@ -234,8 +262,7 @@ def write_mra(user_dict, mol_dict):
         "boxes": [2, 2, 2],
         "corner": [-1, -1, -1],
         "min_scale": min_scale,
-        "max_scale": max_scale,
-        "scaling_factor": [1.0, 1.0, 1.0]
+        "max_scale": max_scale
     }
     return mra_dict
 
@@ -265,9 +292,10 @@ def write_molecule(user_dict):
             })
 
     # Convert angstrom -> bohr
-    origin = user_dict["Molecule"]["gauge_origin"]
-    if user_dict["Molecule"]["angstrom"]:
-        AA = 1.889725989
+    global origin
+    origin = user_dict["world_origin"]
+    if user_dict["world_unit"] == "angstrom":
+        AA = 1.889725989 # Angstrom unit conversion
         origin = [AA * r for r in origin]
         for coord in coords_dict:
             coord["xyz"] = [AA * r for r in coord["xyz"]]
@@ -304,9 +332,8 @@ def write_molecule(user_dict):
             coord["xyz"] = [r - o for r,o in zip(coord["xyz"], CoM)]
 
     mol_dict = {
-        "charge": user_dict["Molecule"]["charge"],
         "multiplicity": user_dict["Molecule"]["multiplicity"],
-        "gauge_origin": origin,
+        "charge": user_dict["Molecule"]["charge"],
         "coords": coords_dict
     }
     return mol_dict
@@ -334,13 +361,13 @@ def write_scf_calculation(user_dict, mol_dict):
     if user_dict["SCF"]["run"]:
         scf_dict["scf_solver"] = write_scf_solver(user_dict, method_name)
 
-    prop_dict = write_scf_properties(user_dict, mol_dict)
+    prop_dict = write_scf_properties(user_dict)
     if len(prop_dict) > 0:
         scf_dict["properties"] = prop_dict
 
     plot_dict = write_scf_plot(user_dict)
     if len(plot_dict) > 0:
-        scf_dict["cube_plot"] = plot_dict
+        scf_dict["plots"] = plot_dict
 
     return scf_dict
 
@@ -355,8 +382,8 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
 
     # Nuclear
     fock_dict["nuclear_operator"] = {
-        "proj_prec": user_dict["Precisions"]["nuc_prec"],
-        "smooth_prec": user_dict["Precisions"]["nuc_prec"],
+        "proj_prec": user_dict["Precisions"]["nuclear_prec"],
+        "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
         "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
     }
 
@@ -389,14 +416,10 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
                     "coef": coef[0]
                 })
         fock_dict["xc_operator"] = {
-            "grid_prec": user_dict["Precisions"]["dft_prec"],
             "shared_memory": user_dict["MPI"]["share_xc_potential"],
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
-                "gamma": user_dict["DFT"]["use_gamma"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                "log_grad": user_dict["DFT"]["log_grad"],
-                "derivative": user_dict["Derivatives"]["dft"],
                 "functionals": func_dict
             }
         }
@@ -405,7 +428,7 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
     if len(user_dict["ExternalFields"]["electric_field"]) > 0:
         fock_dict["external_operator"] = {
             "electric_field": user_dict["ExternalFields"]["electric_field"],
-            "r_O": mol_dict["gauge_origin"]
+            "r_O": origin
         }
 
     return fock_dict
@@ -458,12 +481,6 @@ def write_scf_solver(user_dict, method_name):
     if start_prec < 0.0:
         start_prec = final_prec
 
-    energy_thrs = user_dict["SCF"]["energy_thrs"]
-    orbital_thrs = user_dict["SCF"]["orbital_thrs"]
-    if orbital_thrs < 0.0 and energy_thrs < 0.0:
-        energy_thrs = user_dict["world_prec"] / 10
-        orbital_thrs = math.sqrt(energy_thrs)
-
     scf_dict = user_dict["SCF"]
     solver_dict = {
         "method": method_name,
@@ -475,38 +492,44 @@ def write_scf_solver(user_dict, method_name):
         "checkpoint": scf_dict["write_checkpoint"],
         "start_prec": start_prec,
         "final_prec": final_prec,
-        "energy_thrs": energy_thrs,
-        "orbital_thrs": orbital_thrs,
+        "energy_thrs": scf_dict["energy_thrs"],
+        "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
     }
     return solver_dict
 
 
-def write_scf_properties(user_dict, mol_dict):
+def write_scf_properties(user_dict):
     prop_dict = {}
     if user_dict["Properties"]["dipole_moment"]:
         prop_dict["dipole_moment"] = {}
         prop_dict["dipole_moment"]['dip-1'] = {
-            "precision": user_dict["world_prec"],
             "operator": "h_e_dip",
-            "r_O": mol_dict["gauge_origin"]
+            "precision": user_dict["world_prec"],
+            "r_O": origin
         }
     if user_dict["Properties"]["quadrupole_moment"]:
         prop_dict["quadrupole_moment"] = {}
         prop_dict["quadrupole_moment"]['quad-1'] = {
-            "precision": user_dict["world_prec"],
             "operator": "h_e_quad",
-            "r_O": mol_dict["gauge_origin"]
+            "precision": user_dict["world_prec"],
+            "r_O": origin
         }
     return prop_dict
 
 
 def write_scf_plot(user_dict):
     plot_dict = {}
-    if user_dict["SCF"]["plot_density"] or len(user_dict["SCF"]["plot_orbital"]):
-        plot_dict["density"] = user_dict["SCF"]["plot_density"]
-        plot_dict["orbital"] = user_dict["SCF"]["plot_orbital"]
+    if user_dict["Properties"]["plot_density"] or len(user_dict["Properties"]["plot_orbitals"]):
+        plot_dict["orbitals"] = user_dict["Properties"]["plot_orbitals"]
+        plot_dict["density"] = user_dict["Properties"]["plot_density"]
         plot_dict["plotter"] = user_dict["Plotter"]
+        if user_dict["world_unit"] == "angstrom":
+            AA = 1.889725989 # Angstrom unit conversion
+            plot_dict["plotter"]["O"] = [AA * r for r in plot_dict["plotter"]["O"]]
+            plot_dict["plotter"]["A"] = [AA * r for r in plot_dict["plotter"]["A"]]
+            plot_dict["plotter"]["B"] = [AA * r for r in plot_dict["plotter"]["B"]]
+            plot_dict["plotter"]["C"] = [AA * r for r in plot_dict["plotter"]["C"]]
     return plot_dict
 
 
@@ -528,7 +551,7 @@ def write_rsp_calculations(user_dict, mol_dict):
             rsp_calc = write_rsp_calc(omega, user_dict, mol_dict)
             rsp_calc["perturbation"] = {
                 "operator": "h_e_dip",
-                "r_O": mol_dict["gauge_origin"]
+                "r_O": origin
             }
             rsp_calc["properties"] = {}
             rsp_calc["properties"]["polarizability"] = {}
@@ -536,7 +559,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                 "frequency": omega,
                 "precision": user_dict["world_prec"],
                 "operator": "h_e_dip",
-                "r_O": mol_dict["gauge_origin"]
+                "r_O": origin
             }
             rsp_key = "ext_el-" + freq_key
             rsp_dict[rsp_key] = rsp_calc
@@ -549,7 +572,7 @@ def write_rsp_calculations(user_dict, mol_dict):
         rsp_calc["perturbation"] = {
             "operator": "h_b_dip",
             "derivative": user_dict["Derivatives"]["h_b_dip"],
-            "r_O": mol_dict["gauge_origin"]
+            "r_O": origin
         }
         rsp_calc["properties"] = {}
         if run_mag:
@@ -560,7 +583,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                 "dia_operator": "h_bb_dia",
                 "para_operator": "h_b_dip",
                 "derivative": user_dict["Derivatives"]["h_b_dip"],
-                "r_O": mol_dict["gauge_origin"]
+                "r_O": origin
             }
         if (run_nmr and not nuc_spec):
             rsp_calc["properties"]["nmr_shielding"] = {}
@@ -577,7 +600,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                         "para_operator": "h_m_pso",
                         "smoothing": user_dict["world_prec"],
                         "derivative": user_dict["Derivatives"]["h_m_pso"],
-                        "r_O": mol_dict["gauge_origin"],
+                        "r_O": origin,
                         "r_K": nuclei[k]["xyz"]
                     }
         rsp_key = "ext_mag-" + freq_key
@@ -606,7 +629,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                     "para_operator": "h_b_dip",
                     "smoothing": user_dict["world_prec"],
                     "derivative": user_dict["Derivatives"]["h_b_dip"],
-                    "r_O": mol_dict["gauge_origin"],
+                    "r_O": origin,
                     "r_K": nuclei[k]["xyz"]
                 }
                 rsp_key = "nuc_mag-" + atom_key
@@ -694,14 +717,10 @@ def write_rsp_fock(user_dict, mol_dict, wf_method, dft_funcs):
                     "coef": coef[0]
                 })
         fock_dict["xc_operator"] = {
-            "grid_prec": user_dict["Precisions"]["dft_prec"],
             "shared_memory": user_dict["MPI"]["share_xc_potential"],
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
-                "gamma": user_dict["DFT"]["use_gamma"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                "log_grad": user_dict["DFT"]["log_grad"],
-                "derivative": user_dict["Derivatives"]["dft"],
                 "functionals": func_dict
             }
         }
@@ -718,12 +737,6 @@ def write_rsp_solver(user_dict, method_name, d):
     if start_prec < 0.0:
         start_prec = final_prec
 
-    orbital_thrs = user_dict["Response"]["orbital_thrs"]
-    property_thrs = user_dict["Response"]["property_thrs"]
-    if orbital_thrs < 0.0 and property_thrs < 0.0:
-        property_thrs = user_dict["world_prec"] / 10
-        orbital_thrs = user_dict["world_prec"] * 10
-
     rsp_dict = user_dict["Response"]
     solver_dict = {
         "method": method_name,
@@ -734,10 +747,10 @@ def write_rsp_solver(user_dict, method_name, d):
         "checkpoint": rsp_dict["write_checkpoint"],
         "start_prec": start_prec,
         "final_prec": final_prec,
-        "orbital_thrs": orbital_thrs,
-        "property_thrs": property_thrs,
+        "orbital_thrs": user_dict["Response"]["orbital_thrs"],
+        "property_thrs": user_dict["Response"]["property_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
-        "orth_prec": user_dict["Precisions"]["orth_prec"]
+        "orth_prec": 1.0e-14
     }
     return solver_dict
 

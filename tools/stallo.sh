@@ -1,21 +1,28 @@
-#!/bin/sh
+#!/bin/bash -l
 
-topdir=$HOME/src/mrchem
+if [ `hostname | grep -i stallo | wc -l` == 0 ]; then
+   echo "This script MUST be run on the LOGIN node as it requires internet access"
+   exit 1
+fi
 
-cd $topdir
-rsync -avc \
---exclude '.*' \
---exclude 'share/*' \
---exclude 'external/*' \
---exclude 'Documentation/*' \
---exclude 'Debug/*' \
---exclude 'Release/*' \
-. stallo:src/mrchem
+mrchem_dir="$(pwd)"
+source ${mrchem_dir}/tools/stallo.env
 
-#cd $topdir
-#if [ $# = 1 ]; then
-#    ./config/build_remote.sh stallo src init
-#else
-#    ./config/build_remote.sh stallo src
-#fi
+cd ${mrchem_dir}
+version=`cat VERSION`
+build_dir=${mrchem_dir}/build-${version}
+install_dir=${mrchem_dir}/install-${version}
+
+if [ -d "${build_dir}" ]; then
+    echo "Build directory already exsits, please remove"
+    exit 1
+else
+    ./setup --prefix=${install_dir} --omp --mpi --cxx=mpiicpc ${build_dir} && \
+    cd ${build_dir} && \
+    make && \
+    OMP_NUM_THREADS=1 ctest -L unit --output-on-failure && \
+    make install
+fi
+
+exit 0
 
