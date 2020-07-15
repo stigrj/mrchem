@@ -357,7 +357,7 @@ def write_molecule(user_dict):
                 "radius": radius
             })
 
-    if user_dict["Environment"]["Cavity"]["angstrom"]:
+    if user_dict["world_unit"] == "angstrom" :
         AA = 1.889725989
         for coord in cav_coords_dict:
             coord["center"] = [AA * r for r in coord["center"]]
