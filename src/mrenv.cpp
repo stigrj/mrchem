@@ -144,11 +144,17 @@ void mrenv::print_header() {
     o_author << "Git commit author  " << git_commit_author();
     o_date << "Git commit date    " << git_commit_date();
 
-    o_ver << std::string(txt_width - o_ver.str().size(), ' ');
-    o_branch << std::string(txt_width - o_branch.str().size(), ' ');
-    o_hash << std::string(txt_width - o_hash.str().size(), ' ');
-    o_author << std::string(txt_width - o_author.str().size(), ' ');
-    o_date << std::string(txt_width - o_date.str().size(), ' ');
+    int ver_len = o_ver.str().size();
+    int branch_len = o_branch.str().size();
+    int hash_len = o_hash.str().size();
+    int auth_len = o_author.str().size();
+    int date_len = o_date.str().size();
+
+    o_ver << std::string(std::max(0, txt_width - ver_len), ' ');
+    o_branch << std::string(std::max(0, txt_width - branch_len), ' ');
+    o_hash << std::string(std::max(0, txt_width - hash_len), ' ');
+    o_author << std::string(std::max(0, txt_width - auth_len), ' ');
+    o_date << std::string(std::max(0, txt_width - date_len), ' ');
 
     std::stringstream o_bank;
     if (mpi::bank_size > 0) {
