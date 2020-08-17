@@ -47,6 +47,13 @@ set_target_properties(mrchem
     PUBLIC_HEADER "${_public_headers}"
   )
 
+if(APPLE)
+  set_target_properties(mrchem
+    PROPERTIES
+      LINK_FLAGS "-undefined dynamic_lookup"
+    )
+endif()
+
 install(
   TARGETS
     mrchem
