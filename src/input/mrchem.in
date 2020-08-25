@@ -34,14 +34,15 @@ import subprocess
 import sys
 import tempfile
 from io import StringIO
-from shutil import copyfile
 from pathlib import Path
+from shutil import copyfile
 
 # FIXME This will pick up modules when installed
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
+sys.path.append('@PROJECT_SOURCE_DIR@/src/input')
 sys.path.append('@PROJECT_SOURCE_DIR@/src/chemistry')
 
-from parselglossy.api import parse, validate
+from input_parser.api import parse, validate
 from periodictable import PeriodicTable as PT
 
 origin = [0.0, 0.0, 0.0] # global gauge origin in bohrs
@@ -52,17 +53,17 @@ def main():
     # Parse command line
     launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
-    tmpl_file = Path('@PROJECT_SOURCE_DIR@/src/input/template.yml')
-
+    if inp_name.endswith(".inp"):
+        inp_name = inp_name[:-4]
     inp_file = Path(inp_name + '.inp')
     out_file = Path(inp_name + '.out')
     json_file = Path(inp_name + '.json')
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
     if inp_json:
-        user_dict = validate(infile=inp_file, template=tmpl_file)
+        user_dict = validate(infile=inp_file)
     else:
-        user_dict = parse(infile=inp_file, template=tmpl_file, grammar='getkw')
+        user_dict = parse(infile=inp_file)
 
     # create necessary directories
     for d in [user_dict["SCF"]["path_checkpoint"],

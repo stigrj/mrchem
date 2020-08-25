@@ -15,10 +15,20 @@ file(
     WORLD_READ WORLD_EXECUTE
   )
 
-# install the parser script alongside the mrchem.x executable
+# install the frontend script alongside the mrchem.x executable
 install(
   PROGRAMS
     ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/mrchem
   DESTINATION
     ${CMAKE_INSTALL_BINDIR}
+  )
+
+# install the (generated) input_parser folder
+install(
+  DIRECTORY
+    ${CMAKE_CURRENT_LIST_DIR}/input_parser
+  DESTINATION
+    ${PYTHON_SITE_INSTALL_DIR}
+  FILES_MATCHING
+    PATTERN "*.py"
   )
