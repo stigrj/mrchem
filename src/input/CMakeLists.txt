@@ -31,4 +31,5 @@ install(
     ${PYTHON_SITE_INSTALL_DIR}
   FILES_MATCHING
     PATTERN "*.py"
+  PATTERN "__pycache__" EXCLUDE
   )
