@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-parselglossy = "*"
 runtest = "*"
 
 [dev-packages]
@@ -14,8 +13,6 @@ Sphinx = ">=2.0"
 sphinx_rtd_theme = "*"
 sphinxcontrib-bibtex = "*"
 breathe = "*"
-pyyaml = ">=4.2b1"
+pyyaml = "*"
 yapf = "*"
-
-[pipenv]
-allow_prereleases = true
+parselglossy = ">=0.5"
