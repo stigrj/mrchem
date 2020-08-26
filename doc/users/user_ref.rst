@@ -291,10 +291,12 @@ User input reference
     **Type** ``str``
   
     **Predicates**
-      - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock', 'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86', 'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
-  
-   :restricted: Use spin restricted wavefunction. 
-  
+      - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock',``
+        ``'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86',``
+        ``'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
+
+   :restricted: Use spin restricted wavefunction.
+
     **Type** ``bool``
   
     **Default** ``True``
@@ -549,10 +551,12 @@ User input reference
     **Default** ``sad_dz``
   
     **Predicates**
-      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
-  
-   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint". 
-  
+      - ``value.lower() in ['mw', 'chk', 'gto',``
+        ``'core_sz', 'core_dz', 'core_tz', 'core_qz',``
+        ``'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
+
+   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint".
+
     **Type** ``bool``
   
     **Default** ``False``
