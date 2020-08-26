@@ -14,7 +14,7 @@ macro(add_integration_test)
     COMMAND
       ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test
       --binary=$<TARGET_FILE_DIR:mrchem.x>
-      --work-dir=${CMAKE_CURRENT_BINARY_DIR}
+      --work-dir=${CMAKE_CURRENT_LIST_DIR}
       --launch-agent ${_integration_test_LAUNCH_AGENT}
       --verbose
       # The input file
