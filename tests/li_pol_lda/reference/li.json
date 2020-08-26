@@ -1,0 +1,402 @@
+{
+  "input": {
+    "molecule": {
+      "charge": 0,
+      "coords": [
+        {
+          "atom": "li",
+          "xyz": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "multiplicity": 2
+    },
+    "mpi": {
+      "bank_size": -1,
+      "numerically_exact": true,
+      "shared_memory_size": 10000
+    },
+    "mra": {
+      "basis_order": 5,
+      "basis_type": "interpolating",
+      "boxes": [
+        2,
+        2,
+        2
+      ],
+      "corner": [
+        -1,
+        -1,
+        -1
+      ],
+      "max_scale": 20,
+      "min_scale": -4
+    },
+    "printer": {
+      "file_name": "li",
+      "print_level": 0,
+      "print_mpi": false,
+      "print_prec": 6,
+      "print_width": 75
+    },
+    "rsp_calculations": {
+      "ext_el-0.000000": {
+        "components": [
+          {
+            "initial_guess": {
+              "file_chk_x": "checkpoint/X_rsp_0",
+              "file_chk_y": "checkpoint/Y_rsp_0",
+              "file_x_a": "initial_guess/X_a_rsp_0",
+              "file_x_b": "initial_guess/X_b_rsp_0",
+              "file_x_p": "initial_guess/X_p_rsp_0",
+              "file_y_a": "initial_guess/Y_a_rsp_0",
+              "file_y_b": "initial_guess/Y_b_rsp_0",
+              "file_y_p": "initial_guess/Y_p_rsp_0",
+              "precision": 0.001,
+              "type": "none"
+            }
+          },
+          {
+            "initial_guess": {
+              "file_chk_x": "checkpoint/X_rsp_1",
+              "file_chk_y": "checkpoint/Y_rsp_1",
+              "file_x_a": "initial_guess/X_a_rsp_1",
+              "file_x_b": "initial_guess/X_b_rsp_1",
+              "file_x_p": "initial_guess/X_p_rsp_1",
+              "file_y_a": "initial_guess/Y_a_rsp_1",
+              "file_y_b": "initial_guess/Y_b_rsp_1",
+              "file_y_p": "initial_guess/Y_p_rsp_1",
+              "precision": 0.001,
+              "type": "none"
+            }
+          },
+          {
+            "initial_guess": {
+              "file_chk_x": "checkpoint/X_rsp_2",
+              "file_chk_y": "checkpoint/Y_rsp_2",
+              "file_x_a": "initial_guess/X_a_rsp_2",
+              "file_x_b": "initial_guess/X_b_rsp_2",
+              "file_x_p": "initial_guess/X_p_rsp_2",
+              "file_y_a": "initial_guess/Y_a_rsp_2",
+              "file_y_b": "initial_guess/Y_b_rsp_2",
+              "file_y_p": "initial_guess/Y_p_rsp_2",
+              "precision": 0.001,
+              "type": "none"
+            },
+            "rsp_solver": {
+              "checkpoint": false,
+              "file_chk_x": "checkpoint/X_rsp_2",
+              "file_chk_y": "checkpoint/Y_rsp_2",
+              "final_prec": 0.001,
+              "helmholtz_prec": 0.001,
+              "kain": 3,
+              "max_iter": 10,
+              "method": "DFT (SVWN5)",
+              "orbital_thrs": 0.01,
+              "orth_prec": 1e-14,
+              "property_thrs": -1.0,
+              "start_prec": 0.001
+            }
+          }
+        ],
+        "dynamic": false,
+        "fock_operator": {
+          "coulomb_operator": {
+            "poisson_prec": 0.001,
+            "shared_memory": false
+          },
+          "exchange_operator": {
+            "poisson_prec": 0.001,
+            "screen": false
+          },
+          "xc_operator": {
+            "shared_memory": false,
+            "xc_functional": {
+              "cutoff": 0.0,
+              "functionals": [
+                {
+                  "coef": 1.0,
+                  "name": "svwn5"
+                }
+              ],
+              "spin": true
+            }
+          }
+        },
+        "frequency": 0.0,
+        "perturbation": {
+          "operator": "h_e_dip",
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "properties": {
+          "polarizability": {
+            "pol-0.000000": {
+              "frequency": 0.0,
+              "operator": "h_e_dip",
+              "precision": 0.001,
+              "r_O": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          }
+        },
+        "unperturbed": {
+          "fock_operator": {
+            "coulomb_operator": {
+              "poisson_prec": 0.001,
+              "shared_memory": false
+            },
+            "exchange_operator": {
+              "poisson_prec": 0.001,
+              "screen": false
+            },
+            "kinetic_operator": {
+              "derivative": "abgv_55"
+            },
+            "nuclear_operator": {
+              "proj_prec": 0.001,
+              "shared_memory": false,
+              "smooth_prec": 0.001
+            },
+            "xc_operator": {
+              "shared_memory": false,
+              "xc_functional": {
+                "cutoff": 0.0,
+                "functionals": [
+                  {
+                    "coef": 1.0,
+                    "name": "svwn5"
+                  }
+                ],
+                "spin": true
+              }
+            }
+          },
+          "localize": false,
+          "precision": 0.001
+        }
+      }
+    },
+    "scf_calculation": {
+      "fock_operator": {
+        "coulomb_operator": {
+          "poisson_prec": 0.001,
+          "shared_memory": false
+        },
+        "exchange_operator": {
+          "poisson_prec": 0.001,
+          "screen": false
+        },
+        "kinetic_operator": {
+          "derivative": "abgv_55"
+        },
+        "nuclear_operator": {
+          "proj_prec": 0.001,
+          "shared_memory": false,
+          "smooth_prec": 0.001
+        },
+        "xc_operator": {
+          "shared_memory": false,
+          "xc_functional": {
+            "cutoff": 0.0,
+            "functionals": [
+              {
+                "coef": 1.0,
+                "name": "svwn5"
+              }
+            ],
+            "spin": true
+          }
+        }
+      },
+      "initial_guess": {
+        "file_basis": "initial_guess/mrchem.bas",
+        "file_chk": "checkpoint/phi_scf",
+        "file_gto_a": "initial_guess/mrchem.moa",
+        "file_gto_b": "initial_guess/mrchem.mob",
+        "file_gto_p": "initial_guess/mrchem.mop",
+        "file_phi_a": "initial_guess/phi_a_scf",
+        "file_phi_b": "initial_guess/phi_b_scf",
+        "file_phi_p": "initial_guess/phi_p_scf",
+        "localize": false,
+        "method": "DFT (SVWN5)",
+        "prec": 0.001,
+        "restricted": false,
+        "type": "sad",
+        "zeta": 2
+      }
+    }
+  },
+  "output": {
+    "properties": {
+      "center_of_mass": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "charge": 0,
+      "geometry": [
+        {
+          "symbol": "Li",
+          "xyz": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "multiplicity": 2,
+      "orbital_energies": {
+        "energy": [
+          -1.8145747656849782,
+          -0.11431598899927582,
+          -1.8057552274758275
+        ],
+        "occupation": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "spin": [
+          "a",
+          "a",
+          "b"
+        ],
+        "sum_occupied": -3.7346459821600817
+      },
+      "polarizability": {
+        "pol-0.000000": {
+          "frequency": 0.0,
+          "isotropic_average": null,
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "tensor": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            0.0,
+            0.0,
+            141.06141402240465
+          ]
+        }
+      },
+      "scf_energy": {
+        "E_ee": 4.103869443010732,
+        "E_eext": 0.0,
+        "E_el": -7.297027368977878,
+        "E_en": -17.614352857842967,
+        "E_kin": 7.933164943366601,
+        "E_next": 0.0,
+        "E_nn": 0.0,
+        "E_nuc": 0.0,
+        "E_tot": -7.297027368977878,
+        "E_x": 0.0,
+        "E_xc": -1.7197088975122456
+      }
+    },
+    "rsp_calculations": {
+      "ext_el-0.000000": {
+        "components": [
+          null,
+          null,
+          {
+            "rsp_solver": {
+              "converged": true,
+              "cycles": [
+                {
+                  "mo_residual": 11.85032897847127,
+                  "property_update": -54.52688253434393,
+                  "symmetric_property": -54.52688253434393,
+                  "wall_time": 3.336808723
+                },
+                {
+                  "mo_residual": 6.3334947925333225,
+                  "property_update": -62.743609709823595,
+                  "symmetric_property": -117.27049224416753,
+                  "wall_time": 4.128379612
+                },
+                {
+                  "mo_residual": 1.553630349920989,
+                  "property_update": -4.19256227786633,
+                  "symmetric_property": -121.46305452203386,
+                  "wall_time": 4.927467642
+                },
+                {
+                  "mo_residual": 1.1939941263464864,
+                  "property_update": -15.921246236679409,
+                  "symmetric_property": -137.38430075871327,
+                  "wall_time": 5.30010358
+                },
+                {
+                  "mo_residual": 0.34977404108706817,
+                  "property_update": -1.3978653836574892,
+                  "symmetric_property": -138.78216614237076,
+                  "wall_time": 5.350231059
+                },
+                {
+                  "mo_residual": 0.16317381002347361,
+                  "property_update": -1.3060521484028698,
+                  "symmetric_property": -140.08821829077363,
+                  "wall_time": 6.225177272
+                },
+                {
+                  "mo_residual": 0.06046423667729363,
+                  "property_update": -0.8861414687373212,
+                  "symmetric_property": -140.97435975951095,
+                  "wall_time": 5.592616098
+                },
+                {
+                  "mo_residual": 0.013139290455068231,
+                  "property_update": -0.07959422790307258,
+                  "symmetric_property": -141.05395398741402,
+                  "wall_time": 5.430974135
+                },
+                {
+                  "mo_residual": 0.0037791613757060644,
+                  "property_update": -0.007460034990629083,
+                  "symmetric_property": -141.06141402240465,
+                  "wall_time": 5.402166943
+                }
+              ],
+              "wall_time": 45.694092488
+            }
+          }
+        ],
+        "frequency": 0.0,
+        "perturbation": "h_e_dip",
+        "success": true
+      }
+    },
+    "scf_calculation": {
+      "initial_energy": {
+        "E_ee": 4.103869443010732,
+        "E_eext": 0.0,
+        "E_el": -7.297027368977878,
+        "E_en": -17.614352857842967,
+        "E_kin": 7.933164943366601,
+        "E_next": 0.0,
+        "E_nn": 0.0,
+        "E_nuc": 0.0,
+        "E_tot": -7.297027368977878,
+        "E_x": 0.0,
+        "E_xc": -1.7197088975122456
+      },
+      "success": true
+    }
+  }
+}
