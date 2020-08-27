@@ -43,6 +43,8 @@ def run(options, *, input_file, filters=None, extra_args=None):
     launcher_full_path = Path(options.binary_dir).joinpath(launcher).resolve()
 
     command = []
+    if options.launch_agent is not None:
+        command.append(options.launch_agent)
     command.append(str(launcher_full_path))
     command.append(input_file)
     command.append(f'--executable={options.binary_dir}/mrchem.x')
@@ -54,20 +56,25 @@ def run(options, *, input_file, filters=None, extra_args=None):
     inp_no_suffix = Path(input_file).stem
     output_prefix = inp_no_suffix
 
-    relative_reference_path = 'reference'
-
-    if sys.platform != "win32":
-        command = shlex.split(full_command)
-
-    process = subprocess.Popen(
-        command,
-        cwd=options.work_dir,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
+    sys.stdout.write(
+        f"\nrunning test with input files {input_file} and args {extra_args}\n"
     )
-    stdout, stderr = process.communicate()
+
+    if options.skip_run:
+        sys.stdout.write("(skipped run with -s|--skip-run)\n")
+    else:
+        if sys.platform != "win32":
+            command = shlex.split(full_command)
+
+        process = subprocess.Popen(
+            command,
+            cwd=options.work_dir,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        stdout, stderr = process.communicate()
 
     computed = Path(options.work_dir).joinpath(inp_no_suffix + ".json")
     expected = Path(
@@ -81,12 +88,15 @@ def run(options, *, input_file, filters=None, extra_args=None):
         computed = nested_get(out, what)
         expected = nested_get(ref, what)
         where = location_in_dict(address=what)
-        passed, message = compare_values(computed,
-                                         expected,
-                                         where,
-                                         rtol=threshold.rtol,
-                                         atol=threshold.atol)
-        print(message)
+        if options.no_verification:
+            sys.stdout.write("\nskipped verification")
+        else:
+            passed, message = compare_values(computed,
+                                             expected,
+                                             where,
+                                             rtol=threshold.rtol,
+                                             atol=threshold.atol)
+            sys.stdout.write(f"\n{message}")
 
 
 class Tolerance:
@@ -204,13 +214,6 @@ def script_cli():
         default=None,
         help=
         'prepend a launch agent command (e.g. "mpirun -np 8" or "valgrind --leak-check=yes") [default: %default]',
-    )
-    parser.add_option(
-        "--verbose",
-        "-v",
-        action="store_true",
-        default=False,
-        help="give more verbose output upon test failure [default: %default]",
     )
     parser.add_option(
         "--skip-run",
