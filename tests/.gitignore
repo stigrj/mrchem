@@ -8,3 +8,4 @@
 */*.out.filtered
 */*.out.reference
 */*.stdout
+*/*.json

@@ -39,18 +39,14 @@ CMake, but can also be linked manually by setting the variables::
 Python dependencies
 -------------------
 
-MRChem depends on the following Python tools for its compilation and execution:
-
-- Input parsing: `parselglossy-0.3 <https://github.com/dev-cafe/parselglossy>`_
-- Integration tests: `runtest-2.2 <https://github.com/bast/runtest>`_
-
 A Python3 interpreter is also required for configuration (``setup`` script) as
 well as launching the program (``mrchem`` script). Developers will additionally
-need Python to build the documentation locally with Sphinx.
+need Python to update the input parser and build the documentation locally with
+Sphinx.
 
 We **strongly** suggest not to install these Python dependencies globally, but
-rather to use a local virtual environment. We provide both a ``Pipfile`` and
-a ``requirements.txt`` specifying the Python dependencies.
+rather to use a local virtual environment. We provide a ``Pipfile`` for
+specifying the Python dependencies.
 We recommend using `Pipenv <https://pipenv.readthedocs.io/en/latest/>`_, since
 it manages virtual environment and package installation seamlessly.
 After installing it with your package manager, run::
@@ -181,12 +177,7 @@ To run a collection of small unit tests::
 To run a couple of more involved integration tests::
 
     $ cd <build-dir>
-    $ pipenv run ctest -L integration
-
-Note how we used Pipenv to run the integration tests. This ensures that the
-Python dependencies (``parselglossy`` and ``runtest``) are satisfied in a
-virtual environment and available to ``ctest`` (these are required only for
-the integration tests, not the unit tests).
+    $ ctest -L integration
 
 
 Install
