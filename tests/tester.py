@@ -61,26 +61,22 @@ def run(options, *, input_file, filters=None, extra_args=None):
     command.append(str(launcher_full_path))
     command.append(input_file)
     command.append(f"--executable={options.binary_dir}/mrchem.x")
-    if options.launch_agent is not None:
-        command.append(f"--launcher={options.launch_agent}")
     if extra_args is not None:
         command += extra_args
 
-    full_command = ' '.join(command)
+    if options.launch_agent is not None:
+        command.append(f"--launcher={options.launch_agent}")
 
     inp_no_suffix = Path(input_file).stem
     output_prefix = inp_no_suffix
 
     sys.stdout.write(
-        f"\nrunning test with input files {input_file} and args {extra_args}\n"
+        f"\nrunning {' '.join(command)}\ntest with input files {input_file} and args {extra_args}"
     )
 
     if options.skip_run:
         sys.stdout.write("(skipped run with -s|--skip-run)\n")
     else:
-        if sys.platform != "win32":
-            command = shlex.split(full_command)
-
         process = subprocess.Popen(
             command,
             cwd=options.work_dir,
