@@ -33,6 +33,21 @@ def DIPOLE_MOMENT_NUC(index):
             "vector_nuc")
 
 
+def QUADRUPOLE_MOMENT(index):
+    return ("output", "properties", "quadrupole_moment", f"quad-{index}",
+            "tensor")
+
+
+def QUADRUPOLE_MOMENT_EL(index):
+    return ("output", "properties", "quadrupole_moment", f"quad-{index}",
+            "tensor_el")
+
+
+def QUADRUPOLE_MOMENT_NUC(index):
+    return ("output", "properties", "quadrupole_moment", f"quad-{index}",
+            "tensor_nuc")
+
+
 def POLARIZABILITY(frequency):
     return ("output", "properties", "polarizability", f"pol-{frequency:.6f}",
             "tensor")
