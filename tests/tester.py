@@ -54,15 +54,15 @@ def POLARIZABILITY(frequency):
 
 
 def run(options, *, input_file, filters=None, extra_args=None):
-    launcher = 'mrchem'
+    launcher = "mrchem"
     launcher_full_path = Path(options.binary_dir).joinpath(launcher).resolve()
 
     command = []
-    if options.launch_agent is not None:
-        command.append(options.launch_agent)
     command.append(str(launcher_full_path))
     command.append(input_file)
-    command.append(f'--executable={options.binary_dir}/mrchem.x')
+    command.append(f"--executable={options.binary_dir}/mrchem.x")
+    if options.launch_agent is not None:
+        command.append(f"--launcher={options.launch_agent}")
     if extra_args is not None:
         command += extra_args
 
