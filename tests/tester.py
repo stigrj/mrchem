@@ -33,6 +33,11 @@ def DIPOLE_MOMENT_NUC(index):
             "vector_nuc")
 
 
+def POLARIZABILITY(frequency):
+    return ("output", "properties", "polarizability", f"pol-{frequency:.6f}",
+            "tensor")
+
+
 def run(options, *, input_file, filters=None, extra_args=None):
     launcher = 'mrchem'
     launcher_full_path = Path(options.binary_dir).joinpath(launcher).resolve()
@@ -279,6 +284,15 @@ def compare_values(
     if not types_match:
         return False, f"\tType of computed value ({type(computed).__name__}) does not match expected type ({type(expected.__type__)})."
 
+    expected_is_list = isinstance(expected, list)
+    computed_is_list = isinstance(computed, list)
+
+    # filter None from expected and computed lists
+    if expected_is_list:
+        expected = [_ for _ in expected if _ is not None]
+    if computed_is_list:
+        computed = [_ for _ in computed if _ is not None]
+
     ok = is_close(computed,
                   expected,
                   rtol=rtol,
@@ -288,9 +302,6 @@ def compare_values(
     if ok:
         message = pass_message
     else:
-        expected_is_list = isinstance(expected, list)
-        computed_is_list = isinstance(computed, list)
-
         if not expected_is_list:
             xptd_str = f"{float(expected):.{digits1}f}"
         else:
