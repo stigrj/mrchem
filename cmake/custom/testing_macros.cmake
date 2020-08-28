@@ -1,6 +1,6 @@
 macro(add_integration_test)
-  set(oneValueArgs NAME COST LAUNCH_AGENT)
-  set(multiValueArgs LABELS DEPENDS REFERENCE_FILES)
+  set(oneValueArgs NAME COST LAUNCH_AGENT INITIAL_GUESS)
+  set(multiValueArgs LABELS DEPENDS)
   cmake_parse_arguments(_integration_test
     "${options}"
     "${oneValueArgs}"
@@ -8,14 +8,18 @@ macro(add_integration_test)
     ${ARGN}
     )
 
+  if(_integration_test_LAUNCH_AGENT)
+    set(_launch_agent_flag "\"--launch-agent ${_integration_test_LAUNCH_AGENT}\"")
+  endif()
+
   add_test(
     NAME
       ${_integration_test_NAME}
     COMMAND
       ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test
-      --binary=$<TARGET_FILE_DIR:mrchem.x>
-      --work-dir=${CMAKE_CURRENT_LIST_DIR}
-      --launch-agent ${_integration_test_LAUNCH_AGENT}
+      --binary $<TARGET_FILE_DIR:mrchem.x>
+      --work-dir ${CMAKE_CURRENT_BINARY_DIR}
+      ${_launch_agent_flag}
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_BINARY_DIR}
     )
@@ -39,10 +43,10 @@ macro(add_integration_test)
       )
   endif()
 
-  if(_integration_test_REFERENCE_FILES)
+  if(_integration_test_INITIAL_GUESS)
     file(
       COPY
-        ${_integration_test_REFERENCE_FILES}
+        ${_integration_test_INITIAL_GUESS}
       DESTINATION
         ${CMAKE_CURRENT_BINARY_DIR}
       )
