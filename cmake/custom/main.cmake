@@ -51,6 +51,10 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
     GENERATED 1
   )
 
+if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS 3.6)
+    message(FATAL_ERROR "You will need Python >= 3.6 to run MRChem")
+endif()
+
 set(PYTHON_SITE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages)
 
 # Fetch dependencies: order is important!
