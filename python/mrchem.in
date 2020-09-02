@@ -1,0 +1,91 @@
+#!@Python3_EXECUTABLE@
+
+#
+# MRChem, a numerical real-space code for molecular electronic structure
+# calculations within the self-consistent field (SCF) approximations of quantum
+# chemistry (Hartree-Fock and Density Functional Theory).
+# Copyright (C) 2019 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+#
+# This file is part of MRChem.
+#
+# MRChem is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# MRChem is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+#
+# For information on the complete list of contributors to MRChem, see:
+# <https://mrchem.readthedocs.io/>
+#
+
+import subprocess
+import sys
+from json import dumps
+from pathlib import Path
+
+sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
+sys.path.append("@CMAKE_BINARY_DIR@/@PYTHON_SITE_INSTALL_DIR@")
+
+from mrchem import cli, parse, translate_input, validate
+
+
+def main():
+    this_path = Path(__file__).parent
+
+    # Parse command line
+    args = cli()
+
+    inp_file = Path(args.inp_name) if args.inp_name.endswith(".inp") else Path(
+        args.inp_name + ".inp")
+    name = inp_file.stem
+    # these two are always in the current working directory
+    out_file = f"{name}.out"
+    json_file = f"{name}.json"
+
+    # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
+    if args.inp_json:
+        user_dict = validate(ir_in=inp_file)
+    else:
+        user_dict = parse(infile=inp_file)
+
+    # create necessary directories
+    for d in [
+            user_dict["SCF"]["path_checkpoint"],
+            user_dict["SCF"]["path_orbitals"],
+            user_dict["Response"]["path_checkpoint"],
+            user_dict["Response"]["path_orbitals"],
+            user_dict["Plotter"]["path"]
+    ]:
+        if not Path(d).exists():
+            Path(d).mkdir()
+
+    # now that all keywords have sensible values,
+    # we can translate user input into program input
+    program_dict = {"input": translate_input(user_dict)}
+    program_dict["input"]["printer"]["file_name"] = inp_file.name
+
+    with open(json_file, 'w') as fd:
+        fd.write(dumps(program_dict, indent=2))
+
+    print_mpi = program_dict["input"]["printer"]["print_mpi"]
+    print_level = program_dict["input"]["printer"]["print_level"]
+    if args.stdout or print_mpi or print_level < 0:
+        cmd = f"{args.launcher} {args.executable} {json_file}"
+    else:
+        cmd = f"{args.launcher} {args.executable} {json_file} > {out_file}"
+
+    if args.dryrun:
+        print("launch command: " + cmd)
+    else:
+        subprocess.call(cmd, shell=True)
+
+
+if __name__ == '__main__':
+    main()

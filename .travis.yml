@@ -16,6 +16,7 @@ matrix:
             - g++
             - gcc
             - lcov
+            - libeigen3-dev
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++'
@@ -43,6 +44,7 @@ matrix:
           packages:
             - clang
             - clang-format
+            - libeigen3-dev
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='clang++'
@@ -60,7 +62,6 @@ env:
 
 cache:
   timeout: 1000
-  pip: true
   directories:
     - $HOME/Deps/cmake/$CMAKE_VERSION
     - $HOME/Deps/eigen
@@ -95,8 +96,7 @@ script:
            --prefix=${HOME}/Software/MRChem \
            --cxx=${CXX_COMPILER} \
            ${COVERAGE} \
-           ${OPENMP} \
-           --cmake-options="-DCMAKE_C_COMPILER=${C_COMPILER} -DPYTHON_EXECUTABLE=$(type -P python)"
+           ${OPENMP}
   - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
   - |

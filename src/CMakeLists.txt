@@ -121,4 +121,3 @@ install(
   )
 
 add_subdirectory(initial_guess)
-add_subdirectory(input)
