@@ -1,4 +1,8 @@
-find_package(XCFun CONFIG QUIET)
+find_package(XCFun CONFIG QUIET
+  NO_CMAKE_PATH
+  NO_CMAKE_PACKAGE_REGISTRY
+  NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+  )
 if(TARGET XCFun::xcfun)
   get_property(_loc TARGET XCFun::xcfun PROPERTY LOCATION)
   message(STATUS "Found XCFun: ${_loc} (found version ${XCFun_VERSION})")

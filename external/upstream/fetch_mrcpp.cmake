@@ -1,4 +1,8 @@
-find_package(MRCPP CONFIG QUIET)
+find_package(MRCPP CONFIG QUIET
+  NO_CMAKE_PATH
+  NO_CMAKE_PACKAGE_REGISTRY
+  NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+  )
 if(TARGET MRCPP::mrcpp)
   get_property(_loc TARGET MRCPP::mrcpp PROPERTY LOCATION)
   message(STATUS "Found MRCPP: ${_loc} (found version ${MRCPP_VERSION})")
