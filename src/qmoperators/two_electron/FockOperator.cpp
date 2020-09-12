@@ -87,7 +87,6 @@ void FockOperator::setup(double prec) {
     this->kinetic().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
-    if (this->ex != nullptr) this->ex->setupInternal(prec);
     t_tot.stop();
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_tot);

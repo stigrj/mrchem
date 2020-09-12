@@ -54,11 +54,17 @@ User input reference
  :Precisions: Define specific precision parameters. 
 
   :red:`Keywords`
+   :exchange_prec: Precision parameter used in construction of Exchange operators. Negative value means it will follow the dynamic precision in SCF. 
+  
+    **Type** ``float``
+  
+    **Default** ``-1.0``
+  
    :helmholtz_prec: Precision parameter used in construction of Helmholtz operators. Negative value means it will follow the dynamic precision in SCF. 
   
     **Type** ``float``
   
-    **Default** ``user['world_prec']``
+    **Default** ``-1.0``
   
    :poisson_prec: Precision parameter used in construction of Poisson operators. 
   

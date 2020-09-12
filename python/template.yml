@@ -49,9 +49,15 @@ sections:
           - '1.0e-10 < value < 1.0'
         docstring: |
           Precision parameter used in construction of Poisson operators.
+      - name: exchange_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Precision parameter used in construction of Exchange operators.
+          Negative value means it will follow the dynamic precision in SCF.
       - name: helmholtz_prec
         type: float
-        default: "user['world_prec']"
+        default: -1.0
         docstring: |
           Precision parameter used in construction of Helmholtz operators.
           Negative value means it will follow the dynamic precision in SCF.

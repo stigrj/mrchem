@@ -28,163 +28,157 @@ ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P,
                                          OrbitalVector_p Phi,
                                          OrbitalVector_p X,
                                          OrbitalVector_p Y,
-                                         bool s)
-        : ExchangePotential(P, Phi, s)
+                                         double prec)
+        : ExchangePotential(P, Phi, prec)
         , orbitals_x(X)
         , orbitals_y(Y) {
     if (X == Y) useOnlyX = true;
 }
 
-/** @brief Test if a given contribution has been precomputed
- *
- * @param[in] phi_p orbital for which the check is performed
- *
- * We always return -1 for response calculations
- *
- */
-int ExchangePotentialD2::testPreComputed(Orbital phi_p) const {
-    int out = -1;
-    return out;
-}
+/** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */
+void ExchangePotentialD2::setupBank() {
+    if (mpi::bank_size < 1) return;
 
-/** @brief Computes the exchange potential on the fly
- *
- *  \param[in] inp input orbital
- *
- * The exchange potential is computed and applied on the fly to the given orbital.
- */
-Orbital ExchangePotentialD2::calcExchange(Orbital phi_p) {
+    int id_shift = 10000;
 
-    Orbital ex_p;
-
-    if (useOnlyX) {
-        ex_p = calcExchange_X(phi_p);
-    } else {
-        ex_p = calcExchange_XY(phi_p);
-    }
-    return ex_p;
-}
-
-/** @brief Computes the diagonal part of the internal exchange potential
- *
- *  \param[in] i orbital index
- *
- * The diagonal term K_ii is computed.
- */
-void ExchangePotentialD2::calcInternal(int i) {
-    if (useOnlyX) {
-        calcInternal_X(i);
-    } else {
-        calcInternal_XY(i);
-    }
-}
-
-/** @brief computes the off-diagonal part of the exchange potential
- *
- *  \param[in] i first orbital index
- *  \param[in] j second orbital index
- *
- * The off-diagonal terms K_ij and K_ji are computed.
- */
-void ExchangePotentialD2::calcInternal(int i, int j) {
-    if (useOnlyX) {
-        calcInternal_X(i, j);
-    } else {
-        calcInternal_XY(i, j);
-    }
-}
-
-void ExchangePotentialD2::setupInternal(double prec) {
-    setApplyPrec(prec);
-    if (this->exchange.size() != 0) MSG_ERROR("Exchange not properly cleared");
-    OrbitalVector &Phi = *this->orbitals;
-    OrbitalVector &X = *this->orbitals_x;
-    if (mpi::bank_size > 0) {
-        // store orbitals and orbitals_x in Bank
-        mpi::barrier(mpi::comm_orb); // to be sure nobody still use data
-        for (int i = 0; i < Phi.size(); i++)
-            if (mpi::my_orb(Phi[i])) mpi::orb_bank.put_orb(i, Phi[i]);
-        for (int i = 0; i < X.size(); i++)
-            if (mpi::my_orb(X[i])) mpi::orb_bank.put_orb(i + Phi.size(), X[i]);
-        mpi::barrier(mpi::comm_orb);
-    }
-}
-void ExchangePotentialD2::calcInternal_X(int i) {
-    NOT_IMPLEMENTED_ABORT;
-}
-void ExchangePotentialD2::calcInternal_X(int i, int j) {
-    NOT_IMPLEMENTED_ABORT;
-}
-void ExchangePotentialD2::calcInternal_XY(int i) {
-    NOT_IMPLEMENTED_ABORT;
-}
-void ExchangePotentialD2::calcInternal_XY(int i, int j) {
-    NOT_IMPLEMENTED_ABORT;
-}
-Orbital ExchangePotentialD2::calcExchange_X(Orbital phi_p) {
     Timer timer;
+    mpi::barrier(mpi::comm_orb);
+    OrbitalVector &Phi = *this->orbitals;
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) mpi::orb_bank.put_orb(i + id_shift, Phi[i]);
+    }
+    OrbitalVector &X = *this->orbitals_x;
+    for (int i = 0; i < X.size(); i++) {
+        if (mpi::my_orb(X[i])) mpi::orb_bank.put_orb(i + 2 * id_shift, X[i]);
+    }
+    OrbitalVector &Y = *this->orbitals_y;
+    for (int i = 0; i < Y.size(); i++) {
+        if (mpi::my_orb(Y[i])) mpi::orb_bank.put_orb(i + 3 * id_shift, Y[i]);
+    }
+    mpi::barrier(mpi::comm_orb);
+    mrcpp::print::time(4, "Setting up exchange bank", timer);
+}
 
+/** @brief Apply exchange operator to given orbital
+ *
+ *  @param[in] phi_p input orbital
+ *
+ * The D2 operator has to be applied on-the-fly, e.i. no
+ * pre-computed exchange contributions are available.
+ */
+Orbital ExchangePotentialD2::apply(Orbital phi_p) {
+    if (this->apply_prec < 0.0) {
+        MSG_ERROR("Uninitialized operator");
+        return phi_p.paramCopy();
+    }
+
+    int id_shift = 10000;
+
+    Timer timer;
     OrbitalVector &Phi = *this->orbitals;
     OrbitalVector &X = *this->orbitals_x;
-    std::vector<ComplexDouble> coef_vec;
-    QMFunctionVector func_vec;
+    OrbitalVector &Y = *this->orbitals_y;
 
+    double prec = this->apply_prec;
+    // use fixed exchange_prec if set explicitly, otherwise use setup prec
+    double precf = (this->exchange_prec > 0.0) ? this->exchange_prec : prec;
+    // adjust precision since we sum over orbitals
+    precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
+
+    QMFunctionVector func_vec;
+    std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
         Orbital &x_i = X[i];
+        Orbital &y_i = Y[i];
 
-        if (!mpi::my_orb(phi_i)) mpi::orb_bank.get_orb(i, phi_i);
-        if (!mpi::my_orb(x_i)) mpi::orb_bank.get_orb(i + Phi.size(), x_i);
+        if (not mpi::my_orb(phi_i)) mpi::orb_bank.get_orb(i + id_shift, phi_i, 1);
+        if (not mpi::my_orb(x_i)) mpi::orb_bank.get_orb(i + 2 * id_shift, x_i, 1);
+        if (not mpi::my_orb(y_i)) mpi::orb_bank.get_orb(i + 3 * id_shift, y_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
-            Orbital phi_apb = calcExchangeComponent(phi_p, x_i, phi_i);
-            Orbital phi_bpa = calcExchangeComponent(phi_p, phi_i, x_i);
-            func_vec.push_back(phi_apb);
-            func_vec.push_back(phi_bpa);
+            Orbital ex_xip = phi_p.paramCopy();
+            Orbital ex_iyp = phi_p.paramCopy();
+            calcExchange_kij(precf, x_i, phi_i, phi_p, ex_xip);
+            calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
+            func_vec.push_back(ex_xip);
+            func_vec.push_back(ex_iyp);
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
         }
-        if (!mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
-        if (!mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
+        if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
+        if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
+        if (not mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
     }
 
-    // compute ex_p = sum_i c_i* (phi_apb + phi_bpa)
+    // compute out_p = sum_i c_i*(ex_xip + ex_iyp)
+    Orbital out_p = phi_p.paramCopy();
+    Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
+    qmfunction::linear_combination(out_p, coefs, func_vec, prec);
+    print_utils::qmfunction(3, "Applied exchange", out_p, timer);
+    return out_p;
+}
+
+/** @brief Apply adjoint exchange operator to given orbital
+ *
+ *  @param[in] phi_p input orbital
+ *
+ * The D2 operator has to be applied on-the-fly, e.i. no
+ * pre-computed exchange contributions are available.
+ */
+Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
+    if (this->apply_prec < 0.0) {
+        MSG_ERROR("Uninitialized operator");
+        return phi_p.paramCopy();
+    }
+
+    int id_shift = 10000;
+
+    Timer timer;
+    OrbitalVector &Phi = *this->orbitals;
+    OrbitalVector &X = *this->orbitals_x;
+    OrbitalVector &Y = *this->orbitals_y;
+
+    double prec = this->apply_prec;
+    // use fixed exchange_prec if set explicitly, otherwise use setup prec
+    double precf = (this->exchange_prec > 0.0) ? this->exchange_prec : prec;
+    // adjust precision since we sum over orbitals
+    precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
+
+    QMFunctionVector func_vec;
+    std::vector<ComplexDouble> coef_vec;
+    for (int i = 0; i < Phi.size(); i++) {
+        Orbital &phi_i = Phi[i];
+        Orbital &x_i = X[i];
+        Orbital &y_i = Y[i];
+
+        if (not mpi::my_orb(phi_i)) mpi::orb_bank.get_orb(i + id_shift, phi_i, 1);
+        if (not mpi::my_orb(x_i)) mpi::orb_bank.get_orb(i + 2 * id_shift, x_i, 1);
+        if (not mpi::my_orb(y_i)) mpi::orb_bank.get_orb(i + 3 * id_shift, y_i, 1);
+
+        double spin_fac = getSpinFactor(phi_i, phi_p);
+        if (std::abs(spin_fac) >= mrcpp::MachineZero) {
+            Orbital ex_ixp = phi_p.paramCopy();
+            Orbital ex_yip = phi_p.paramCopy();
+            calcExchange_kij(precf, phi_i, x_i, phi_p, ex_ixp);
+            calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
+            func_vec.push_back(ex_ixp);
+            func_vec.push_back(ex_yip);
+            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+        }
+        if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
+        if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
+        if (not mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
+    }
+
+    // compute ex_p = sum_i c_i*(ex_ixp + ex_yip)
     Orbital ex_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    qmfunction::linear_combination(ex_p, coefs, func_vec, -1.0);
+    qmfunction::linear_combination(ex_p, coefs, func_vec, prec);
     print_utils::qmfunction(3, "Applied exchange", ex_p, timer);
-
     return ex_p;
-}
-
-Orbital ExchangePotentialD2::calcExchange_XY(Orbital phi_p) {
-    NOT_IMPLEMENTED_ABORT;
-}
-
-Orbital ExchangePotentialD2::calcExchangeComponent(Orbital phi_p, Orbital phi_a, Orbital phi_b) {
-    double prec = this->apply_prec;
-    mrcpp::PoissonOperator &P = *this->poisson;
-    // compute phi_pb = phi_p * phi_b.dagger()
-    Orbital phi_pb = phi_p.paramCopy();
-    qmfunction::multiply(phi_pb, phi_p, phi_b.dagger(), -1.0);
-
-    // compute V_pb = P[phi_pb]
-    Orbital V_pb = phi_p.paramCopy();
-    if (phi_pb.hasReal()) {
-        V_pb.alloc(NUMBER::Real);
-        mrcpp::apply(prec, V_pb.real(), P, phi_pb.real());
-    }
-    if (phi_pb.hasImag()) {
-        V_pb.alloc(NUMBER::Imag);
-        mrcpp::apply(prec, V_pb.imag(), P, phi_pb.imag());
-    }
-    phi_pb.release();
-
-    // compute phi_apb = phi_a * V_pb
-    Orbital phi_apb = phi_p.paramCopy();
-    qmfunction::multiply(phi_apb, phi_a, V_pb, -1.0);
-    return phi_apb;
 }
 
 } // namespace mrchem

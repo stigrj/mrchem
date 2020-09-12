@@ -52,7 +52,7 @@ TEST_CASE("ExchangeHessian", "[exchange_hessian]") {
     auto Phi_p = std::make_shared<OrbitalVector>();
     auto X_p = std::make_shared<OrbitalVector>();
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
-    ExchangeOperator V(P_p, Phi_p, X_p, X_p);
+    ExchangeOperator V(P_p, Phi_p, X_p, X_p, prec);
 
     OrbitalVector &Phi = *Phi_p;
     ns.push_back(2);
@@ -107,9 +107,9 @@ TEST_CASE("ExchangeHessian", "[exchange_hessian]") {
     int i = 0;
     DoubleMatrix E = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    E(0, 0) = 0.0630355499;
-    E(1, 1) = 0.0673407628;
-    E(2, 2) = 0.0673407628;
+    E(0, 0) = 0.0625327715;
+    E(1, 1) = 0.0667432283;
+    E(2, 2) = 0.0667432283;
 
     V.setup(prec);
     SECTION("apply") {

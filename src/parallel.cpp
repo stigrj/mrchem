@@ -67,7 +67,7 @@ Bank orb_bank;
 
 } // namespace mpi
 
-int const id_shift = 1000000; // to ensure that nodes, orbitals and functions do not collide
+int const id_shift = 100000000; // to ensure that nodes, orbitals and functions do not collide
 
 void mpi::initialize() {
     omp_set_dynamic(0);
@@ -84,9 +84,15 @@ void mpi::initialize() {
     // for now the new group does not include comm_share
     mpi::comm_bank = MPI_COMM_WORLD; // clients and master
     MPI_Comm comm_remainder;         // clients only
-    if (mpi::world_size > 1 and mpi::bank_size < 0) mpi::bank_size = mpi::world_size / 6 + 1;
-    mpi::bank_size = std::max(0, mpi::bank_size);
+
+    // set bank_size automatically if not defined by user
+    if (mpi::world_size < 2) {
+        mpi::bank_size = 0;
+    } else if (mpi::bank_size < 0) {
+        mpi::bank_size = mpi::world_size / 6 + 1;
+    }
     if (mpi::world_size - mpi::bank_size < 1) MSG_ABORT("No MPI ranks left for working!");
+
     mpi::bankmaster.resize(mpi::bank_size);
     for (int i = 0; i < mpi::bank_size; i++) {
         mpi::bankmaster[i] = mpi::world_size - i - 1; // rank of the bankmasters
@@ -414,6 +420,10 @@ void Bank::open() {
             // send message that it is ready (value of message is not used)
             MPI_Send(&message, 1, MPI_INTEGER, status.MPI_SOURCE, 77, mpi::comm_bank);
         }
+        if (message == GETMAXTOTDATA) {
+            int maxsize_int = maxsize / 1024; // convert into MB
+            MPI_Send(&maxsize_int, 1, MPI_INTEGER, status.MPI_SOURCE, 1171, mpi::comm_bank);
+        }
         if (message == GET_ORBITAL or message == GET_ORBITAL_AND_WAIT or message == GET_ORBITAL_AND_DELETE or
             message == GET_FUNCTION or message == GET_DATA) {
             // withdrawal
@@ -446,6 +456,7 @@ void Bank::open() {
                     }
                     mpi::send_orbital(*deposits[ix].orb, status.MPI_SOURCE, deposits[ix].id, mpi::comm_bank);
                     if (message == GET_ORBITAL_AND_DELETE) {
+                        this->currentsize -= deposits[ix].orb->getSizeNodes(NUMBER::Total);
                         deposits[ix].orb->free(NUMBER::Total);
                         id2ix[status.MPI_TAG] = 0;
                     }
@@ -465,16 +476,19 @@ void Bank::open() {
         }
         if (message == SAVE_ORBITAL or message == SAVE_FUNCTION or message == SAVE_DATA) {
             // make a new deposit
+            int exist_flag = 0;
             if (id2ix[status.MPI_TAG]) {
                 ix = id2ix[status.MPI_TAG]; // the deposit exist from before. Will be overwritten
+                exist_flag = 1;
                 if (message == SAVE_DATA and !deposits[ix].hasdata) {
+                    exist_flag = 0;
                     deposits[ix].data = new double[datasize];
                     deposits[ix].hasdata = true;
                 }
             } else {
                 ix = deposits.size(); // NB: ix is now index of last element + 1
                 deposits.resize(ix + 1);
-                if (message == SAVE_ORBITAL or message == SAVE_FUNCTION) { deposits[ix].orb = new Orbital(0); }
+                if (message == SAVE_ORBITAL or message == SAVE_FUNCTION) deposits[ix].orb = new Orbital(0);
                 if (message == SAVE_DATA) {
                     deposits[ix].data = new double[datasize];
                     deposits[ix].hasdata = true;
@@ -485,6 +499,10 @@ void Bank::open() {
             deposits[ix].source = status.MPI_SOURCE;
             if (message == SAVE_ORBITAL) {
                 mpi::recv_orbital(*deposits[ix].orb, deposits[ix].source, deposits[ix].id, mpi::comm_bank);
+                if (exist_flag == 0) {
+                    this->currentsize += deposits[ix].orb->getSizeNodes(NUMBER::Total);
+                    this->maxsize = std::max(this->currentsize, this->maxsize);
+                }
             }
             if (message == SAVE_FUNCTION) {
                 mpi::recv_function(*deposits[ix].orb, deposits[ix].source, deposits[ix].id, mpi::comm_bank);
@@ -498,6 +516,8 @@ void Bank::open() {
                          deposits[ix].id,
                          mpi::comm_bank,
                          &status);
+                this->currentsize += datasize / 128; // converted into kB
+                this->maxsize = std::max(this->currentsize, this->maxsize);
             }
             if (id2qu[deposits[ix].id] != 0) {
                 // someone is waiting for those data. Send to them
@@ -514,7 +534,9 @@ void Bank::open() {
                         MPI_Send(deposits[ix].data, datasize, MPI_DOUBLE, iqq, queue[iq].id, mpi::comm_bank);
                     }
                 }
-                queue.erase(queue.begin() + iq);
+                queue[iq].clients.clear(); // cannot erase entire queue[iq], because that would require to shift all the
+                                           // id2qu value larger than iq
+                queue[iq].id = -1;
                 id2qu.erase(deposits[ix].id);
             }
         }
@@ -540,7 +562,7 @@ void Bank::open() {
 int Bank::put_orb(int id, Orbital &orb) {
 #ifdef HAVE_MPI
     // for now we distribute according to id
-    if (id > id_shift) MSG_WARN("Bank id should be less than id_shift (1000000)");
+    if (id > id_shift) MSG_WARN("Bank id should be less than id_shift (100000000)");
     MPI_Send(&SAVE_ORBITAL, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     mpi::send_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
 #endif
@@ -653,6 +675,20 @@ void Bank::close() {
 #endif
 }
 
+int Bank::get_maxtotalsize() {
+    int maxtot = 0;
+#ifdef HAVE_MPI
+    MPI_Status status;
+    int datasize;
+    for (int i = 0; i < mpi::bank_size; i++) {
+        MPI_Send(&GETMAXTOTDATA, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
+        MPI_Recv(&datasize, 1, MPI_INTEGER, mpi::bankmaster[i], 1171, mpi::comm_bank, &status);
+        maxtot = std::max(maxtot, datasize);
+    }
+#endif
+    return maxtot;
+}
+
 // remove all deposits
 // NB:: collective call. All clients must call this
 void Bank::clear_all(int iclient, MPI_Comm comm) {
@@ -682,6 +718,7 @@ void Bank::clear_bank() {
     this->queue.resize(1);
     this->id2ix.clear();
     this->id2qu.clear();
+    this->currentsize = 0;
 #endif
 }
 

@@ -206,6 +206,9 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     const auto &json_fock = json_scf["fock_operator"];
     driver::build_fock_operator(json_fock, mol, F, 0);
 
+    // Pre-compute internal exchange contributions
+    // if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
+
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
@@ -703,6 +706,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         json_out["components"].push_back(comp_out);
     }
     F_0.clear();
+    mpi::barrier(mpi::comm_orb);
+    if (mpi::bank_size > 0) mpi::orb_bank.clear_all(mpi::orb_rank, mpi::comm_orb);
     mol.getOrbitalsX_p().reset(); // Release shared_ptr
     mol.getOrbitalsY_p().reset(); // Release shared_ptr
 
@@ -944,14 +949,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     /////////////////   Exchange Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("exchange_operator") and exx > mrcpp::MachineZero) {
+        auto exchange_prec = json_fock["exchange_operator"]["exchange_prec"];
         auto poisson_prec = json_fock["exchange_operator"]["poisson_prec"];
-        auto screen_prec = json_fock["exchange_operator"]["screen"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         if (order == 0) {
-            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, screen_prec);
+            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         } else {
-            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, screen_prec);
+            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         }
     }

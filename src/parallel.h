@@ -117,7 +117,7 @@ public:
     ~Bank();
     void open();
     void close();
-    void clear_all(int i, MPI_Comm comm);
+    void clear_all(int i = mpi::orb_rank, MPI_Comm comm = mpi::comm_orb);
     void clear(int ix);
     int put_orb(int id, Orbital &orb);
     int get_orb(int id, Orbital &orb, int wait = 0);
@@ -127,6 +127,7 @@ public:
     int set_datasize(int datasize);
     int put_data(int id, int size, double *data);
     int get_data(int id, int size, double *data);
+    int get_maxtotalsize();
 
 private:
     int const CLOSE_BANK = 1;
@@ -140,10 +141,13 @@ private:
     int const SET_DATASIZE = 9;
     int const GET_DATA = 10;
     int const SAVE_DATA = 11;
+    int const GETMAXTOTDATA = 12;
     std::map<int, int> id2ix;
     std::vector<bank::deposit> deposits;
     std::map<int, int> id2qu;
     std::vector<bank::queue_struct> queue;
+    long long currentsize = 0; // total deposited data size (without containers)
+    long long maxsize = 0;     // max total deposited data size (without containers)
 
     void clear_bank();
 };

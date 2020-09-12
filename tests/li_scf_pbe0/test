@@ -21,6 +21,6 @@ filters = {
     E_EL: rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="li", filters=filters, extra_args=["--stdout"])
+ierr = run(options, input_file="li", filters=filters)
 
 sys.exit(ierr)

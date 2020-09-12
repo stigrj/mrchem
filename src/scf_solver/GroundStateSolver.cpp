@@ -254,24 +254,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        OrbitalVector Phi_np1;
-        if (mpi::bank_size > 0) {
-            // process one orbital at a time, using bank
-            Phi_np1 = H.rotate_apply(F.potential(), F_mat, Phi_n);
-        } else {
-            // Setup argument
-            Timer t_arg;
-            mrcpp::print::header(2, "Computing Helmholtz argument");
-            ComplexMatrix L_mat = H.getLambdaMatrix();
-            OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat);
-            mrcpp::print::time(2, "Rotating orbitals", t_arg);
-            mrcpp::print::footer(2, t_arg, 2);
-            if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
-            // Apply Helmholtz operator
-            Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
-            Psi.clear();
-        }
+        // Setup argument
+        Timer t_arg;
+        mrcpp::print::header(2, "Computing Helmholtz argument");
+        ComplexMatrix L_mat = H.getLambdaMatrix();
+        OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat, orb_prec);
+        mrcpp::print::time(2, "Rotating orbitals", t_arg);
+        mrcpp::print::footer(2, t_arg, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+
+        // Apply Helmholtz operator
+        OrbitalVector Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
+        Psi.clear();
         F.clear();
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
@@ -342,6 +337,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     }
 
     F.clear();
+    mpi::barrier(mpi::comm_orb);
+    if (mpi::bank_size > 0) mpi::orb_bank.clear_all(mpi::orb_rank, mpi::comm_orb);
 
     printConvergence(converged, "Total energy");
     reset();

@@ -18,26 +18,27 @@ namespace mrchem {
  * orbitals themselves are allowed to change in between each
  * application. The internal exchange potentials (the operator applied
  * to it's own orbitals) can be precomputed and stored for fast
- * retrieval. Option to use screening based on previous calculations
- * of the internal exchange (make sure that the internal orbitals
- * haven't been significantly changed since the last time the operator
- * was set up, e.g. through an orbital rotation).
+ * retrieval.
  */
 
 class ExchangePotentialD1 final : public ExchangePotential {
 public:
-    ExchangePotentialD1(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, bool s = false);
+    ExchangePotentialD1(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, double prec);
     ~ExchangePotentialD1() override = default;
 
     friend class ExchangeOperator;
 
 private:
-    void setupInternal(double prec);
-    int testPreComputed(Orbital phi_p) const;
+    void setupBank() override;
+    int testInternal(Orbital phi_p) const override;
+    void setupInternal(double prec) override;
     Orbital calcExchange(Orbital phi_p);
-    void calcInternal(int i);
-    void calcInternal(int i, int j);
-    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);
+
+    Orbital apply(Orbital phi_p) override;
+    Orbital dagger(Orbital phi_p) override;
+
+    using QMOperator::apply;
+    using QMOperator::dagger;
 };
 
 } // namespace mrchem

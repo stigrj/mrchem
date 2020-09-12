@@ -44,7 +44,6 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     this->total_U = DoubleMatrix::Identity(this->N, this->N);
     this->N2h = this->N * (this->N - 1) / 2;
     this->gradient = DoubleVector(this->N2h);
-    this->hessian = DoubleMatrix(this->N2h, this->N2h);
     this->r_i_orig = DoubleMatrix::Zero(this->N, 3 * this->N);
     this->r_i = DoubleMatrix(this->N, 3 * this->N);
 
@@ -177,7 +176,9 @@ double RRMaximizer::make_gradient() {
  */
 // clang-format off
 double RRMaximizer::make_hessian() {
-    this->hessian = DoubleMatrix::Zero(this->N2h, this->N2h);
+    MSG_ABORT("Hessian is not explicitely constructed");
+
+    hessian = DoubleMatrix::Zero(this->N2h, this->N2h);
 
     double djk, djl, dik, dil;
     for (int d = 0; d < 3; d++) {
@@ -192,7 +193,7 @@ double RRMaximizer::make_hessian() {
                         dik = (i == k) ? 1.0 : 0.0;
                         dil = (i == l) ? 1.0 : 0.0;
 
-                        this->hessian(ij,kl) += 2.0*(
+                        hessian(ij,kl) += 2.0*(
                                          djk*r_i(i,i+d*N)*r_i(l,i+d*N)
                                         -djl*r_i(i,i+d*N)*r_i(k,i+d*N)
                                         -dik*r_i(j,j+d*N)*r_i(l,j+d*N)

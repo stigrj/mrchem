@@ -74,10 +74,10 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
     int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    E_P(0, 0) = 0.646839239;
-    E_P(1, 0) = 0.0978951545;
-    E_P(0, 1) = 0.0978951545;
-    E_P(1, 1) = 0.1722781696;
+    E_P(0, 0) = 0.6691669775;
+    E_P(1, 0) = 0.1059515625;
+    E_P(0, 1) = 0.1059515625;
+    E_P(1, 1) = 0.1738221575;
 
     V.setup(prec);
 

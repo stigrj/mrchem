@@ -72,6 +72,7 @@ public:
     void rescale(double c);
     void rescale(ComplexDouble c);
     void add(ComplexDouble c, QMFunction inp);
+    void absadd(ComplexDouble c, QMFunction inp);
 
 protected:
     bool conj{false};

@@ -156,9 +156,14 @@ void qmfunction::add(QMFunction &out,
 /** @brief out = inp_a * inp_b
  *
  */
-void qmfunction::multiply(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec) {
-    multiply_real(out, inp_a, inp_b, prec);
-    multiply_imag(out, inp_a, inp_b, prec);
+void qmfunction::multiply(QMFunction &out,
+                          QMFunction inp_a,
+                          QMFunction inp_b,
+                          double prec,
+                          bool absPrec,
+                          bool useMaxNorms) {
+    multiply_real(out, inp_a, inp_b, prec, absPrec, useMaxNorms);
+    multiply_imag(out, inp_a, inp_b, prec, absPrec, useMaxNorms);
 }
 
 /** @brief out = c_0*inp_0 + c_1*inp_1 + ... + c_N*inp_N
@@ -214,7 +219,12 @@ void qmfunction::linear_combination(QMFunction &out, const ComplexVector &c, QMF
 /** @brief out = Re(inp_a * inp_b)
  *
  */
-void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec) {
+void qmfunction::multiply_real(QMFunction &out,
+                               QMFunction inp_a,
+                               QMFunction inp_b,
+                               double prec,
+                               bool absPrec,
+                               bool useMaxNorms) {
     double conj_a = (inp_a.conjugate()) ? -1.0 : 1.0;
     double conj_b = (inp_b.conjugate()) ? -1.0 : 1.0;
 
@@ -232,7 +242,7 @@ void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp
                 mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), 0);
             } else {
                 // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real());
+                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), -1, absPrec, useMaxNorms);
             }
         }
         vec.push_back(std::make_tuple(1.0, tree));
@@ -248,7 +258,7 @@ void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp
                 mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), 0);
             } else {
                 // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag());
+                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), -1, absPrec, useMaxNorms);
             }
         }
         vec.push_back(std::make_tuple(1.0, tree));
@@ -283,7 +293,12 @@ void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp
 /** @brief out = Im(inp_a * inp_b)
  *
  */
-void qmfunction::multiply_imag(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec) {
+void qmfunction::multiply_imag(QMFunction &out,
+                               QMFunction inp_a,
+                               QMFunction inp_b,
+                               double prec,
+                               bool absPrec,
+                               bool useMaxNorms) {
     double conj_a = (inp_a.conjugate()) ? -1.0 : 1.0;
     double conj_b = (inp_b.conjugate()) ? -1.0 : 1.0;
 
@@ -301,7 +316,7 @@ void qmfunction::multiply_imag(QMFunction &out, QMFunction inp_a, QMFunction inp
                 mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), 0);
             } else {
                 // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag());
+                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), -1, absPrec, useMaxNorms);
             }
         }
         vec.push_back(std::make_tuple(1.0, tree));
@@ -317,7 +332,7 @@ void qmfunction::multiply_imag(QMFunction &out, QMFunction inp_a, QMFunction inp
                 mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), 0);
             } else {
                 // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real());
+                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), -1, absPrec, useMaxNorms);
             }
         }
         vec.push_back(std::make_tuple(1.0, tree));
