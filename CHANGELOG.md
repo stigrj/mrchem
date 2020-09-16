@@ -1,5 +1,26 @@
 # Change log
 
+## Version 1.0.0-alpha3 2020-10-10
+
+### Added
+
+- Dagger terms in exchange hessian
+- Screening of exchange contributions
+
+### Changed
+
+- Updated MRCPP to v1.3.5
+- Updated XCFun to v2.1.0
+- Updated parselglossy to v0.7.0
+- Removed runtest dependency
+- Removed parselglossy as runtime dependency
+- Encapsulated MRChem and MRCPP parallelizations
+
+### Fixed
+
+- Installation path for SAD files
+- Misc CMake fixes to enable packaging
+
 ## Version 1.0.0-alpha2 2020-06-29
 
 ### Added
