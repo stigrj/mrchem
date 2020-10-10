@@ -30,13 +30,28 @@
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 
+#ifdef MRCHEM_HAS_OMP
+#ifndef MRCPP_HAS_OMP
+#include <omp.h>
+#endif
+#define mrchem_get_max_threads() omp_get_max_threads()
+#define mrchem_get_num_threads() omp_get_num_threads()
+#define mrchem_get_thread_num() omp_get_thread_num()
+#define mrchem_set_dynamic(n) omp_set_dynamic(n)
+#else
+#define mrchem_get_max_threads() 1
+#define mrchem_get_num_threads() 1
+#define mrchem_get_thread_num() 0
+#define mrchem_set_dynamic(n)
+#endif
+
 using mrcpp::Printer;
 
 namespace mrchem {
 
 namespace omp {
 
-int n_threads = omp_get_max_threads();
+int n_threads = mrchem_get_max_threads();
 
 } // namespace omp
 
@@ -70,9 +85,10 @@ Bank orb_bank;
 int const id_shift = 100000000; // to ensure that nodes, orbitals and functions do not collide
 
 void mpi::initialize() {
-    omp_set_dynamic(0);
+    mrchem_set_dynamic(0);
+    mrcpp::set_max_threads(omp::n_threads);
 
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Init(nullptr, nullptr);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi::world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi::world_rank);
@@ -143,14 +159,14 @@ void mpi::initialize() {
 }
 
 void mpi::finalize() {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     if (mpi::bank_size > 0 and mpi::grand_master()) mpi::orb_bank.close();
     MPI_Finalize();
 #endif
 }
 
 void mpi::barrier(MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Barrier(comm);
 #endif
 }
@@ -200,7 +216,7 @@ OrbitalChunk mpi::get_my_chunk(OrbitalVector &Phi) {
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
 void mpi::allreduce_vector(IntVector &vec, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int N = vec.size();
     MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_INT, MPI_SUM, comm);
 #endif
@@ -208,7 +224,7 @@ void mpi::allreduce_vector(IntVector &vec, MPI_Comm comm) {
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
 void mpi::allreduce_vector(DoubleVector &vec, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int N = vec.size();
     MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE, MPI_SUM, comm);
 #endif
@@ -216,7 +232,7 @@ void mpi::allreduce_vector(DoubleVector &vec, MPI_Comm comm) {
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
 void mpi::allreduce_vector(ComplexVector &vec, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int N = vec.size();
     MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, comm);
 #endif
@@ -224,7 +240,7 @@ void mpi::allreduce_vector(ComplexVector &vec, MPI_Comm comm) {
 
 /** @brief Add up each entry of the matrix with contributions from all MPI ranks */
 void mpi::allreduce_matrix(IntMatrix &mat, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int N = mat.size();
     MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_INT, MPI_SUM, comm);
 #endif
@@ -232,7 +248,7 @@ void mpi::allreduce_matrix(IntMatrix &mat, MPI_Comm comm) {
 
 /** @brief Add up each entry of the matrix with contributions from all MPI ranks */
 void mpi::allreduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int N = mat.size();
     MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_DOUBLE, MPI_SUM, comm);
 #endif
@@ -240,7 +256,7 @@ void mpi::allreduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
 
 /** @brief Add up each entry of the matrix with contributions from all MPI ranks */
 void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int N = mat.size();
     MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, comm);
 #endif
@@ -248,7 +264,7 @@ void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 
 // send an orbital with MPI, includes orbital meta data
 void mpi::send_orbital(Orbital &orb, int dst, int tag, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     mpi::send_function(orb, dst, tag, comm);
     OrbitalData &orbinfo = orb.getOrbitalData();
     MPI_Send(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, comm);
@@ -257,7 +273,7 @@ void mpi::send_orbital(Orbital &orb, int dst, int tag, MPI_Comm comm) {
 
 // receive an orbital with MPI, includes orbital meta data
 void mpi::recv_orbital(Orbital &orb, int src, int tag, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     mpi::recv_function(orb, src, tag, comm);
 
     MPI_Status status;
@@ -268,18 +284,23 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag, MPI_Comm comm) {
 
 // send a function with MPI
 void mpi::send_function(QMFunction &func, int dst, int tag, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
+#ifdef MRCPP_HAS_MPI
     if (func.isShared()) MSG_WARN("Sending a shared function is not recommended");
     FunctionData &funcinfo = func.getFunctionData();
     MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, comm);
     if (func.hasReal()) mrcpp::send_tree(func.real(), dst, tag, comm, funcinfo.real_size);
     if (func.hasImag()) mrcpp::send_tree(func.imag(), dst, tag + 10000, comm, funcinfo.imag_size);
+#else
+    MSG_ABORT("MRCPP compiled without MPI support");
+#endif
 #endif
 }
 
 // receive a function with MPI
 void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
+#ifdef MRCPP_HAS_MPI
     if (func.isShared()) MSG_WARN("Receiving a shared function is not recommended");
     MPI_Status status;
 
@@ -296,16 +317,23 @@ void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
         if (not func.hasImag()) func.alloc(NUMBER::Imag);
         mrcpp::recv_tree(func.imag(), src, tag + 10000, comm, funcinfo.imag_size);
     }
+#else
+    MSG_ABORT("MRCPP compiled without MPI support");
+#endif
 #endif
 }
 
 /** Update a shared function after it has been changed by one of the MPI ranks. */
 void mpi::share_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
+#ifdef MRCPP_HAS_MPI
     if (func.isShared()) {
         if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, comm);
         if (func.hasImag()) mrcpp::share_tree(func.imag(), src, 2 * tag, comm);
     }
+#else
+    MSG_ABORT("MRCPP compiled without MPI support");
+#endif
 #endif
 }
 
@@ -317,7 +345,7 @@ void mpi::reduce_function(double prec, QMFunction &func, MPI_Comm comm) {
       effective rank = rank/fac , where fac are powers of 2
    4) repeat
  */
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
     MPI_Comm_size(comm, &comm_size);
@@ -354,7 +382,7 @@ void mpi::reduce_function(double prec, QMFunction &func, MPI_Comm comm) {
 /** @brief Distribute rank zero function to all ranks */
 void mpi::broadcast_function(QMFunction &func, MPI_Comm comm) {
 /* use same strategy as a reduce, but in reverse order */
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
     MPI_Comm_size(comm, &comm_size);
@@ -392,7 +420,7 @@ Bank::~Bank() {
 }
 
 void Bank::open() {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     char safe_data1;
     int deposit_size = sizeof(bank::deposit);
@@ -560,7 +588,7 @@ void Bank::open() {
 
 // save orbital in Bank with identity id
 int Bank::put_orb(int id, Orbital &orb) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     // for now we distribute according to id
     if (id > id_shift) MSG_WARN("Bank id should be less than id_shift (100000000)");
     MPI_Send(&SAVE_ORBITAL, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
@@ -573,7 +601,7 @@ int Bank::put_orb(int id, Orbital &orb) {
 // If wait=0, return immediately with value zero if not available (default)
 // else, wait until available
 int Bank::get_orb(int id, Orbital &orb, int wait) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     if (wait == 0) {
         MPI_Send(&GET_ORBITAL, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
@@ -596,7 +624,7 @@ int Bank::get_orb(int id, Orbital &orb, int wait) {
 // get orbital with identity id, and delete from bank.
 // return immediately with value zero if not available
 int Bank::get_orb_del(int id, Orbital &orb) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     MPI_Send(&GET_ORBITAL_AND_DELETE, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     int found;
@@ -613,7 +641,7 @@ int Bank::get_orb_del(int id, Orbital &orb) {
 
 // save function in Bank with identity id
 int Bank::put_func(int id, QMFunction &func) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     // for now we distribute according to id
     id += id_shift;
     MPI_Send(&SAVE_FUNCTION, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
@@ -624,7 +652,7 @@ int Bank::put_func(int id, QMFunction &func) {
 
 // get function with identity id
 int Bank::get_func(int id, QMFunction &func) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     id += id_shift;
     MPI_Send(&GET_FUNCTION, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
@@ -635,7 +663,7 @@ int Bank::get_func(int id, QMFunction &func) {
 
 // set the size of the data arrays (in size of doubles) to be sent/received later
 int Bank::set_datasize(int datasize) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     for (int i = 0; i < mpi::bank_size; i++) {
         MPI_Send(&SET_DATASIZE, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
         MPI_Send(&datasize, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
@@ -646,7 +674,7 @@ int Bank::set_datasize(int datasize) {
 
 // save data in Bank with identity id . datasize MUST have been set already. NB:not tested
 int Bank::put_data(int id, int size, double *data) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     // for now we distribute according to id
     id += 2 * id_shift;
     MPI_Send(&SAVE_DATA, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
@@ -657,7 +685,7 @@ int Bank::put_data(int id, int size, double *data) {
 
 // get data with identity id
 int Bank::get_data(int id, int size, double *data) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     id += 2 * id_shift;
     MPI_Send(&GET_DATA, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
@@ -668,7 +696,7 @@ int Bank::get_data(int id, int size, double *data) {
 
 // Ask to close the Bank
 void Bank::close() {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     for (int i = 0; i < mpi::bank_size; i++) {
         MPI_Send(&CLOSE_BANK, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
     }
@@ -677,7 +705,7 @@ void Bank::close() {
 
 int Bank::get_maxtotalsize() {
     int maxtot = 0;
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     int datasize;
     for (int i = 0; i < mpi::bank_size; i++) {
@@ -692,7 +720,7 @@ int Bank::get_maxtotalsize() {
 // remove all deposits
 // NB:: collective call. All clients must call this
 void Bank::clear_all(int iclient, MPI_Comm comm) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     // 1) wait until all clients are ready
     mpi::barrier(comm);
     // master send signal to bank
@@ -712,7 +740,7 @@ void Bank::clear_all(int iclient, MPI_Comm comm) {
 }
 
 void Bank::clear_bank() {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     for (int ix = 1; ix < this->deposits.size(); ix++) this->clear(ix);
     this->deposits.resize(1);
     this->queue.resize(1);
@@ -723,7 +751,7 @@ void Bank::clear_bank() {
 }
 
 void Bank::clear(int ix) {
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
     deposits[ix].orb->free(NUMBER::Total);
     delete deposits[ix].data;
     deposits[ix].hasdata = false;

@@ -8,6 +8,12 @@ add_library(mrchem
 
 add_dependencies(mrchem mrchem-info)
 
+target_compile_definitions(mrchem
+  PUBLIC
+    $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:MRCHEM_HAS_OMP>
+    $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MRCHEM_HAS_MPI>
+  )
+
 target_include_directories(mrchem
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
@@ -38,6 +44,11 @@ target_link_libraries(mrchem
     MRCPP::mrcpp
     XCFun::xcfun
     nlohmann_json::nlohmann_json
+    $<$<TARGET_EXISTS:OpenMP::OpenMP_CXX>:OpenMP::OpenMP_CXX>
+    $<$<TARGET_EXISTS:MPI::MPI_CXX>:MPI::MPI_CXX>
+    # NOTE the above should become this for consistency, but this requires #155 in MRCPP to be merged first
+    #$<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:OpenMP::OpenMP_CXX>
+    #$<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MPI::MPI_CXX>
   )
 
 set_target_properties(mrchem
@@ -87,11 +98,6 @@ set_target_properties(mrchem.x
 target_link_libraries(mrchem.x
   PRIVATE
     mrchem
-    MRCPP::mrcpp
-    XCFun::xcfun
-    nlohmann_json::nlohmann_json
-    $<$<TARGET_EXISTS:MPI::MPI_CXX>:MPI::MPI_CXX>
-    $<$<TARGET_EXISTS:OpenMP::OpenMP_CXX>:OpenMP::OpenMP_CXX>
   )
 
 # RPATH fixing
