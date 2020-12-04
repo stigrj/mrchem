@@ -61,6 +61,7 @@
 #include "qmoperators/one_electron/H_B_spin.h"
 #include "qmoperators/one_electron/H_E_dip.h"
 #include "qmoperators/one_electron/H_E_quad.h"
+#include "qmoperators/one_electron/H_MB_dia.h"
 #include "qmoperators/one_electron/H_M_fc.h"
 #include "qmoperators/one_electron/H_M_pso.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
@@ -331,13 +332,17 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         MSG_ERROR("Invalid initial guess");
         success = false;
     }
-    orbital::print(Phi);
+    for (const auto &phi_i : Phi) {
+        double err = (mpi::my_orb(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        if (err > 0.01) MSG_WARN("MO not normalized!");
+    }
 
+    orbital::print(Phi);
     return success;
 }
 
 bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockOperator &F) {
-    double prec = json_guess["prec"];
+    auto prec = json_guess["prec"];
     auto method = json_guess["method"];
     auto localize = json_guess["localize"];
 
@@ -726,7 +731,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
  */
 bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto type = json_guess["type"];
-    auto prec = json_guess["precision"];
+    auto prec = json_guess["prec"];
     auto mw_xp = json_guess["file_x_p"];
     auto mw_xa = json_guess["file_x_a"];
     auto mw_xb = json_guess["file_x_b"];
@@ -997,6 +1002,8 @@ RankTwoTensorOperator<I, J> driver::get_operator(const std::string &name, const 
     } else if (name == "h_bb_dia") {
         h = H_BB_dia(json_inp["r_O"]);
     } else if (name == "h_bm_dia") {
+        h = H_MB_dia(json_inp["r_O"], json_inp["r_K"], json_inp["smoothing"]);
+    } else if (name == "h_mb_dia") {
         h = H_BM_dia(json_inp["r_O"], json_inp["r_K"], json_inp["smoothing"]);
     } else {
         MSG_ERROR("Invalid operator: " << name);

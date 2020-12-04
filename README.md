@@ -3,7 +3,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3606659.svg)](https://doi.org/10.5281/zenodo.3606659)
 [![License](https://img.shields.io/badge/license-%20LGPLv3-blue.svg)](../master/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/mrchem/badge/?version=latest)](http://mrchem.readthedocs.io/en/latest/?badge=latest)
-[![Travis CI build status](https://travis-ci.org/MRChemSoft/mrchem.svg?branch=master)](https://travis-ci.org/MRChemSoft/mrchem)
+![Build and test MRChem](https://github.com/MRChemSoft/mrchem/workflows/Build%20and%20test%20MRChem/badge.svg)
 [![CircleCI](https://circleci.com/gh/MRChemSoft/mrchem/tree/master.svg?style=svg)](https://circleci.com/gh/MRChemSoft/mrchem/tree/master)
 [![codecov](https://codecov.io/gh/MRChemSoft/mrchem/branch/master/graph/badge.svg)](https://codecov.io/gh/MRChemSoft/mrchem)
 
@@ -24,11 +24,11 @@ For optimal performance it is recommended to build from source, as the packaged
 builds are quite generic without architecture specific optimizations.
 
 
-### From source including code examples
+### From source
 
 To build MRChem from source with MPI+OpenMP parallelization:
 
-    $ git clone git@github.com:MRChemSoft/mrchem.git
+    $ git clone https://github.com/MRChemSoft/mrchem.git
     $ cd mrchem
     $ ./setup --prefix=<install-dir> --omp --mpi --cxx=<mpi-compiler> <build-dir>
     $ cd <build-dir>
@@ -63,7 +63,7 @@ To list all available versions
 
 ### Using Spack
 
-To install MRCPP in a Spack environment `myenv`:
+To install MRChem in a Spack environment `myenv`:
 
     $ spack env create myenv
     $ spack env activate myenv
@@ -88,4 +88,17 @@ available):
 See
 [EasyBuild](https://github.com/easybuilders/easybuild-easyconfigs/tree/develop/easybuild/easyconfigs/m/MRChem)
 for available `<versions>` and `<toolchains>`.
+
+
+### Using Singularity
+
+To download MRChem image from Singularity Hub:
+
+    $ singularity pull --name mrchem-omp.sif shub://MRChemSoft/mrchem-singularity:v1.0.0-nompi
+    $ singularity pull --name mrchem-mpi.sif shub://MRChemSoft/mrchem-singularity:v1.0.0-openmpi4.0.5
+
+Note that the MPI image requires that a compatible MPI library is installed and
+available on the host. For information on how to launch the container:
+
+    $ singularity run-help mrchem-mpi.sif
 
