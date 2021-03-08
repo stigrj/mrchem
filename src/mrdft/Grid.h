@@ -52,7 +52,7 @@ public:
         // Extend current grid
         for (auto i = 0; i < inp.size(); i++) {
             auto &inp_i = mrcpp::get_func(inp, i);
-            mrcpp::build_grid(tree, inp_i);
+            tree.appendTreeNoCoeff(inp_i);
         }
         // Unify input grids
         for (auto i = 0; i < inp.size(); i++) {

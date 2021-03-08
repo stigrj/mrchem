@@ -36,22 +36,21 @@ enum {
     SAVE_ORBITAL,           // 7
     GET_FUNCTION,           // 8
     SAVE_FUNCTION,          // 9
-    SET_DATASIZE,           // 10
-    GET_DATA,               // 11
-    SAVE_DATA,              // 12
-    SAVE_NODEDATA,          // 13
-    GET_NODEDATA,           // 14
-    GET_NODEBLOCK,          // 15
-    GET_ORBBLOCK,           // 16
-    CLEAR_BLOCKS,           // 17
-    GETMAXTOTDATA,          // 18
-    GETTOTDATA,             // 19
-    INIT_TASKS,             // 20
-    GET_NEXTTASK,           // 21
-    PUT_READYTASK,          // 22
-    DEL_READYTASK,          // 23
-    GET_READYTASK,          // 24
-    GET_READYTASK_DEL,      // 25
+    GET_DATA,               // 10
+    SAVE_DATA,              // 11
+    SAVE_NODEDATA,          // 12
+    GET_NODEDATA,           // 13
+    GET_NODEBLOCK,          // 14
+    GET_ORBBLOCK,           // 15
+    CLEAR_BLOCKS,           // 16
+    GETMAXTOTDATA,          // 17
+    GETTOTDATA,             // 18
+    INIT_TASKS,             // 19
+    GET_NEXTTASK,           // 20
+    PUT_READYTASK,          // 21
+    DEL_READYTASK,          // 22
+    GET_READYTASK,          // 23
+    GET_READYTASK_DEL,      // 24
 };
 
 class Bank {
@@ -102,7 +101,6 @@ public:
     int get_orb_del(int id, Orbital &orb);
     int put_func(int id, QMFunction &func);
     int get_func(int id, QMFunction &func);
-    void set_datasize(int datasize, int iclient = orb_rank, MPI_Comm comm = comm_orb);
     int put_data(int id, int size, double *data);
     int get_data(int id, int size, double *data);
     int put_nodedata(int id, int nodeid, int size, double *data);

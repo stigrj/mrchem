@@ -473,7 +473,6 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
         std::vector<double> split(Neff, -1.0); // which orbitals need splitting (at a given node). For now double for compatibilty with bank
         std::vector<double> needsplit(Neff, 1.0); // which orbitals need splitting
         BankAccount nodeSplits;
-        nodeSplits.set_datasize(Neff);
         mrchem::mpi::barrier(mrchem::mpi::comm_orb); // required for now, as the blockdata functionality has no queue yet.
 
         DoubleMatrix coeffBlock(sizecoeff, Neff);

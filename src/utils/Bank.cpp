@@ -387,6 +387,7 @@ void Bank::open() {
                 ix = id2ix[id]; // the deposit exist from before. Will be overwritten
                 exist_flag = 1;
                 if (message == SAVE_DATA and !deposits[ix].hasdata) {
+                    datasize = messages[3];
                     exist_flag = 0;
                     deposits[ix].data = new double[datasize];
                     deposits[ix].hasdata = true;
@@ -396,6 +397,7 @@ void Bank::open() {
                 deposits.resize(ix + 1);
                 if (message == SAVE_ORBITAL or message == SAVE_FUNCTION) deposits[ix].orb = new Orbital(0);
                 if (message == SAVE_DATA) {
+                    datasize = messages[3];
                     deposits[ix].data = new double[datasize];
                     deposits[ix].hasdata = true;
                 }
@@ -413,6 +415,7 @@ void Bank::open() {
             }
             if (message == SAVE_FUNCTION) { recv_function(*deposits[ix].orb, deposits[ix].source, 1, comm_bank); }
             if (message == SAVE_DATA) {
+                datasize = messages[3];
                 deposits[ix].datasize = datasize;
                 MPI_Recv(deposits[ix].data, datasize, MPI_DOUBLE, deposits[ix].source, 1, comm_bank, &status);
                 currentsize[account] += datasize / 128; // converted into kB
@@ -426,25 +429,15 @@ void Bank::open() {
                 for (int iqq : queue[iq].clients) {
                     if (message == SAVE_ORBITAL) { send_orbital(*deposits[ix].orb, iqq, 1, comm_bank); }
                     if (message == SAVE_FUNCTION) { send_function(*deposits[ix].orb, iqq, 1, comm_bank); }
-                    if (message == SAVE_DATA) { MPI_Send(deposits[ix].data, datasize, MPI_DOUBLE, iqq, 1, comm_bank); }
+                    if (message == SAVE_DATA) {
+                        MPI_Send(deposits[ix].data, messages[3], MPI_DOUBLE, iqq, 1, comm_bank);
+                    }
                 }
                 queue[iq].clients.clear(); // cannot erase entire queue[iq], because that would require to shift all the
                                            // id2qu value larger than iq
                 queue[iq].id = -1;
                 id2qu.erase(deposits[ix].id);
             }
-        } else if (message == SET_DATASIZE) {
-            int datasize_new = messages[2];
-            if (datasize_new != datasize) {
-                // make sure that all old data arrays are deleted
-                for (int ix = 1; ix < deposits.size(); ix++) {
-                    if (deposits[ix].hasdata) {
-                        delete deposits[ix].data;
-                        deposits[ix].hasdata = false;
-                    }
-                }
-            }
-            datasize = datasize_new;
 
             // Task manager members:
         } else if (message == INIT_TASKS) {
@@ -590,7 +583,7 @@ void Bank::remove_account(int account) {
 
 int Bank::openAccount(int iclient, MPI_Comm comm) {
     // NB: this is a collective call, since we need all the accounts to be synchronized
-    int account_id = -1;
+    int account_id[1];
 #ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     int messages[message_size];
@@ -601,18 +594,18 @@ int Bank::openAccount(int iclient, MPI_Comm comm) {
     messages[1] = size;
     if (iclient == 0) {
         for (int i = 0; i < bank_size; i++) {
-            int account_id_i;
+            int account_id_i[1];
             MPI_Send(messages, message_size, MPI_INT, bankmaster[i], 0, comm_bank);
-            MPI_Recv(&account_id_i, 1, MPI_INT, bankmaster[i], 1, comm_bank, &status);
-            if (i > 0 and account_id_i != account_id) MSG_ABORT("Account id mismatch!");
-            account_id = account_id_i;
+            MPI_Recv(account_id_i, 1, MPI_INT, bankmaster[i], 1, comm_bank, &status);
+            if (i > 0 and account_id_i[0] != account_id[0]) MSG_ABORT("Account id mismatch!");
+            account_id[0] = account_id_i[0];
         }
-        MPI_Bcast(&account_id, 1, MPI_INT, 0, comm);
+        MPI_Bcast(account_id, 1, MPI_INT, 0, comm);
     } else {
-        MPI_Bcast(&account_id, 1, MPI_INT, 0, comm);
+        MPI_Bcast(account_id, 1, MPI_INT, 0, comm);
     }
 #endif
-    return account_id;
+    return account_id[0];
 }
 
 int Bank::openTaskManager(int ntasks, int iclient, MPI_Comm comm) {
@@ -803,22 +796,6 @@ int BankAccount::get_func(int id, QMFunction &func) {
     return 1;
 }
 
-// set the size of the data arrays (in size of doubles) to be sent/received later
-void BankAccount::set_datasize(int datasize, int iclient, MPI_Comm comm) {
-#ifdef MRCHEM_HAS_MPI
-    if (iclient == 0) {
-        for (int i = 0; i < bank_size; i++) {
-            int messages[message_size];
-            messages[0] = SET_DATASIZE;
-            messages[1] = account_id;
-            messages[2] = datasize;
-            MPI_Send(messages, 3, MPI_INT, bankmaster[i], 0, comm_bank);
-        }
-    }
-    MPI_Barrier(comm);
-#endif
-}
-
 // save data in Bank with identity id . datasize MUST have been set already. NB:not tested
 int BankAccount::put_data(int id, int size, double *data) {
 #ifdef MRCHEM_HAS_MPI
@@ -828,7 +805,8 @@ int BankAccount::put_data(int id, int size, double *data) {
     messages[0] = SAVE_DATA;
     messages[1] = account_id;
     messages[2] = id;
-    MPI_Send(messages, 3, MPI_INT, bankmaster[id % bank_size], 0, comm_bank);
+    messages[3] = size;
+    MPI_Send(messages, 4, MPI_INT, bankmaster[id % bank_size], 0, comm_bank);
     MPI_Send(data, size, MPI_DOUBLE, bankmaster[id % bank_size], 1, comm_bank);
 #endif
     return 1;

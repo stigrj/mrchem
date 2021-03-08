@@ -155,8 +155,13 @@ void ExchangePotential::calcExchange_kij(double prec,
     if (phi_k.hasReal()) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_k.real()));
     if (phi_k.hasImag()) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_k.imag()));
 
-    if (phi_j.hasReal()) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_j.real()));
-    if (phi_j.hasImag()) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_j.imag()));
+    if (phi_j.hasReal() and &phi_j != &phi_k) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_j.real()));
+    if (phi_j.hasImag() and &phi_j != &phi_k) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_j.imag()));
+
+    if (phi_i.hasReal() and &phi_i != &phi_k and &phi_i != &phi_j)
+        phi_opt_vec.push_back(std::make_tuple(1.0, &phi_i.real()));
+    if (phi_i.hasImag() and &phi_i != &phi_k and &phi_i != &phi_j)
+        phi_opt_vec.push_back(std::make_tuple(1.0, &phi_i.imag()));
 
     // compute V_ij = P[rho_ij]
     Timer timer_p;

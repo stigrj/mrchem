@@ -24,8 +24,13 @@
  */
 
 #include "MRCPP/MWOperators"
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+#include <MRCPP/trees/FunctionNode.h>
 
+#include "Functional.h"
 #include "MRDFT.h"
+#include "utils/Bank.h"
 #include "xc_utils.h"
 
 namespace mrdft {
@@ -55,39 +60,69 @@ namespace mrdft {
  * out_vec[2] = v_xc_b (XC beta potential)
  */
 mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) {
+    mrcpp::Timer timer;
     grid().unify(inp);
     functional().preprocess(inp);
     mrcpp::FunctionTreeVector<3> xcInpVec = functional().setupXCInput();
     mrcpp::FunctionTreeVector<3> ctrInpVec = functional().setupCtrInput();
 
-    // auto nOutXC = functional().getXCOutputLength();
-    // mrcpp::FunctionTreeVector<3> xcOutVec = grid().generate(nOutXC);
+    int nCoefs = mrcpp::get_func(inp, 0).getEndFuncNode(0).getNCoefs();
+    int nOutCtr = functional().getCtrOutputLength();
+    int nFcs = functional().getXCOutputLength();
 
-    auto nOutCtr = functional().getCtrOutputLength();
-    mrcpp::FunctionTreeVector<3> ctrOutVec = grid().generate(nOutCtr);
+    // divide nNodes into parts assigned to each MPI rank
+    int nNodes = grid().size();
+    int n_start = (mrchem::mpi::orb_rank * nNodes) / mrchem::mpi::orb_size;
+    int n_end = ((mrchem::mpi::orb_rank + 1) * nNodes) / mrchem::mpi::orb_size;
+    std::vector<Eigen::MatrixXd> ctrOutDataVec(n_end - n_start);
+
+    mrcpp::FunctionTreeVector<3> ctrOutVec;
+    if (mrchem::mpi::orb_size == 1) ctrOutVec = grid().generate(nOutCtr);
 
 #pragma omp parallel
     {
-        auto nNodes = grid().size();
 #pragma omp for schedule(guided)
-        for (int n = 0; n < nNodes; n++) {
+        for (int n = n_start; n < n_end; n++) {
             auto xcInpNodes = xc_utils::fetch_nodes(n, xcInpVec);
             auto xcInpData = xc_utils::compress_nodes(xcInpNodes);
 
             auto xcOutData = functional().evaluate(xcInpData);
-            // auto xcOutNodes = xc_utils::fetch_nodes(n, xcOutVec);
-            // xc_utils::expand_nodes(xcOutNodes, xcOutData);
-
             auto ctrInpNodes = xc_utils::fetch_nodes(n, ctrInpVec);
             auto ctrInpData = xc_utils::compress_nodes(ctrInpNodes);
             auto ctrOutData = functional().contract(xcOutData, ctrInpData);
 
+            if (mrchem::mpi::orb_size > 1) {
+                // store the results temporarily
+                ctrOutDataVec[n - n_start] = std::move(ctrOutData);
+            } else {
+                // postprocess the results
+                auto ctrOutNodes = xc_utils::fetch_nodes(n, ctrOutVec);
+                xc_utils::expand_nodes(ctrOutNodes, ctrOutData);
+            }
+        }
+    }
+
+    // Input data is cleared before constructing the full output
+    mrcpp::clear(xcInpVec, false);
+    mrcpp::clear(ctrInpVec, false);
+
+    if (mrchem::mpi::orb_size > 1) {
+        // each MPI process has only a part of the results
+
+        ctrOutVec = grid().generate(nOutCtr);
+        mrchem::BankAccount ctrOutBank; // to put the ctrOutDataVec;
+
+        // note that mpi cannot run in multiple omp threads
+        int size = nFcs * nCoefs;
+        for (int n = n_start; n < n_end; n++) ctrOutBank.put_data(n, size, ctrOutDataVec[n - n_start].data());
+        // fetch all nodes from bank and postprocess
+        for (int n = 0; n < nNodes; n++) {
+            Eigen::MatrixXd ctrOutData(nFcs, nCoefs);
+            ctrOutBank.get_data(n, size, ctrOutData.data());
             auto ctrOutNodes = xc_utils::fetch_nodes(n, ctrOutVec);
             xc_utils::expand_nodes(ctrOutNodes, ctrOutData);
         }
     }
-    mrcpp::clear(xcInpVec, false);
-    mrcpp::clear(ctrInpVec, false);
 
     // Reconstruct raw xcfun output functions
     /*
@@ -100,15 +135,22 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     */
 
     // Reconstruct contracted output functions
+    int totNodes = 0;
+    int totSize = 0;
     for (auto i = 0; i < ctrOutVec.size(); i++) {
         auto &f_i = mrcpp::get_func(ctrOutVec, i);
         f_i.mwTransform(mrcpp::BottomUp);
         f_i.calcSquareNorm();
+        // TODO? insert a crop
+        totNodes += f_i.getNNodes();
+        totSize += f_i.getSizeNodes();
     }
 
     auto potOutVec = functional().postprocess(ctrOutVec);
     mrcpp::clear(ctrOutVec, true);
     functional().clear();
+    auto t = timer.elapsed();
+    mrcpp::print::tree(2, "XC evaluate", totNodes, totSize, t);
 
     return potOutVec;
 }
