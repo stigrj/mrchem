@@ -53,6 +53,7 @@ NuclearPotential::NuclearPotential(const Nuclei &nucs, double proj_prec, double 
     NuclearFunction loc_func;
 
     double c = 0.00435 * smooth_prec;
+    double mycharge = 0.0;
     for (int k = 0; k < nucs.size(); k++) {
         const Nucleus &nuc = nucs[k];
         double Z = nuc.getCharge();
@@ -61,9 +62,9 @@ NuclearPotential::NuclearPotential(const Nuclei &nucs, double proj_prec, double 
 
         // All projection must be done on grand master in order to be exact
         int proj_rank = (mpi::numerically_exact) ? 0 : k % mpi::orb_size;
-
         this->func.push_back(nuc, smooth);
         if (mpi::orb_rank == proj_rank) loc_func.push_back(nuc, smooth);
+        if (mpi::orb_rank == proj_rank) mycharge += Z;
 
         std::stringstream o_row;
         o_row << std::setw(w1) << k;
@@ -79,16 +80,17 @@ NuclearPotential::NuclearPotential(const Nuclei &nucs, double proj_prec, double 
 
     // Scale precision by system size
     int Z_tot = chemistry::get_total_charge(nucs);
-    double abs_prec = proj_prec / Z_tot;
-
+    double abs_prec = proj_prec / std::min(1.0 * Z_tot, sqrt(2 * Z_tot));
+    double myabs_prec = proj_prec / std::max(1.0, mycharge);
     QMFunction V_loc(false);
 
     Timer t_loc;
-    qmfunction::project(V_loc, loc_func, NUMBER::Real, abs_prec);
+    qmfunction::project(V_loc, loc_func, NUMBER::Real, myabs_prec);
     t_loc.stop();
 
     Timer t_com;
     allreducePotential(abs_prec, V_loc);
+
     t_com.stop();
 
     t_tot.stop();
