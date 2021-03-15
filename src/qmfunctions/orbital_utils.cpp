@@ -324,8 +324,8 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
 
     // used for serial only:
     std::vector<std::vector<double *>> coeffVec(Neff);
-    std::vector<std::vector<int>> indexVec(Neff); // serialIx of the nodes
-    std::map<int, std::vector<int>> node2orbVec; // for each node index, gives a vector with the indices of the orbitals using this node
+    std::vector<std::vector<int>> indexVec(Neff);   // serialIx of the nodes
+    std::map<int, std::vector<int>> node2orbVec;    // for each node index, gives a vector with the indices of the orbitals using this node
     std::vector<std::map<int, int>> orb2node(Neff); // for a given orbital and a given node, gives the node index in the
                                                     // orbital given the node index in the reference tree
 
@@ -366,13 +366,13 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
     }
 
     // 4) rotate all the nodes
-    IntMatrix split_serial; // in the serial case all split are store in one array
-    std::vector<double> split(Neff, -1.0); // which orbitals need splitting (at a given node). For now double for compatibilty with bank
+    IntMatrix split_serial;                             // in the serial case all split are store in one array
+    std::vector<double> split(Neff, -1.0);              // which orbitals need splitting (at a given node). For now double for compatibilty with bank
     std::vector<double> needsplit(Neff, 1.0);           // which orbitals need splitting
     std::vector<std::vector<double *>> coeffpVec(Neff); // to put pointers to the rotated coefficient for each orbital
-    std::vector<std::map<int, int>> ix2coef(Neff); // to find the index in for example rotCoeffVec[] corresponding to a serialIx
-    int csize; // size of the current coefficients (different for roots and branches)
-    std::vector<DoubleMatrix> rotatedCoeffVec; // just to ensure that the data from rotatedCoeff is not deleted, since we point to it.
+    std::vector<std::map<int, int>> ix2coef(Neff);      // to find the index in for example rotCoeffVec[] corresponding to a serialIx
+    int csize;                                          // size of the current coefficients (different for roots and branches)
+    std::vector<DoubleMatrix> rotatedCoeffVec;          // just to ensure that the data from rotatedCoeff is not deleted, since we point to it.
     // j indices are for unrotated orbitals, i indices are for rotated orbitals
     if (serial) {
         std::map<int, int> ix2coef_ref;   // to find the index n corresponding to a serialIx
@@ -417,8 +417,7 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
             for (int i = 0; i < Neff; i++) { // loop over all rotated orbitals
                 if (not makeReal and i < N) continue;
                 if (not makeImag and i >= N) continue;
-                if (parindexVec_ref[n] >= 0 and split_serial(i, ix2coef_ref[parindexVec_ref[n]]) == 0)
-                    continue; // parent node has too small wavelets
+                if (parindexVec_ref[n] >= 0 and split_serial(i, ix2coef_ref[parindexVec_ref[n]]) == 0) continue; // parent node has too small wavelets
                 orbiVec.push_back(i);
             }
 
@@ -447,8 +446,7 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
                     // check norms for split
                     double wnorm = 0.0; // rotatedCoeff(k, i) is already in cache here
                     int kstart = 0;
-                    if (parindexVec_ref[n] < 0)
-                        kstart = sizecoeff - sizecoeffW; // do not include scaling, even for roots
+                    if (parindexVec_ref[n] < 0) kstart = sizecoeff - sizecoeffW; // do not include scaling, even for roots
                     for (int k = kstart; k < csize; k++) wnorm += rotatedCoeff(k, i) * rotatedCoeff(k, i);
                     if (thres < wnorm or prec < 0)
                         split_serial(orbiVec[i], n) = 1;
@@ -470,7 +468,7 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
     } else { // MPI case
 
         // TODO? rotate in bank, so that we do not get and put. Requires clever handling of splits.
-        std::vector<double> split(Neff, -1.0); // which orbitals need splitting (at a given node). For now double for compatibilty with bank
+        std::vector<double> split(Neff, -1.0);    // which orbitals need splitting (at a given node). For now double for compatibilty with bank
         std::vector<double> needsplit(Neff, 1.0); // which orbitals need splitting
         BankAccount nodeSplits;
         mrchem::mpi::barrier(mrchem::mpi::comm_orb); // required for now, as the blockdata functionality has no queue yet.
@@ -883,7 +881,7 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &BraKet) {
 
     // only used for serial case:
     std::vector<std::vector<double *>> coeffVec(2 * N);
-    std::map<int, std::vector<int>> node2orbVec; // for each node index, gives a vector with the indices of the orbitals using this node
+    std::map<int, std::vector<int>> node2orbVec;     // for each node index, gives a vector with the indices of the orbitals using this node
     std::vector<std::map<int, int>> orb2node(2 * N); // for a given orbital and a given node, gives the node index in
                                                      // the orbital given the node index in the reference tree
 
@@ -955,10 +953,8 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &BraKet) {
                 S_temp.noalias() = coeffBlock.transpose() * coeffBlock;
                 for (int i = 0; i < orbVec.size(); i++) {
                     for (int j = 0; j < orbVec.size(); j++) {
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta)
-                            continue;
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha)
-                            continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta) continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha) continue;
                         double &Srealij = Sreal(orbVec[i], orbVec[j]);
                         double &Stempij = S_temp(i, j);
 #pragma omp atomic
@@ -976,10 +972,8 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &BraKet) {
                 S_temp.noalias() = coeffBlock.transpose() * coeffBlock;
                 for (int i = 0; i < orbVec.size(); i++) {
                     for (int j = 0; j < orbVec.size(); j++) {
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta)
-                            continue;
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha)
-                            continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta) continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha) continue;
                         Sreal(orbVec[i], orbVec[j]) += S_temp(i, j);
                     }
                 }
@@ -1042,11 +1036,11 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ke
 
     // only used for serial case:
     std::vector<std::vector<double *>> coeffVecBra(2 * N);
-    std::map<int, std::vector<int>> node2orbVecBra; // for each node index, gives a vector with the indices of the orbitals using this node
+    std::map<int, std::vector<int>> node2orbVecBra;     // for each node index, gives a vector with the indices of the orbitals using this node
     std::vector<std::map<int, int>> orb2nodeBra(2 * N); // for a given orbital and a given node, gives the node index in
                                                         // the orbital given the node index in the reference tree
     std::vector<std::vector<double *>> coeffVecKet(2 * M);
-    std::map<int, std::vector<int>> node2orbVecKet; // for each node index, gives a vector with the indices of the orbitals using this node
+    std::map<int, std::vector<int>> node2orbVecKet;     // for each node index, gives a vector with the indices of the orbitals using this node
     std::vector<std::map<int, int>> orb2nodeKet(2 * M); // for a given orbital and a given node, gives the node index in
                                                         // the orbital given the node index in the reference tree
     BankAccount nodesBra;
@@ -1136,14 +1130,12 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ke
 
             for (int j : node2orbVecBra[node_ix]) { // loop over indices of the orbitals using this node
                 int orb_node_ix = orb2nodeBra[j][node_ix];
-                for (int k = 0; k < csize; k++)
-                    coeffBlockBra(k, orbVecBra.size()) = coeffVecBra[j][orb_node_ix][k + shift];
+                for (int k = 0; k < csize; k++) coeffBlockBra(k, orbVecBra.size()) = coeffVecBra[j][orb_node_ix][k + shift];
                 orbVecBra.push_back(j);
             }
             for (int j : node2orbVecKet[node_ix]) { // loop over indices of the orbitals using this node
                 int orb_node_ix = orb2nodeKet[j][node_ix];
-                for (int k = 0; k < csize; k++)
-                    coeffBlockKet(k, orbVecKet.size()) = coeffVecKet[j][orb_node_ix][k + shift];
+                for (int k = 0; k < csize; k++) coeffBlockKet(k, orbVecKet.size()) = coeffVecKet[j][orb_node_ix][k + shift];
                 orbVecKet.push_back(j);
             }
 
@@ -1152,10 +1144,8 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ke
                 S_temp.noalias() = coeffBlockBra.transpose() * coeffBlockKet;
                 for (int i = 0; i < orbVecBra.size(); i++) {
                     for (int j = 0; j < orbVecKet.size(); j++) {
-                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Alpha and Ket[orbVecKet[j] % M].spin() == SPIN::Beta)
-                            continue;
-                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Beta and Ket[orbVecKet[j] % M].spin() == SPIN::Alpha)
-                            continue;
+                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Alpha and Ket[orbVecKet[j] % M].spin() == SPIN::Beta) continue;
+                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Beta and Ket[orbVecKet[j] % M].spin() == SPIN::Alpha) continue;
                         // must ensure that threads are not competing
                         double &Srealij = Sreal(orbVecBra[i], orbVecKet[j]);
                         double &Stempij = S_temp(i, j);
@@ -1178,10 +1168,8 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ke
                 S_temp.noalias() = coeffBlockBra.transpose() * coeffBlockKet;
                 for (int i = 0; i < orbVecBra.size(); i++) {
                     for (int j = 0; j < orbVecKet.size(); j++) {
-                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Alpha and Ket[orbVecKet[j] % M].spin() == SPIN::Beta)
-                            continue;
-                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Beta and Ket[orbVecKet[j] % M].spin() == SPIN::Alpha)
-                            continue;
+                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Alpha and Ket[orbVecKet[j] % M].spin() == SPIN::Beta) continue;
+                        if (Bra[orbVecBra[i] % N].spin() == SPIN::Beta and Ket[orbVecKet[j] % M].spin() == SPIN::Alpha) continue;
                         Sreal(orbVecBra[i], orbVecKet[j]) += S_temp(i, j);
                     }
                 }
@@ -1243,7 +1231,7 @@ DoubleMatrix orbital::calc_norm_overlap_matrix(OrbitalVector &BraKet) {
 
     // only used for serial case:
     std::vector<std::vector<double *>> coeffVec(2 * N);
-    std::map<int, std::vector<int>> node2orbVec; // for each node index, gives a vector with the indices of the orbitals using this node
+    std::map<int, std::vector<int>> node2orbVec;     // for each node index, gives a vector with the indices of the orbitals using this node
     std::vector<std::map<int, int>> orb2node(2 * N); // for a given orbital and a given node, gives the node index in
                                                      // the orbital given the node index in the reference tree
 
@@ -1315,10 +1303,8 @@ DoubleMatrix orbital::calc_norm_overlap_matrix(OrbitalVector &BraKet) {
                 S_temp.noalias() = coeffBlock.transpose() * coeffBlock;
                 for (int i = 0; i < orbVec.size(); i++) {
                     for (int j = 0; j < orbVec.size(); j++) {
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta)
-                            continue;
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha)
-                            continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta) continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha) continue;
                         double &Srealij = Sreal(orbVec[i], orbVec[j]);
                         double &Stempij = S_temp(i, j);
 #pragma omp atomic
@@ -1337,10 +1323,8 @@ DoubleMatrix orbital::calc_norm_overlap_matrix(OrbitalVector &BraKet) {
                 S_temp.noalias() = coeffBlock.transpose() * coeffBlock;
                 for (int i = 0; i < orbVec.size(); i++) {
                     for (int j = 0; j < orbVec.size(); j++) {
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta)
-                            continue;
-                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha)
-                            continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Alpha and BraKet[orbVec[j] % N].spin() == SPIN::Beta) continue;
+                        if (BraKet[orbVec[i] % N].spin() == SPIN::Beta and BraKet[orbVec[j] % N].spin() == SPIN::Alpha) continue;
                         Sreal(orbVec[i], orbVec[j]) += S_temp(i, j);
                     }
                 }
@@ -1357,8 +1341,7 @@ DoubleMatrix orbital::calc_norm_overlap_matrix(OrbitalVector &BraKet) {
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j <= i; j++) {
-            S(i, j) = Sreal(i, j) + conjMat[i] * conjMat[j] * Sreal(i + N, j + N) + conjMat[j] * Sreal(i, j + N) -
-                      conjMat[i] * Sreal(i + N, j);
+            S(i, j) = Sreal(i, j) + conjMat[i] * conjMat[j] * Sreal(i + N, j + N) + conjMat[j] * Sreal(i, j + N) - conjMat[i] * Sreal(i + N, j);
             S(j, i) = S(i, j);
         }
     }
@@ -1376,8 +1359,12 @@ DoubleMatrix orbital::calc_norm_overlap_matrix(OrbitalVector &BraKet) {
  * Computes the inverse square root of the orbital overlap matrix S^(-1/2)
  */
 ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
+    Timer overlap_t;
     ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
+    mrcpp::print::time(2, "Computing overlap matrix", overlap_t);
     ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0 / 2.0);
+    Timer lowdin_t;
+    mrcpp::print::time(2, "Computing Lowdin matrix", lowdin_t);
     return S_m12;
 }
 
@@ -1456,11 +1443,7 @@ ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi)
     } else {
         println(2, " Cannot localize less than two orbitals");
     }
-    if (n_it == 0) {
-        Timer orth_t;
-        U = orbital::calc_lowdin_matrix(Phi);
-        mrcpp::print::time(2, "Computing Lowdin matrix", orth_t);
-    }
+    if (n_it == 0) U = orbital::calc_lowdin_matrix(Phi);
     return U;
 }
 
@@ -1478,10 +1461,8 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Digonalizing Fock matrix");
 
-    Timer orth_t;
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
     F = S_m12.adjoint() * F * S_m12;
-    mrcpp::print::time(2, "Computing Lowdin matrix", orth_t);
 
     Timer diag_t;
     ComplexMatrix U = ComplexMatrix::Zero(F.rows(), F.cols());
@@ -1515,9 +1496,7 @@ ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi, ComplexMa
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Lowdin orthonormalization");
 
-    t_lap.start();
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    mrcpp::print::time(2, "Computing Lowdin matrix", t_lap);
 
     t_lap.start();
     Phi = orbital::rotate(Phi, U, prec);
