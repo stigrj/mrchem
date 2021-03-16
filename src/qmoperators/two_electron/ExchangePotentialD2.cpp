@@ -89,7 +89,7 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
     // use fixed exchange_prec if set explicitly, otherwise use setup prec
     double precf = (this->exchange_prec > 0.0) ? this->exchange_prec : prec;
     // adjust precision since we sum over orbitals
-    precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
+    precf /= std::sqrt(1 * Phi.size());
 
     QMFunctionVector func_vec;
     std::vector<ComplexDouble> coef_vec;
