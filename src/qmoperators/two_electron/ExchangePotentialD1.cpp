@@ -158,6 +158,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     int task = 0;
     // make a path for tasks that follow diagonals, in order to maximize the spread of orbitals treated
     for (int ib = 0; ib < (iblocks + 1) / 2; ib++) {
+        if (task >= (iblocks * (iblocks - 1) / 2)) break;
         for (int ij = 0; ij < iblocks; ij++) {
             int j0 = ij;
             int i0 = ib + ij + 1;
@@ -188,7 +189,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
             task++;
             if (task >= (iblocks * (iblocks - 1) / 2)) break;
         }
-        if (task >= (iblocks * (iblocks - 1) / 2)) break;
     }
 
     // add diagonal blocks:
@@ -356,7 +356,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
         }
         sizes[j] = Ex[j].getNNodes(NUMBER::Total);
         sizes[j + N] = Ex[j].getSizeNodes(NUMBER::Total);
-   }
+    }
     mrcpp::print::time(4, "Time rcv orbitals", timerR);
     mrcpp::print::time(4, "Time send exchanges", timerS);
     mrcpp::print::time(4, "Time rcv exchanges", t_get);
