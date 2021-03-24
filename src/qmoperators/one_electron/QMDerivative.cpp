@@ -39,12 +39,13 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-QMNabla::QMNabla(int d, std::shared_ptr<DerivativeOperator<3>> D)
+QMDerivative::QMDerivative(int d, std::shared_ptr<DerivativeOperator<3>> D, bool im)
         : QMOperator()
+        , imag(im)
         , apply_dir(d)
         , derivative(D) {}
 
-Orbital QMNabla::apply(Orbital inp) {
+Orbital QMDerivative::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
     if (this->derivative == nullptr) MSG_ERROR("No derivative operator");
 
@@ -52,23 +53,32 @@ Orbital QMNabla::apply(Orbital inp) {
     auto &D = *this->derivative;
 
     Orbital out = inp.paramCopy();
-
-    // Calc real part
-    if (inp.hasReal()) {
-        out.alloc(NUMBER::Real);
-        mrcpp::apply(out.real(), D, inp.real(), dir);
+    if (this->isReal()) {
+        if (inp.hasReal()) {
+            out.alloc(NUMBER::Real);
+            mrcpp::apply(out.real(), D, inp.real(), dir);
+        }
+        if (inp.hasImag()) {
+            out.alloc(NUMBER::Imag);
+            mrcpp::apply(out.imag(), D, inp.imag(), dir);
+            if (inp.conjugate()) out.imag().rescale(-1.0);
+        }
+    } else {
+        if (inp.hasImag()) {
+            out.alloc(NUMBER::Real);
+            mrcpp::apply(out.real(), D, inp.imag(), dir);
+            if (inp.conjugate()) out.real().rescale(-1.0);
+        }
+        if (inp.hasReal()) {
+            out.alloc(NUMBER::Imag);
+            mrcpp::apply(out.imag(), D, inp.real(), dir);
+            out.imag().rescale(-1.0);
+        }
     }
-    // Calc imag part
-    if (inp.hasImag()) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::apply(out.imag(), D, inp.imag(), dir);
-        if (inp.conjugate()) out.imag().rescale(-1.0);
-    }
-
     return out;
 }
 
-Orbital QMNabla::dagger(Orbital inp) {
+Orbital QMDerivative::dagger(Orbital inp) {
     NOT_IMPLEMENTED_ABORT;
 }
 

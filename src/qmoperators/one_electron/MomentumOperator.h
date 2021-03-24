@@ -25,29 +25,17 @@
 
 #pragma once
 
-#include "qmoperators/QMOperator.h"
+#include "qmoperators/one_electron/QMDerivative.h"
 #include "qmoperators/RankOneTensorOperator.h"
 
 namespace mrchem {
 
-class QMMomentum final : public QMOperator {
-public:
-    QMMomentum(int d, std::shared_ptr<mrcpp::DerivativeOperator<3>> D);
-
-private:
-    const int apply_dir;
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
-
-    Orbital apply(Orbital inp) override;
-    Orbital dagger(Orbital inp) override;
-};
-
 class MomentumOperator final : public RankOneTensorOperator<3> {
 public:
     MomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        auto p_x = std::make_shared<QMMomentum>(0, D);
-        auto p_y = std::make_shared<QMMomentum>(1, D);
-        auto p_z = std::make_shared<QMMomentum>(2, D);
+        auto p_x = std::make_shared<QMDerivative>(0, D, true);
+        auto p_y = std::make_shared<QMDerivative>(1, D, true);
+        auto p_z = std::make_shared<QMDerivative>(2, D, true);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &p = (*this);

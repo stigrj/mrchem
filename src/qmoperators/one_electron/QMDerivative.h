@@ -25,27 +25,24 @@
 
 #pragma once
 
-#include "qmoperators/one_electron/QMDerivative.h"
-#include "qmoperators/RankOneTensorOperator.h"
+#include "qmoperators/QMOperator.h"
 
 namespace mrchem {
 
-class NablaOperator final : public RankOneTensorOperator<3> {
+class QMDerivative final : public QMOperator {
 public:
-    NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        auto d_x = std::make_shared<QMDerivative>(0, D);
-        auto d_y = std::make_shared<QMDerivative>(1, D);
-        auto d_z = std::make_shared<QMDerivative>(2, D);
+    QMDerivative(int d, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool im = false);
 
-        // Invoke operator= to assign *this operator
-        RankOneTensorOperator<3> &d = (*this);
-        d[0] = d_x;
-        d[1] = d_y;
-        d[2] = d_z;
-        d[0].name() = "del[x]";
-        d[1].name() = "del[y]";
-        d[2].name() = "del[z]";
-    }
+private:
+    const bool imag;     // add imaginary unit prefactor, for faster application
+    const int apply_dir; // Cartesian direction of derivative
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
+
+    bool isReal() const { return not(imag); }
+    bool isImag() const { return imag; }
+
+    Orbital apply(Orbital inp) override;
+    Orbital dagger(Orbital inp) override;
 };
 
 } // namespace mrchem
