@@ -25,21 +25,17 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
-#include "qmoperators/one_electron/QMIdentity.h"
+#include "qmoperators/QMOperator.h"
 
 namespace mrchem {
 
-class IdentityOperator final : public RankZeroTensorOperator {
+class QMIdentity final : public QMOperator {
 public:
-    IdentityOperator() {
-        auto id = std::make_shared<QMIdentity>();
+    QMIdentity() = default;
 
-        // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &I = (*this);
-        I = id;
-        I.name() = "I";
-    }
+private:
+    Orbital apply(Orbital inp) override;
+    Orbital dagger(Orbital inp) override;
 };
 
 } // namespace mrchem

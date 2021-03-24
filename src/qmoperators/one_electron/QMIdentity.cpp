@@ -25,13 +25,12 @@
 
 #include "MRCPP/Printer"
 
-#include "IdentityOperator.h"
+#include "QMIdentity.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** Identity operator is a deep copy */
 Orbital QMIdentity::apply(Orbital inp) {
