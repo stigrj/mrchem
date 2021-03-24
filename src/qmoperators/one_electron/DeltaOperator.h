@@ -44,16 +44,13 @@ private:
 class DeltaOperator final : public RankZeroTensorOperator {
 public:
     DeltaOperator(const mrcpp::Coord<3> &o, double expo = 1.0e6) {
-        delta = std::make_shared<QMDelta>(o, expo);
+        auto delta = std::make_shared<QMDelta>(o, expo);
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &d = (*this);
         d = delta;
         d.name() = "delta";
     }
-
-private:
-    std::shared_ptr<QMDelta> delta{nullptr};
 };
 
 } // namespace mrchem

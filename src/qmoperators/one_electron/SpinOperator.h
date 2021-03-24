@@ -45,9 +45,9 @@ private:
 class SpinOperator final : public RankOneTensorOperator<3> {
 public:
     SpinOperator() {
-        s_x = std::make_shared<QMSpin>(0);
-        s_y = std::make_shared<QMSpin>(1);
-        s_z = std::make_shared<QMSpin>(2);
+        auto s_x = std::make_shared<QMSpin>(0);
+        auto s_y = std::make_shared<QMSpin>(1);
+        auto s_z = std::make_shared<QMSpin>(2);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator &s = *this;
@@ -58,11 +58,6 @@ public:
         s[1].name() = "s[y]";
         s[2].name() = "s[z]";
     }
-
-private:
-    std::shared_ptr<QMSpin> s_x{nullptr};
-    std::shared_ptr<QMSpin> s_y{nullptr};
-    std::shared_ptr<QMSpin> s_z{nullptr};
 };
 
 } // namespace mrchem

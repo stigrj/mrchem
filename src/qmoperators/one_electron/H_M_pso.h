@@ -47,10 +47,11 @@ namespace mrchem {
 
 class H_M_pso final : public RankOneTensorOperator<3> {
 public:
-    H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double c)
-            : p(D)
-            , r_m3(1.0, k, c) {
+    H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double c) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
+
+        MomentumOperator p(D);
+        NuclearGradientOperator r_m3(1.0, k, c);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
@@ -61,10 +62,6 @@ public:
         h[1].name() = "h_M_pso[y]";
         h[2].name() = "h_M_pso[z]";
     }
-
-private:
-    MomentumOperator p;
-    NuclearGradientOperator r_m3;
 };
 
 } // namespace mrchem

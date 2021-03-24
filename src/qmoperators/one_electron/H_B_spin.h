@@ -49,6 +49,8 @@ public:
     H_B_spin() {
         const double g_e = PHYSCONST::g_e;
 
+        SpinOperator s;
+
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
         h[0] = (-g_e / 2.0) * s[0];
@@ -58,9 +60,6 @@ public:
         h[1].name() = "h_B_spin[y]";
         h[2].name() = "h_B_spin[z]";
     }
-
-private:
-    SpinOperator s;
 };
 
 } // namespace mrchem

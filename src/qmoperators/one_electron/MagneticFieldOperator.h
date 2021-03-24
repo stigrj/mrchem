@@ -44,22 +44,14 @@ class MagneticFieldOperator final : public ExternalFieldOperator {
 public:
     MagneticFieldOperator(const Eigen::Vector3d &f,
                           std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                          const mrcpp::Coord<3> &o)
-            : field(f)
-            , dipole(D, o) {
-        RankZeroTensorOperator &d_x = this->dipole[0];
-        RankZeroTensorOperator &d_y = this->dipole[1];
-        RankZeroTensorOperator &d_z = this->dipole[2];
+                          const mrcpp::Coord<3> &o) {
+        H_B_dip mu(D, o);
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &HMF = (*this);
-        HMF = f[0] * d_x + f[1] * d_y + f[2] * d_z;
+        HMF = f[0] * mu[0] + f[1] * mu[1] + f[2] * mu[2];
         HMF.name() = "B . mu_B";
     }
-
-private:
-    Eigen::Vector3d field;
-    H_B_dip dipole;
 };
 
 } // namespace mrchem

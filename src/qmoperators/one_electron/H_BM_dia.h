@@ -48,16 +48,18 @@ namespace mrchem {
 
 class H_BM_dia final : public RankTwoTensorOperator<3, 3> {
 public:
-    H_BM_dia(const mrcpp::Coord<3> &o, const mrcpp::Coord<3> &k, double c)
-            : r_o(o)
-            , r_rm3(1.0, k, c) {
+    H_BM_dia(const mrcpp::Coord<3> &o, const mrcpp::Coord<3> &k, double c) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
-        RankZeroTensorOperator &o_x = this->r_o[0];
-        RankZeroTensorOperator &o_y = this->r_o[1];
-        RankZeroTensorOperator &o_z = this->r_o[2];
-        RankZeroTensorOperator &k_x = this->r_rm3[0];
-        RankZeroTensorOperator &k_y = this->r_rm3[1];
-        RankZeroTensorOperator &k_z = this->r_rm3[2];
+
+        PositionOperator r_o(o);
+        NuclearGradientOperator r_rm3(1.0, k, c);
+
+        RankZeroTensorOperator &o_x = r_o[0];
+        RankZeroTensorOperator &o_y = r_o[1];
+        RankZeroTensorOperator &o_z = r_o[2];
+        RankZeroTensorOperator &k_x = r_rm3[0];
+        RankZeroTensorOperator &k_y = r_rm3[1];
+        RankZeroTensorOperator &k_z = r_rm3[2];
 
         // Invoke operator= to assign *this operator
         RankTwoTensorOperator<3, 3> &h = (*this);
@@ -80,10 +82,6 @@ public:
         h[2][1].name() = "h_BM_dia[z,y]";
         h[2][2].name() = "h_BM_dia[z,z]";
     }
-
-private:
-    PositionOperator r_o;
-    NuclearGradientOperator r_rm3;
 };
 
 } // namespace mrchem

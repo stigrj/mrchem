@@ -46,8 +46,9 @@ namespace mrchem {
 
 class H_B_dip final : public RankOneTensorOperator<3> {
 public:
-    H_B_dip(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
-            : l(D, o) {
+    H_B_dip(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o) {
+        AngularMomentumOperator l(D, o);
+
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
         h[0] = 0.5 * l[0];
@@ -57,9 +58,6 @@ public:
         h[1].name() = "h_B_dip[y]";
         h[2].name() = "h_B_dip[z]";
     }
-
-private:
-    AngularMomentumOperator l;
 };
 
 } // namespace mrchem

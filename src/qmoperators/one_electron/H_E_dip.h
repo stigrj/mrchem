@@ -43,8 +43,9 @@ namespace mrchem {
 
 class H_E_dip final : public RankOneTensorOperator<3> {
 public:
-    H_E_dip(const mrcpp::Coord<3> &o)
-            : r(o) {
+    H_E_dip(const mrcpp::Coord<3> &o) {
+        PositionOperator r(o);
+
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
         h[0] = -1.0 * r[0];
@@ -54,9 +55,6 @@ public:
         h[1].name() = "h_E_dip[y]";
         h[2].name() = "h_E_dip[z]";
     }
-
-protected:
-    PositionOperator r;
 };
 
 } // namespace mrchem

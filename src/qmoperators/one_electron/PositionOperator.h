@@ -44,9 +44,9 @@ protected:
 class PositionOperator : public RankOneTensorOperator<3> {
 public:
     PositionOperator(const mrcpp::Coord<3> &o = {0.0, 0.0, 0.0}) {
-        r_x = std::make_shared<PositionPotential>(0, o);
-        r_y = std::make_shared<PositionPotential>(1, o);
-        r_z = std::make_shared<PositionPotential>(2, o);
+        auto r_x = std::make_shared<PositionPotential>(0, o);
+        auto r_y = std::make_shared<PositionPotential>(1, o);
+        auto r_z = std::make_shared<PositionPotential>(2, o);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator &r = (*this);
@@ -57,11 +57,6 @@ public:
         r[1].name() = "r[y]";
         r[2].name() = "r[z]";
     }
-
-protected:
-    std::shared_ptr<PositionPotential> r_x{nullptr};
-    std::shared_ptr<PositionPotential> r_y{nullptr};
-    std::shared_ptr<PositionPotential> r_z{nullptr};
 };
 
 } // namespace mrchem

@@ -32,8 +32,7 @@ namespace mrchem {
 
 class QMIdentity final : public QMOperator {
 public:
-    QMIdentity()
-            : QMOperator() {}
+    QMIdentity() = default;
 
 private:
     Orbital apply(Orbital inp) override;
@@ -43,26 +42,13 @@ private:
 class IdentityOperator final : public RankZeroTensorOperator {
 public:
     IdentityOperator() {
-        I = std::make_shared<QMIdentity>();
+        auto I = std::make_shared<QMIdentity>();
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &h = (*this);
         h = I;
         h.name() = "I";
     }
-
-    ComplexDouble operator()(Orbital bra, Orbital ket);
-    ComplexDouble dagger(Orbital bra, Orbital ket);
-
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
-
-    // Necessary in order to pick up base class definitions for overloaded functions
-    using RankZeroTensorOperator::operator();
-    using RankZeroTensorOperator::dagger;
-
-private:
-    std::shared_ptr<QMIdentity> I;
 };
 
 } // namespace mrchem

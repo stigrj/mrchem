@@ -46,7 +46,7 @@ private:
 class DistanceOperator final : public RankZeroTensorOperator {
 public:
     DistanceOperator(double pow, const mrcpp::Coord<3> &R, double S = 1.0e-7) {
-        r_pow = std::make_shared<DistancePotential>(pow, R, S);
+        auto r_pow = std::make_shared<DistancePotential>(pow, R, S);
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &v = (*this);
@@ -55,9 +55,6 @@ public:
         o_name << "r^{" << std::setprecision(1) << std::fixed << pow << "}";
         v.name() = o_name.str();
     }
-
-private:
-    std::shared_ptr<DistancePotential> r_pow{nullptr};
 };
 
 } // namespace mrchem

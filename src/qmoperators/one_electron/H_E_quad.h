@@ -42,8 +42,9 @@ namespace mrchem {
 
 class H_E_quad final : public RankTwoTensorOperator<3, 3> {
 public:
-    H_E_quad(const mrcpp::Coord<3> &o)
-            : r(o) {
+    H_E_quad(const mrcpp::Coord<3> &o) {
+        PositionOperator r(o);
+
         // Invoke operator= to assign *this operator
         RankTwoTensorOperator &h = (*this);
         h[0][0] = -1.0 * r[0] * r[0] + 0.5 * r[1] * r[1] + 0.5 * r[2] * r[2];
@@ -65,9 +66,6 @@ public:
         h[2][1].name() = "h_e_quad[z,y]";
         h[2][2].name() = "h_e_quad[z,z]";
     }
-
-private:
-    PositionOperator r;
 };
 
 } // namespace mrchem

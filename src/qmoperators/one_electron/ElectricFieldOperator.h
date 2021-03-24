@@ -49,34 +49,22 @@ namespace mrchem {
  */
 class ElectricFieldOperator final : public RankZeroTensorOperator {
 public:
-    ElectricFieldOperator(const std::array<double, 3> &f, const mrcpp::Coord<3> &o)
-            : field(f[0], f[1], f[2])
-            , dipole(o) {
-        RankZeroTensorOperator &d_x = this->dipole[0];
-        RankZeroTensorOperator &d_y = this->dipole[1];
-        RankZeroTensorOperator &d_z = this->dipole[2];
+    ElectricFieldOperator(const std::array<double, 3> &f, const mrcpp::Coord<3> &o) {
+        H_E_dip mu(o);
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &HEF = (*this);
-        HEF = -f[0] * d_x - f[1] * d_y - f[2] * d_z;
+        HEF = -f[0] * mu[0] - f[1] * mu[1] - f[2] * mu[2];
         HEF.name() = "E . mu_E";
     }
-    ElectricFieldOperator(const Eigen::Vector3d &f, const mrcpp::Coord<3> &o)
-            : field(f)
-            , dipole(o) {
-        RankZeroTensorOperator &d_x = this->dipole[0];
-        RankZeroTensorOperator &d_y = this->dipole[1];
-        RankZeroTensorOperator &d_z = this->dipole[2];
+    ElectricFieldOperator(const Eigen::Vector3d &f, const mrcpp::Coord<3> &o) {
+        H_E_dip mu(o);
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &HEF = (*this);
-        HEF = -f[0] * d_x - f[1] * d_y - f[2] * d_z;
+        HEF = -f[0] * mu[0] - f[1] * mu[1] - f[2] * mu[2];
         HEF.name() = "E . mu_E";
     }
-
-private:
-    Eigen::Vector3d field; ///< the external field vector
-    H_E_dip dipole;        ///< the dipole moment operator
 };
 
 } // namespace mrchem

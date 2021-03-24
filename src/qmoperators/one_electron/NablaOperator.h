@@ -45,9 +45,9 @@ private:
 class NablaOperator final : public RankOneTensorOperator<3> {
 public:
     NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        d_x = std::make_shared<QMNabla>(0, D);
-        d_y = std::make_shared<QMNabla>(1, D);
-        d_z = std::make_shared<QMNabla>(2, D);
+        auto d_x = std::make_shared<QMNabla>(0, D);
+        auto d_y = std::make_shared<QMNabla>(1, D);
+        auto d_z = std::make_shared<QMNabla>(2, D);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &d = (*this);
@@ -58,11 +58,6 @@ public:
         d[1].name() = "del[y]";
         d[2].name() = "del[z]";
     }
-
-private:
-    std::shared_ptr<QMNabla> d_x{nullptr};
-    std::shared_ptr<QMNabla> d_y{nullptr};
-    std::shared_ptr<QMNabla> d_z{nullptr};
 };
 
 } // namespace mrchem
