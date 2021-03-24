@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "MomentumOperator.h"
+#include "NablaOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class KineticOperator
@@ -43,22 +43,14 @@ namespace mrchem {
 
 class KineticOperator final : public RankZeroTensorOperator {
 public:
-    KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
-            : p(D) {
+    KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
+        NablaOperator del(D);
+
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &t = (*this);
-        t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+        t = -0.5 * (del[0] * del[0] + del[1] * del[1] + del[2] * del[2]);
         t.name() = "T";
     }
-
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
-
-    using RankZeroTensorOperator::operator();
-    using RankZeroTensorOperator::dagger;
-
-private:
-    MomentumOperator p;
 };
 
 } // namespace mrchem
