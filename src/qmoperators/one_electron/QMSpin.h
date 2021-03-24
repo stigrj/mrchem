@@ -25,27 +25,20 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
-#include "qmoperators/one_electron/QMSpin.h"
+#include "qmoperators/QMOperator.h"
 
 namespace mrchem {
 
-class SpinOperator final : public RankOneTensorOperator<3> {
+class QMSpin final : public QMOperator {
 public:
-    SpinOperator() {
-        auto s_x = std::make_shared<QMSpin>(0);
-        auto s_y = std::make_shared<QMSpin>(1);
-        auto s_z = std::make_shared<QMSpin>(2);
+    QMSpin(int d)
+            : D(d) {}
 
-        // Invoke operator= to assign *this operator
-        RankOneTensorOperator &s = *this;
-        s[0] = s_x;
-        s[1] = s_y;
-        s[2] = s_z;
-        s[0].name() = "s[x]";
-        s[1].name() = "s[y]";
-        s[2].name() = "s[z]";
-    }
+private:
+    const int D;
+
+    Orbital apply(Orbital inp) override;
+    Orbital dagger(Orbital inp) override;
 };
 
 } // namespace mrchem

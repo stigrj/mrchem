@@ -26,7 +26,7 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "SpinOperator.h"
+#include "QMSpin.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
