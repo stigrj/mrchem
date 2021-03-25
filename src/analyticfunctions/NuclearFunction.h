@@ -41,6 +41,11 @@ public:
     double evalf(const mrcpp::Coord<3> &r) const override;
 
     void push_back(const Nucleus &nuc, double S);
+    void push_back(const std::string &atom, const mrcpp::Coord<3> &r, double S) {
+        PeriodicTable pt;
+        Nucleus nuc(pt.getElement(atom.c_str()), r);
+        push_back(nuc, S);
+    }
 
     Nuclei &getNuclei() { return this->nuclei; }
     const Nuclei &getNuclei() const { return this->nuclei; }
