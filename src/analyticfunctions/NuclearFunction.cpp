@@ -29,9 +29,9 @@
 
 namespace mrchem {
 
-void NuclearFunction::push_back(const Nucleus &nuc, double S) {
+void NuclearFunction::push_back(const Nucleus &nuc, double c) {
     this->nuclei.push_back(nuc);
-    this->smooth.push_back(S);
+    this->smooth.push_back(c);
 }
 
 double NuclearFunction::evalf(const mrcpp::Coord<3> &r) const {

@@ -25,35 +25,49 @@
 
 #pragma once
 
-#include "analyticfunctions/NuclearFunction.h"
 #include "qmoperators/RankZeroTensorOperator.h"
-#include "qmoperators/one_electron/QMPotential.h"
+
+#include "QMPotential.h"
+#include "analyticfunctions/NuclearFunction.h"
 
 namespace mrchem {
 
-class DistancePotential final : public QMPotential {
-public:
-    DistancePotential(double pow, const mrcpp::Coord<3> &r_K, double S);
-
-    void setup(double prec) override;
-    void clear() override;
-
-private:
-    const double power;
-    NuclearFunction func;
-};
-
 class DistanceOperator final : public RankZeroTensorOperator {
 public:
-    DistanceOperator(double pow, const mrcpp::Coord<3> &R, double S = 1.0e-7) {
-        auto r_pow = std::make_shared<DistancePotential>(pow, R, S);
+    /*! @brief DistanceOperator represents the function: 1.0/|r - o|^p
+     *  @param p: Power in denominator
+     *  @param o: Coordinate of origin
+     *  @param proj_prec: Precision for projection of analytic function
+     *  @param smooth_prec: Precision for smoothing of analytic function
+     */
+    DistanceOperator(double p, const mrcpp::Coord<3> &o, double proj_prec, double smooth_prec = -1.0) {
+        if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
+        if (smooth_prec < 0.0) smooth_prec = proj_prec;
+
+        // Define analytic smoothed 1/r
+        double c = detail::nuclear_potential_smoothing(smooth_prec, 1.0);
+        NuclearFunction nuc_func;
+        nuc_func.push_back("H", o, std::pow(c, p));
+
+        // Raise analytic 1/r to power
+        auto f = [p, nuc_func](const mrcpp::Coord<3> &r) -> double {
+            double f_r = nuc_func.evalf(r);
+            return std::pow(f_r, p);
+        };
+
+        // Project analytic potential, building grid for 1/r
+        auto r_pow = std::make_shared<QMPotential>(1);
+        r_pow->alloc(NUMBER::Real);
+        mrcpp::build_grid(r_pow->real(), nuc_func);
+        mrcpp::project<3>(proj_prec, r_pow->real(), f);
+
+        std::stringstream o_name;
+        o_name << "r^{" << std::setprecision(1) << std::fixed << p << "}";
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &v = (*this);
-        v = r_pow;
-        std::stringstream o_name;
-        o_name << "r^{" << std::setprecision(1) << std::fixed << pow << "}";
-        v.name() = o_name.str();
+        RankZeroTensorOperator &O = (*this);
+        O = r_pow;
+        O.name() = o_name.str();
     }
 };
 

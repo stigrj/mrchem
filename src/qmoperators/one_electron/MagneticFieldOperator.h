@@ -26,7 +26,7 @@
 #pragma once
 
 #include "H_B_dip.h"
-#include "RankZeroTensorOperator.h"
+#include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class MagneticFieldOperator
  *
@@ -40,11 +40,9 @@
 
 namespace mrchem {
 
-class MagneticFieldOperator final : public ExternalFieldOperator {
+class MagneticFieldOperator final : public RankZeroTensorOperator {
 public:
-    MagneticFieldOperator(const Eigen::Vector3d &f,
-                          std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                          const mrcpp::Coord<3> &o) {
+    MagneticFieldOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const Eigen::Vector3d &f, const mrcpp::Coord<3> &o) {
         H_B_dip mu(D, o);
 
         // Invoke operator= to assign *this operator

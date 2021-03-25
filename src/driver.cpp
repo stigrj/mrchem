@@ -31,8 +31,6 @@
 
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
-#include "environment/Cavity.h"
-#include "environment/Permittivity.h"
 
 #include "initial_guess/chk.h"
 #include "initial_guess/core.h"
@@ -50,32 +48,29 @@
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
+#include "qmoperators/one_electron/H_BB_dia.h"
+#include "qmoperators/one_electron/H_BM_dia.h"
+#include "qmoperators/one_electron/H_B_dip.h"
+#include "qmoperators/one_electron/H_E_quad.h"
+#include "qmoperators/one_electron/H_MB_dia.h"
+#include "qmoperators/one_electron/H_M_pso.h"
 #include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
-#include "qmoperators/one_electron/H_BB_dia.h"
-#include "qmoperators/one_electron/H_BM_dia.h"
-#include "qmoperators/one_electron/H_B_dip.h"
-#include "qmoperators/one_electron/H_B_spin.h"
-#include "qmoperators/one_electron/H_E_dip.h"
-#include "qmoperators/one_electron/H_E_quad.h"
-#include "qmoperators/one_electron/H_MB_dia.h"
-#include "qmoperators/one_electron/H_M_fc.h"
-#include "qmoperators/one_electron/H_M_pso.h"
-#include "qmoperators/one_electron/NuclearGradientOperator.h"
-
-#include "properties/GeometricDerivative.h"
-
-#include "environment/SCRF.h"
-
 #include "scf_solver/GroundStateSolver.h"
 #include "scf_solver/KAIN.h"
 #include "scf_solver/LinearResponseSolver.h"
+
+#include "environment/Cavity.h"
+#include "environment/Permittivity.h"
+#include "environment/SCRF.h"
 
 #include "mrdft/Factory.h"
 
@@ -466,8 +461,8 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
         mrcpp::print::header(2, "Computing geometric derivative");
         for (const auto &item : json_prop["geometric_derivative"].items()) {
             const auto &id = item.key();
-            const auto &prec = item.value()["precision"];
-            const auto &smoothing = item.value()["smooth_prec"];
+            const double &prec = item.value()["precision"];
+            const double &smoothing = item.value()["smoothing"];
             GeometricDerivative &G = mol.getGeometricDerivative(id);
             auto &nuc = G.getNuclear();
             auto &el = G.getElectronic();
@@ -476,8 +471,7 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
                 const auto nuc_k = nuclei[k];
                 auto Z_k = nuc_k.getCharge();
                 auto R_k = nuc_k.getCoord();
-                auto smooth = detail::nuclear_gradient_smoothing(mol.getNNuclei(), smoothing, Z_k);
-                NuclearGradientOperator h(Z_k, R_k, smooth);
+                NuclearGradientOperator h(Z_k, R_k, prec, smoothing / mol.getNNuclei());
                 h.setup(prec);
                 nuc.row(k) = Eigen::RowVector3d::Zero();
                 for (auto l = 0; l < mol.getNNuclei(); ++l) {
@@ -992,17 +986,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto density_type = json_fock["reaction_operator"]["density_type"];
         Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r, formulation);
 
-        SCRF helper(dielectric_func,
-                    nuclei,
-                    P_r,
-                    D_r,
-                    poisson_prec,
-                    hist_r,
-                    max_iter,
-                    accelerate_Vr,
-                    convergence_criterion,
-                    algorithm,
-                    density_type);
+        SCRF helper(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, convergence_criterion, algorithm, density_type);
         auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
         F.getReactionOperator() = Reo;
     }
@@ -1077,24 +1061,23 @@ template <int I> RankOneTensorOperator<I> driver::get_operator(const std::string
         h = H_B_dip(D, json_inp["r_O"]);
     } else if (name == "h_m_pso") {
         auto D = driver::get_derivative(json_inp["derivative"]);
-        h = H_M_pso(D, json_inp["r_K"], json_inp["smoothing"]);
+        h = H_M_pso(D, json_inp["r_K"], json_inp["precision"], json_inp["smoothing"]);
     } else {
         MSG_ERROR("Invalid operator: " << name);
     }
     return h;
 }
 
-template <int I, int J>
-RankTwoTensorOperator<I, J> driver::get_operator(const std::string &name, const json &json_inp) {
+template <int I, int J> RankTwoTensorOperator<I, J> driver::get_operator(const std::string &name, const json &json_inp) {
     RankTwoTensorOperator<I, J> h;
     if (name == "h_e_quad") {
         h = H_E_quad(json_inp["r_O"]);
     } else if (name == "h_bb_dia") {
         h = H_BB_dia(json_inp["r_O"]);
     } else if (name == "h_bm_dia") {
-        h = H_MB_dia(json_inp["r_O"], json_inp["r_K"], json_inp["smoothing"]);
+        h = H_MB_dia(json_inp["r_O"], json_inp["r_K"], json_inp["precision"], json_inp["smoothing"]);
     } else if (name == "h_mb_dia") {
-        h = H_BM_dia(json_inp["r_O"], json_inp["r_K"], json_inp["smoothing"]);
+        h = H_BM_dia(json_inp["r_O"], json_inp["r_K"], json_inp["precision"], json_inp["smoothing"]);
     } else {
         MSG_ERROR("Invalid operator: " << name);
     }

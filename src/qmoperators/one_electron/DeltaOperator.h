@@ -25,31 +25,39 @@
 
 #pragma once
 
-#include "QMPotential.h"
+#include <MRCPP/Gaussians>
+
 #include "qmoperators/RankZeroTensorOperator.h"
+
+#include "QMPotential.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 
-class QMDelta final : public QMPotential {
-public:
-    QMDelta(const mrcpp::Coord<3> &o, double expo);
-
-private:
-    mrcpp::GaussFunc<3> func;
-
-    void setup(double prec) override;
-    void clear() override;
-};
-
 class DeltaOperator final : public RankZeroTensorOperator {
 public:
-    DeltaOperator(const mrcpp::Coord<3> &o, double expo = 1.0e6) {
-        auto delta = std::make_shared<QMDelta>(o, expo);
+    /*! @brief DeltaOperator represents the Dirac delta function: delta|r - o|
+     *  @param o: Coordinate of origin
+     *  @param proj_prec: Precision for projection of analytic function
+     *  @param smooth_prec: Precision for smoothing of analytic function
+     */
+    DeltaOperator(const mrcpp::Coord<3> &o, double proj_prec, double smooth_prec = -1.0) {
+        if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
+        if (smooth_prec < 0.0) smooth_prec = proj_prec;
+
+        // Define analytic potential
+        double beta = 1.0 / smooth_prec;
+        double alpha = std::pow(beta / MATHCONST::pi, 3.0 / 2.0);
+        mrcpp::GaussFunc<3> f(beta, alpha, o);
+
+        // Project analytic potential
+        auto delta = std::make_shared<QMPotential>(1);
+        qmfunction::project(*delta, f, NUMBER::Real, proj_prec);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &d = (*this);
-        d = delta;
-        d.name() = "delta";
+        RankZeroTensorOperator &h = (*this);
+        h = delta;
+        h.name() = "delta";
     }
 };
 

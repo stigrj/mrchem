@@ -23,12 +23,16 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "NuclearOperator.h"
+#include "QMPotential.h"
+
+#include "analyticfunctions/NuclearFunction.h"
 #include "chemistry/chemistry_utils.h"
 #include "parallel.h"
+#include "qmfunctions/QMFunction.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
@@ -37,25 +41,54 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-/** @brief projects an analytic expression for a smoothed nuclear potential
- *
- * @param[in] nucs collection of nuclei that defines the potential
- * @param[in] prec precision used both in smoothing and projection
- *
- * We create two different analytic functions for the nuclear potential:
- *
- * 1) this->func: The total potential from all nuclei of the system.
- *                This is needed later for analytic calculations.
- *
- * 2) loc_func: Temporary function that contains only some of the
- *              nuclei, which are distributed among the available
- *              MPIs. This is used only for the projection below.
+/*! @brief NuclearOperator represents the function: sum_i Z_i/|r - R_i|
+ *  @param nucs: Collection of nuclei that defines the potential
+ *  @param proj_prec: Precision for projection of analytic function
+ *  @param smooth_prec: Precision for smoothing of analytic function
+ *  @param mpi_share: Should MPI ranks on the same machine share this function?
  */
-NuclearPotential::NuclearPotential(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share)
-        : QMPotential(1, mpi_share) {
+NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
 
+    Timer t_tot;
+    mrcpp::print::header(2, "Projecting nuclear potential");
+
+    // Setup local analytic function
+    Timer t_loc;
+    NuclearFunction f_loc;
+    setupLocalPotential(f_loc, nucs, smooth_prec);
+
+    // Scale precision by system size
+    double Z_tot = 1.0 * chemistry::get_total_charge(nucs);
+    double Z_loc = 1.0 * chemistry::get_total_charge(f_loc.getNuclei());
+    double tot_prec = proj_prec / std::min(1.0 * Z_tot, std::sqrt(2.0 * Z_tot));
+    double loc_prec = proj_prec / std::max(1.0, Z_loc);
+
+    // Project local potential
+    QMFunction V_loc(false);
+    qmfunction::project(V_loc, f_loc, NUMBER::Real, loc_prec);
+    t_loc.stop();
+
+    // Collect local potentials
+    Timer t_com;
+    auto V_tot = std::make_shared<QMPotential>(1, mpi_share);
+    allreducePotential(tot_prec, *V_tot, V_loc);
+    t_com.stop();
+
+    t_tot.stop();
+    mrcpp::print::separator(2, '-');
+    print_utils::qmfunction(2, "Local potential", V_loc, t_loc);
+    print_utils::qmfunction(2, "Allreduce potential", *V_tot, t_com);
+    mrcpp::print::footer(2, t_tot, 2);
+
+    // Invoke operator= to assign *this operator
+    RankZeroTensorOperator &O = (*this);
+    O = V_tot;
+    O.name() = "V_nuc";
+}
+
+void NuclearOperator::setupLocalPotential(NuclearFunction &f_loc, const Nuclei &nucs, double smooth_prec) const {
     int pprec = Printer::getPrecision();
     int w0 = Printer::getWidth() - 1;
     int w1 = 5;
@@ -71,25 +104,17 @@ NuclearPotential::NuclearPotential(const Nuclei &nucs, double proj_prec, double 
     o_head << std::setw(w3) << "Precision";
     o_head << std::setw(w3) << "Smoothing";
 
-    mrcpp::print::header(2, "Projecting nuclear potential");
     println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
-    NuclearFunction loc_func;
-
-    double c = 0.00435 * smooth_prec;
-    double mycharge = 0.0;
     for (int k = 0; k < nucs.size(); k++) {
         const Nucleus &nuc = nucs[k];
         double Z = nuc.getCharge();
-        double Z_5 = std::pow(Z, 5.0);
-        double smooth = std::pow(c / Z_5, 1.0 / 3.0);
+        double c = detail::nuclear_potential_smoothing(smooth_prec, Z);
 
         // All projection must be done on grand master in order to be exact
         int proj_rank = (mpi::numerically_exact) ? 0 : k % mpi::orb_size;
-        this->func.push_back(nuc, smooth);
-        if (mpi::orb_rank == proj_rank) loc_func.push_back(nuc, smooth);
-        if (mpi::orb_rank == proj_rank) mycharge += Z;
+        if (mpi::orb_rank == proj_rank) f_loc.push_back(nuc, c);
 
         std::stringstream o_row;
         o_row << std::setw(w1) << k;
@@ -97,37 +122,12 @@ NuclearPotential::NuclearPotential(const Nuclei &nucs, double proj_prec, double 
         o_row << std::string(w4, ' ');
         o_row << std::setw(w3) << std::setprecision(pprec) << std::scientific << Z;
         o_row << std::setw(w3) << std::setprecision(pprec) << std::scientific << smooth_prec;
-        o_row << std::setw(w3) << std::setprecision(pprec) << std::scientific << smooth;
+        o_row << std::setw(w3) << std::setprecision(pprec) << std::scientific << c;
         println(2, o_row.str());
     }
-
-    Timer t_tot;
-
-    // Scale precision by system size
-    int Z_tot = chemistry::get_total_charge(nucs);
-    double abs_prec = proj_prec / std::min(1.0 * Z_tot, sqrt(2 * Z_tot));
-    double myabs_prec = proj_prec / std::max(1.0, mycharge);
-    QMFunction V_loc(false);
-
-    Timer t_loc;
-    qmfunction::project(V_loc, loc_func, NUMBER::Real, myabs_prec);
-    t_loc.stop();
-
-    Timer t_com;
-    allreducePotential(abs_prec, V_loc);
-
-    t_com.stop();
-
-    t_tot.stop();
-    mrcpp::print::separator(2, '-');
-    print_utils::qmfunction(2, "Local potential", V_loc, t_loc);
-    print_utils::qmfunction(2, "Allreduce potential", V_loc, t_com);
-    mrcpp::print::footer(2, t_tot, 2);
 }
 
-void NuclearPotential::allreducePotential(double prec, QMFunction &V_loc) {
-    QMFunction &V_tot = *this;
-
+void NuclearOperator::allreducePotential(double prec, QMFunction &V_tot, QMFunction &V_loc) const {
     // Add up local contributions into the grand master
     mpi::reduce_function(prec, V_loc, mpi::comm_orb);
     if (mpi::grand_master()) {

@@ -25,9 +25,10 @@
 
 #pragma once
 
+#include "qmoperators/RankOneTensorOperator.h"
+
 #include "MomentumOperator.h"
 #include "NuclearGradientOperator.h"
-#include "qmoperators/RankOneTensorOperator.h"
 
 namespace mrchem {
 
@@ -47,11 +48,11 @@ namespace mrchem {
 
 class H_M_pso final : public RankOneTensorOperator<3> {
 public:
-    H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double c) {
+    H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double proj_prec, double smooth_prec = -1.0) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 
         MomentumOperator p(D);
-        NuclearGradientOperator r_m3(1.0, k, c);
+        NuclearGradientOperator r_m3(1.0, k, proj_prec, smooth_prec);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);

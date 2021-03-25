@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include <array>
+#include <cmath>
 #include <vector>
 
-#include "MRCPP/MWFunctions"
+#include <MRCPP/MWFunctions>
 
 #include "chemistry/Nucleus.h"
 
@@ -36,15 +36,13 @@ namespace mrchem {
 
 class NuclearFunction final : public mrcpp::RepresentableFunction<3> {
 public:
-    NuclearFunction() {}
-
     double evalf(const mrcpp::Coord<3> &r) const override;
 
-    void push_back(const Nucleus &nuc, double S);
-    void push_back(const std::string &atom, const mrcpp::Coord<3> &r, double S) {
+    void push_back(const Nucleus &nuc, double c);
+    void push_back(const std::string &atom, const mrcpp::Coord<3> &r, double c) {
         PeriodicTable pt;
         Nucleus nuc(pt.getElement(atom.c_str()), r);
-        push_back(nuc, S);
+        push_back(nuc, c);
     }
 
     Nuclei &getNuclei() { return this->nuclei; }
@@ -57,5 +55,13 @@ protected:
     Nuclei nuclei;
     std::vector<double> smooth;
 };
+
+namespace detail {
+/*! @brief Compute nucleus- and precision-dependent smoothing parameter */
+inline auto nuclear_potential_smoothing(double prec, double Z) -> double {
+    double tmp = 0.00435 * prec / std::pow(Z, 5.0);
+    return std::cbrt(tmp);
+}
+} // namespace detail
 
 } // namespace mrchem

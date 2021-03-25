@@ -37,7 +37,6 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief constructor
  *
@@ -53,15 +52,6 @@ QMPotential::QMPotential(int adap, bool shared)
         : QMFunction(shared)
         , QMOperator()
         , adap_build(adap) {}
-
-/** @brief destructor
- *
- * The potential components should be cleared already at this point using clear().
- */
-QMPotential::~QMPotential() {
-    if (hasReal()) MSG_ERROR("Potential not cleared");
-    if (hasImag()) MSG_ERROR("Potential not cleared");
-}
 
 /** @brief apply potential
  *

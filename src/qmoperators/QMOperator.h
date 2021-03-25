@@ -56,8 +56,10 @@ class Orbital;
 
 class QMOperator {
 public:
-    QMOperator(){};
-    virtual ~QMOperator(){};
+    QMOperator() = default;
+    virtual ~QMOperator() {
+        if (prec() > 0.0) MSG_ERROR("Operator not properly cleared");
+    }
 
     double prec() { return this->apply_prec; }
 

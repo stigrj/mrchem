@@ -25,9 +25,10 @@
 
 #pragma once
 
+#include "qmoperators/RankTwoTensorOperator.h"
+
 #include "NuclearGradientOperator.h"
 #include "PositionOperator.h"
-#include "qmoperators/RankTwoTensorOperator.h"
 
 namespace mrchem {
 
@@ -48,11 +49,11 @@ namespace mrchem {
 
 class H_BM_dia final : public RankTwoTensorOperator<3, 3> {
 public:
-    H_BM_dia(const mrcpp::Coord<3> &o, const mrcpp::Coord<3> &k, double c) {
+    H_BM_dia(const mrcpp::Coord<3> &o, const mrcpp::Coord<3> &k, double proj_prec, double smooth_prec = -1.0) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 
         PositionOperator r_o(o);
-        NuclearGradientOperator r_rm3(1.0, k, c);
+        NuclearGradientOperator r_rm3(1.0, k, proj_prec, smooth_prec);
 
         RankZeroTensorOperator &o_x = r_o[0];
         RankZeroTensorOperator &o_y = r_o[1];

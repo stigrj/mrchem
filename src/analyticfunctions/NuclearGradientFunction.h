@@ -27,23 +27,24 @@
 
 #include <cmath>
 
-#include "MRCPP/MWFunctions"
+#include <MRCPP/MWFunctions>
 
 namespace mrchem {
 
 class NuclearGradientFunction : public mrcpp::RepresentableFunction<3> {
 public:
     /*!
+     *  @brief NuclearGradientFunction represents the function: Z * [x,y,z]/|r - o|^3
      *  @param d: Cartesian component to evaluate (0: x, 1: y, 2: z)
      *  @param z: Nuclear charge of nucleus
-     *  @param r: Coordinate in space
+     *  @param o: Coordinate of origin
      *  @param c: Nuclei- and precision-dependent smoothing parameter
      */
-    NuclearGradientFunction(int d, double z, const mrcpp::Coord<3> &r, double c)
+    NuclearGradientFunction(int d, double z, const mrcpp::Coord<3> &o, double c)
             : D(d)
             , C(c)
             , Z(z)
-            , R(r) {}
+            , R(o) {}
 
     double evalf(const mrcpp::Coord<3> &r) const override;
 
@@ -52,7 +53,7 @@ public:
 
 protected:
     int D;             ///< Cartesian direction
-    double C;          ///< Smmothing parameter (nuclei- and precision-dependent)
+    double C;          ///< Smoothing parameter (nuclei- and precision-dependent)
     double Z;          ///< Nuclear charge
     mrcpp::Coord<3> R; ///< Nuclear coordinate
 
@@ -61,8 +62,8 @@ protected:
 
 namespace detail {
 /*! @brief Compute nucleus- and precision-dependent smoothing parameter */
-inline auto nuclear_gradient_smoothing(int N, double prec, double Z) -> double {
-    auto tmp = prec / (0.00435 * std::pow(Z, 5) * N);
+inline auto nuclear_gradient_smoothing(double prec, double Z) -> double {
+    auto tmp = prec / (0.00435 * std::pow(Z, 5));
     return std::cbrt(tmp);
 }
 } // namespace detail

@@ -47,7 +47,7 @@ public:
     explicit QMPotential(int adap, bool shared = false);
     QMPotential(const QMPotential &pot) = delete;
     QMPotential &operator=(const QMPotential &pot) = delete;
-    ~QMPotential() override;
+    virtual ~QMPotential() = default;
 
 protected:
     int adap_build;

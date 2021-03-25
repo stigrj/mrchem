@@ -215,15 +215,14 @@ def write_scf_properties(user_dict, origin):
         prop_dict["geometric_derivative"]["geom-1"] = {
             "operator": "h_nuc_grad",
             "precision": user_dict["world_prec"],
-            "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
+            "smoothing": user_dict["Precisions"]["nuclear_prec"],
         }
     return prop_dict
 
 
 def write_scf_plot(user_dict):
     plot_dict = {}
-    if user_dict["Properties"]["plot_density"] or len(
-            user_dict["Properties"]["plot_orbitals"]):
+    if user_dict["Properties"]["plot_density"] or len(user_dict["Properties"]["plot_orbitals"]):
         plot_dict["orbitals"] = user_dict["Properties"]["plot_orbitals"]
         plot_dict["density"] = user_dict["Properties"]["plot_density"]
         plot_dict["plotter"] = user_dict["Plotter"]
