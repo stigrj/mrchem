@@ -33,6 +33,8 @@
 #include "parallel.h"
 #include "sad.h"
 
+#include "chemistry/Nucleus.h"
+
 #include "utils/print_utils.h"
 
 #include "qmfunctions/Orbital.h"
