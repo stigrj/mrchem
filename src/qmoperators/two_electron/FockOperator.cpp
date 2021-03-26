@@ -203,7 +203,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto v = this->potential();
 
     ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
-    if (t != nullptr) T += (*t)(bra, ket);
+    if (t != nullptr) T += qmoperator::calc_kinetic_matrix(*t, bra, ket);
 
     ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
     if (v.size() > 0) V += v(bra, ket);

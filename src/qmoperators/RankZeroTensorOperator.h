@@ -73,6 +73,8 @@ public:
     virtual ~RankZeroTensorOperator() {}
 
     int size() const { return this->oper_exp.size(); }
+    int size(int i) const { return this->oper_exp[i].size(); }
+
     std::string &name() { return this->oper_name; }
     const std::string &name() const { return this->oper_name; }
 
@@ -94,6 +96,9 @@ public:
     ComplexDouble trace(OrbitalVector &Phi);
     ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y);
     ComplexDouble trace(const Nuclei &nucs);
+
+    RankZeroTensorOperator get(int i);
+    RankZeroTensorOperator get(int i, int j);
 
     RankZeroTensorOperator &operator=(std::shared_ptr<QMOperator> O);
     RankZeroTensorOperator &operator+=(std::shared_ptr<QMOperator> O);

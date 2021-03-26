@@ -34,6 +34,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 

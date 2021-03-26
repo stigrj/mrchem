@@ -52,6 +52,25 @@ ComplexVector RankZeroTensorOperator::getCoefVector() const {
     return out;
 }
 
+/** @brief return the i-th term (c_i*q_i1*q_i2*...) in the expansion: sum_i c_i * prod_j q_ij */
+RankZeroTensorOperator RankZeroTensorOperator::get(int i) {
+    if (i < 0 or i >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
+    RankZeroTensorOperator out;
+    out.name() = this->name();
+    auto c_i = this->coef_exp[i];
+    auto Q_i = this->oper_exp[i];
+    out.coef_exp.push_back(c_i);
+    out.oper_exp.push_back(Q_i);
+    return out;
+}
+
+/** @brief return ij-the operator (q_ij) in the expansion: sum_i c_i * prod_j q_ij */
+RankZeroTensorOperator RankZeroTensorOperator::get(int i, int j) {
+    if (i < 0 or i >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
+    if (j < 0 or j >= this->size(i)) MSG_ABORT("Invalid operator term (j): " << i);
+    return this->oper_exp[i][j];
+}
+
 /** @brief assignment operator
  *
  * Clears the operator expansion and sets the right hand side as the only component.

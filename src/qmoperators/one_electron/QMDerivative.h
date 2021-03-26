@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "qmoperators/QMOperator.h"
 
 namespace mrchem {

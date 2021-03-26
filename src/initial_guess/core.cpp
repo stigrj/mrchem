@@ -257,7 +257,9 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
 ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroTensorOperator &V) {
     Timer t1;
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
-    ComplexMatrix f_tilde = T(Phi, Phi) + V(Phi, Phi);
+    ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(T, Phi, Phi);
+    ComplexMatrix v_tilde = V(Phi, Phi);
+    ComplexMatrix f_tilde = t_tilde + v_tilde;
     ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
     mrcpp::print::time(1, "Computing Fock matrix", t1);
 
