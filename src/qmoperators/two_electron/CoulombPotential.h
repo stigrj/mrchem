@@ -25,8 +25,9 @@
 
 #pragma once
 
+#include "qmoperators/QMPotential.h"
+
 #include "qmfunctions/Density.h"
-#include "qmoperators/one_electron/QMPotential.h"
 
 /** @class CoulombPotential
  *

@@ -25,10 +25,11 @@
 
 #pragma once
 
+#include "qmoperators/RankZeroTensorOperator.h"
+
 #include "CoulombPotential.h"
 #include "CoulombPotentialD1.h"
 #include "CoulombPotentialD2.h"
-#include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class CoulombOperator
  *

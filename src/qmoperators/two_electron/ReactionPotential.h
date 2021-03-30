@@ -24,8 +24,10 @@
  */
 
 #pragma once
+
+#include "qmoperators/QMPotential.h"
+
 #include "environment/SCRF.h"
-#include "qmoperators/one_electron/QMPotential.h"
 
 namespace mrchem {
 /** @class ReactionPotential

@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "SpinOperator.h"
 #include "qmoperators/RankOneTensorOperator.h"
+
+#include "SpinOperator.h"
 
 namespace mrchem {
 

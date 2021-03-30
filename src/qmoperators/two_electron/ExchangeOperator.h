@@ -25,9 +25,10 @@
 
 #pragma once
 
+#include "qmoperators/RankZeroTensorOperator.h"
+
 #include "ExchangePotentialD1.h"
 #include "ExchangePotentialD2.h"
-#include "qmoperators/RankZeroTensorOperator.h"
 
 /**
  * @class ExchangeOperator

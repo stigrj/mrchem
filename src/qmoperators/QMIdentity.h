@@ -25,24 +25,15 @@
 
 #pragma once
 
-#include <memory>
-
-#include "qmoperators/QMOperator.h"
+#include "QMOperator.h"
 
 namespace mrchem {
 
-class QMDerivative final : public QMOperator {
+class QMIdentity final : public QMOperator {
 public:
-    QMDerivative(int d, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool im = false);
+    QMIdentity() = default;
 
 private:
-    const bool imag;     // add imaginary unit prefactor, for faster application
-    const int apply_dir; // Cartesian direction of derivative
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
-
-    bool isReal() const { return not(imag); }
-    bool isImag() const { return imag; }
-
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
 };

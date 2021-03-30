@@ -25,10 +25,11 @@
 
 #pragma once
 
+#include "qmoperators/RankZeroTensorOperator.h"
+
 #include "XCPotential.h"
 #include "XCPotentialD1.h"
 #include "XCPotentialD2.h"
-#include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class XCOperator
  *

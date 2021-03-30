@@ -23,26 +23,22 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
+#pragma once
 
-#include "QMIdentity.h"
-#include "qmfunctions/Orbital.h"
-#include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
+#include "QMOperator.h"
 
 namespace mrchem {
 
-/** Identity operator is a deep copy */
-Orbital QMIdentity::apply(Orbital inp) {
-    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-    Orbital out = inp.paramCopy();
-    qmfunction::deep_copy(out, inp);
-    return out;
-}
+class QMSpin final : public QMOperator {
+public:
+    QMSpin(int d)
+            : D(d) {}
 
-/** Identity operator is a deep copy */
-Orbital QMIdentity::dagger(Orbital inp) {
-    return apply(inp);
-}
+private:
+    const int D;
+
+    Orbital apply(Orbital inp) override;
+    Orbital dagger(Orbital inp) override;
+};
 
 } // namespace mrchem

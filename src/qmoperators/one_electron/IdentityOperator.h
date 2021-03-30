@@ -26,7 +26,8 @@
 #pragma once
 
 #include "qmoperators/RankZeroTensorOperator.h"
-#include "qmoperators/one_electron/QMIdentity.h"
+
+#include "qmoperators/QMIdentity.h"
 
 namespace mrchem {
 

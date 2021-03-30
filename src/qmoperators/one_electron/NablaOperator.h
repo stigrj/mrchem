@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "qmoperators/one_electron/QMDerivative.h"
 #include "qmoperators/RankOneTensorOperator.h"
+
+#include "qmoperators/QMDerivative.h"
 
 namespace mrchem {
 

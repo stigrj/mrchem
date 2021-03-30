@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "MomentumOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
+
+#include "MomentumOperator.h"
 
 /** @class KineticOperator
  *

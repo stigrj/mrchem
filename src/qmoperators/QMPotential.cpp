@@ -23,11 +23,11 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "QMPotential.h"
-#include "chemistry/Nucleus.h"
+
 #include "qmfunctions/Orbital.h"
 #include "utils/print_utils.h"
 

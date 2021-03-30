@@ -27,9 +27,10 @@
 
 #include <memory>
 
+#include "QMOperator.h"
+
 #include "chemistry/chemistry_fwd.h"
 #include "qmfunctions/qmfunction_fwd.h"
-#include "qmoperators/QMOperator.h"
 
 namespace mrchem {
 

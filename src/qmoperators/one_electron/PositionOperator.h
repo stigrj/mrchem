@@ -27,8 +27,8 @@
 
 #include "qmoperators/RankOneTensorOperator.h"
 
-#include "QMPotential.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 

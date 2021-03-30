@@ -23,52 +23,63 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
-#include "QMSpin.h"
+#include "QMDerivative.h"
+
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/qmfunction_utils.h"
+#include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
 
+using mrcpp::DerivativeOperator;
+using mrcpp::FunctionTree;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
-Orbital QMSpin::apply(Orbital inp) {
-    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
+QMDerivative::QMDerivative(int d, std::shared_ptr<DerivativeOperator<3>> D, bool im)
+        : QMOperator()
+        , imag(im)
+        , apply_dir(d)
+        , derivative(D) {}
 
-    ComplexDouble coef(0.0, 0.0);
-    switch (inp.spin()) {
-        case SPIN::Alpha:
-            if (this->D == 0) coef = ComplexDouble(0.5, 0.0);
-            if (this->D == 1) coef = ComplexDouble(0.0, 0.5);
-            if (this->D == 2) coef = ComplexDouble(0.5, 0.0);
-            break;
-        case SPIN::Beta:
-            if (this->D == 0) coef = ComplexDouble(0.5, 0.0);
-            if (this->D == 1) coef = ComplexDouble(0.0, -0.5);
-            if (this->D == 2) coef = ComplexDouble(-0.5, 0.0);
-            break;
-        default:
-            MSG_ABORT("Cannot apply spin operator on paired orbital");
-    }
+Orbital QMDerivative::apply(Orbital inp) {
+    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
+    if (this->derivative == nullptr) MSG_ERROR("No derivative operator");
+
+    auto dir = this->apply_dir;
+    auto &D = *this->derivative;
 
     Orbital out = inp.paramCopy();
-    qmfunction::deep_copy(out, inp);
-    out.rescale(coef);
-
-    // Flip spin for s_x and s_y
-    if (this->D == 0 or this->D == 1) {
-        if (inp.spin() == SPIN::Alpha) out.setSpin(SPIN::Beta);
-        if (inp.spin() == SPIN::Beta) out.setSpin(SPIN::Alpha);
+    if (this->isReal()) {
+        if (inp.hasReal()) {
+            out.alloc(NUMBER::Real);
+            mrcpp::apply(out.real(), D, inp.real(), dir);
+        }
+        if (inp.hasImag()) {
+            out.alloc(NUMBER::Imag);
+            mrcpp::apply(out.imag(), D, inp.imag(), dir);
+            if (inp.conjugate()) out.imag().rescale(-1.0);
+        }
+    } else {
+        if (inp.hasImag()) {
+            out.alloc(NUMBER::Real);
+            mrcpp::apply(out.real(), D, inp.imag(), dir);
+            if (inp.conjugate()) out.real().rescale(-1.0);
+        }
+        if (inp.hasReal()) {
+            out.alloc(NUMBER::Imag);
+            mrcpp::apply(out.imag(), D, inp.real(), dir);
+            out.imag().rescale(-1.0);
+        }
     }
-
     return out;
 }
 
-Orbital QMSpin::dagger(Orbital inp) {
+Orbital QMDerivative::dagger(Orbital inp) {
     NOT_IMPLEMENTED_ABORT;
 }
 

@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "H_B_dip.h"
 #include "qmoperators/RankZeroTensorOperator.h"
+
+#include "H_B_dip.h"
 
 /** @class MagneticFieldOperator
  *

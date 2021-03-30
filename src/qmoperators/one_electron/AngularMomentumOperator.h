@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "qmoperators/RankOneTensorOperator.h"
+
 #include "MomentumOperator.h"
 #include "PositionOperator.h"
 

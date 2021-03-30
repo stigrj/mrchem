@@ -28,8 +28,8 @@
 #include <memory>
 
 #include "ExchangePotential.h"
+
 #include "qmfunctions/qmfunction_fwd.h"
-#include "qmoperators/QMOperator.h"
 #include "utils/Bank.h"
 
 namespace mrchem {

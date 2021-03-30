@@ -26,7 +26,8 @@
 #pragma once
 
 #include "qmoperators/RankOneTensorOperator.h"
-#include "qmoperators/one_electron/QMSpin.h"
+
+#include "qmoperators/QMSpin.h"
 
 namespace mrchem {
 

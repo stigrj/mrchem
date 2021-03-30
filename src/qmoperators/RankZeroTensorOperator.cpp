@@ -23,13 +23,13 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-
-#include "parallel.h"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "RankZeroTensorOperator.h"
+
 #include "chemistry/Nucleus.h"
+#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
@@ -39,7 +39,6 @@ using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
 using mrcpp::Timer;
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief return the expansion coefficients as an Eigen vector
  *

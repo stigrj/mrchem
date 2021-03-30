@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "ReactionPotential.h"
 #include "qmoperators/RankZeroTensorOperator.h"
+
+#include "ReactionPotential.h"
 
 /** @class ReactionOperator
  *

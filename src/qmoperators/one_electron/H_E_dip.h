@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "PositionOperator.h"
 #include "qmoperators/RankOneTensorOperator.h"
+
+#include "PositionOperator.h"
 
 /** Class H_E_dip
  *

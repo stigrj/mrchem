@@ -23,19 +23,27 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#pragma once
+#include <MRCPP/Printer>
 
-#include "qmoperators/QMOperator.h"
+#include "QMIdentity.h"
+
+#include "qmfunctions/Orbital.h"
+#include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 
-class QMIdentity final : public QMOperator {
-public:
-    QMIdentity() = default;
+/** Identity operator is a deep copy */
+Orbital QMIdentity::apply(Orbital inp) {
+    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
+    Orbital out = inp.paramCopy();
+    qmfunction::deep_copy(out, inp);
+    return out;
+}
 
-private:
-    Orbital apply(Orbital inp) override;
-    Orbital dagger(Orbital inp) override;
-};
+/** Identity operator is a deep copy */
+Orbital QMIdentity::dagger(Orbital inp) {
+    return apply(inp);
+}
 
 } // namespace mrchem

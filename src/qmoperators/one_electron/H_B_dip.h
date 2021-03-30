@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "AngularMomentumOperator.h"
 #include "qmoperators/RankOneTensorOperator.h"
+
+#include "AngularMomentumOperator.h"
 
 namespace mrchem {
 

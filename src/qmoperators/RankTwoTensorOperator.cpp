@@ -24,6 +24,7 @@
  */
 
 #include "RankTwoTensorOperator.h"
+
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 

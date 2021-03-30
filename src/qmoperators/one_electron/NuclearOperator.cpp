@@ -27,13 +27,13 @@
 #include <MRCPP/Timer>
 
 #include "NuclearOperator.h"
-#include "QMPotential.h"
 
 #include "analyticfunctions/NuclearFunction.h"
 #include "chemistry/chemistry_utils.h"
 #include "parallel.h"
 #include "qmfunctions/QMFunction.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/QMPotential.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;

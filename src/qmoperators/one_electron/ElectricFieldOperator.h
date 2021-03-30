@@ -25,8 +25,9 @@
 
 #pragma once
 
-#include "H_E_dip.h"
 #include "qmoperators/RankZeroTensorOperator.h"
+
+#include "H_E_dip.h"
 
 /** @class ElectricFieldOperator
  *
