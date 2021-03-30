@@ -43,9 +43,16 @@ namespace mrchem {
 
 class MagneticFieldOperator final : public RankZeroTensorOperator {
 public:
-    MagneticFieldOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const Eigen::Vector3d &f, const mrcpp::Coord<3> &o) {
-        H_B_dip mu(D, o);
+    MagneticFieldOperator(const Eigen::Vector3d &f, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
+            : MagneticFieldOperator(std::array<double, 3>{f[0], f[1], f[2]}, H_B_dip(D, o)) {}
 
+    MagneticFieldOperator(const Eigen::Vector3d &f, const H_B_dip &mu)
+            : MagneticFieldOperator(std::array<double, 3>{f[0], f[1], f[2]}, mu) {}
+
+    MagneticFieldOperator(const std::array<double, 3> &f, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
+            : MagneticFieldOperator(f, H_B_dip(D, o)) {}
+
+    MagneticFieldOperator(const std::array<double, 3> &f, const H_B_dip &mu) {
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &HMF = (*this);
         HMF = f[0] * mu[0] + f[1] * mu[1] + f[2] * mu[2];

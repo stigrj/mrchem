@@ -48,12 +48,12 @@ namespace mrchem {
 
 class H_M_fc final : public RankOneTensorOperator<3> {
 public:
-    H_M_fc(const mrcpp::Coord<3> &o, double proj_prec, double smooth_prec = -1.0) {
+    H_M_fc(const mrcpp::Coord<3> &o, double proj_prec, double smooth_prec = -1.0)
+            : H_M_fc(H_B_spin(), DeltaOperator(o, proj_prec, smooth_prec)) {}
+
+    H_M_fc(const H_B_spin &s, const DeltaOperator &delta) {
         const double coef = -(8.0 / 3.0) * MATHCONST::pi;
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
-
-        H_B_spin s;
-        DeltaOperator delta(o, proj_prec, smooth_prec);
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);

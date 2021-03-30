@@ -34,10 +34,10 @@ namespace mrchem {
 
 class AngularMomentumOperator final : public RankOneTensorOperator<3> {
 public:
-    AngularMomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o) {
-        PositionOperator r(o);
-        MomentumOperator p(D);
+    AngularMomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
+            : AngularMomentumOperator(PositionOperator(o), MomentumOperator(D)) {}
 
+    AngularMomentumOperator(const PositionOperator &r, const MomentumOperator &p) {
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
         h[0] = (r[1] * p[2] - r[2] * p[1]);

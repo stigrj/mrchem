@@ -50,17 +50,16 @@ namespace mrchem {
  */
 class ElectricFieldOperator final : public RankZeroTensorOperator {
 public:
-    ElectricFieldOperator(const std::array<double, 3> &f, const mrcpp::Coord<3> &o) {
-        H_E_dip mu(o);
+    ElectricFieldOperator(const Eigen::Vector3d &f, const mrcpp::Coord<3> &o)
+            : ElectricFieldOperator(std::array<double, 3>{f[0], f[1], f[2]}, H_E_dip(o)) {}
 
-        // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &HEF = (*this);
-        HEF = -f[0] * mu[0] - f[1] * mu[1] - f[2] * mu[2];
-        HEF.name() = "E . mu_E";
-    }
-    ElectricFieldOperator(const Eigen::Vector3d &f, const mrcpp::Coord<3> &o) {
-        H_E_dip mu(o);
+    ElectricFieldOperator(const Eigen::Vector3d &f, const H_E_dip &mu)
+            : ElectricFieldOperator(std::array<double, 3>{f[0], f[1], f[2]}, mu) {}
 
+    ElectricFieldOperator(const std::array<double, 3> &f, const mrcpp::Coord<3> &o)
+            : ElectricFieldOperator(f, H_E_dip(o)) {}
+
+    ElectricFieldOperator(const std::array<double, 3> &f, const H_E_dip &mu) {
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &HEF = (*this);
         HEF = -f[0] * mu[0] - f[1] * mu[1] - f[2] * mu[2];

@@ -48,17 +48,24 @@ namespace mrchem {
 
 class H_M_pso final : public RankOneTensorOperator<3> {
 public:
-    H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double proj_prec, double smooth_prec = -1.0) {
+    H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double proj_prec, double smooth_prec = -1.0)
+            : H_M_pso(MomentumOperator(D), NuclearGradientOperator(1.0, k, proj_prec, smooth_prec)) {}
+
+    H_M_pso(const MomentumOperator &p, const NuclearGradientOperator &r_rm3) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 
-        MomentumOperator p(D);
-        NuclearGradientOperator r_m3(1.0, k, proj_prec, smooth_prec);
+        const RankZeroTensorOperator &p_x = p[0];
+        const RankZeroTensorOperator &p_y = p[1];
+        const RankZeroTensorOperator &p_z = p[2];
+        const RankZeroTensorOperator &x_rm3 = r_rm3[0];
+        const RankZeroTensorOperator &y_rm3 = r_rm3[1];
+        const RankZeroTensorOperator &z_rm3 = r_rm3[2];
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
-        h[0] = alpha_2 * (r_m3[1] * p[2] - r_m3[2] * p[1]);
-        h[1] = alpha_2 * (r_m3[2] * p[0] - r_m3[0] * p[2]);
-        h[2] = alpha_2 * (r_m3[0] * p[1] - r_m3[1] * p[0]);
+        h[0] = alpha_2 * (y_rm3 * p_z - z_rm3 * p_y);
+        h[1] = alpha_2 * (z_rm3 * p_x - x_rm3 * p_z);
+        h[2] = alpha_2 * (x_rm3 * p_y - y_rm3 * p_x);
         h[0].name() = "h_M_pso[x]";
         h[1].name() = "h_M_pso[y]";
         h[2].name() = "h_M_pso[z]";

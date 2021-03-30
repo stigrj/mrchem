@@ -44,9 +44,10 @@ namespace mrchem {
 
 class KineticOperator final : public RankZeroTensorOperator {
 public:
-    KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        MomentumOperator p(D);
+    explicit KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
+            : KineticOperator(MomentumOperator(D)) {}
 
+    explicit KineticOperator(const MomentumOperator &p) {
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &t = (*this);
         t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);

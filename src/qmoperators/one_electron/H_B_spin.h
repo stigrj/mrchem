@@ -47,10 +47,11 @@ namespace mrchem {
 
 class H_B_spin final : public RankOneTensorOperator<3> {
 public:
-    H_B_spin() {
-        const double g_e = PHYSCONST::g_e;
+    H_B_spin()
+            : H_B_spin(SpinOperator()) {}
 
-        SpinOperator s;
+    explicit H_B_spin(const SpinOperator &s) {
+        const double g_e = PHYSCONST::g_e;
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
