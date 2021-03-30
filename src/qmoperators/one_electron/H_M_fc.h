@@ -51,7 +51,7 @@ public:
     H_M_fc(const mrcpp::Coord<3> &o, double proj_prec, double smooth_prec = -1.0)
             : H_M_fc(H_B_spin(), DeltaOperator(o, proj_prec, smooth_prec)) {}
 
-    H_M_fc(const H_B_spin &s, const DeltaOperator &delta) {
+    H_M_fc(H_B_spin s, DeltaOperator delta) {
         const double coef = -(8.0 / 3.0) * MATHCONST::pi;
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 

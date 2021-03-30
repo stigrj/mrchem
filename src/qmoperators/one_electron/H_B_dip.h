@@ -50,7 +50,7 @@ public:
     H_B_dip(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
             : H_B_dip(AngularMomentumOperator(D, o)) {}
 
-    explicit H_B_dip(const AngularMomentumOperator &l) {
+    explicit H_B_dip(AngularMomentumOperator l) {
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);
         h[0] = 0.5 * l[0];

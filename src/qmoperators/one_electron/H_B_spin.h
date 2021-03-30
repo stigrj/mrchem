@@ -50,7 +50,7 @@ public:
     H_B_spin()
             : H_B_spin(SpinOperator()) {}
 
-    explicit H_B_spin(const SpinOperator &s) {
+    explicit H_B_spin(SpinOperator s) {
         const double g_e = PHYSCONST::g_e;
 
         // Invoke operator= to assign *this operator

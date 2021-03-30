@@ -51,15 +51,15 @@ public:
     H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double proj_prec, double smooth_prec = -1.0)
             : H_M_pso(MomentumOperator(D), NuclearGradientOperator(1.0, k, proj_prec, smooth_prec)) {}
 
-    H_M_pso(const MomentumOperator &p, const NuclearGradientOperator &r_rm3) {
+    H_M_pso(MomentumOperator p, NuclearGradientOperator r_rm3) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 
-        const RankZeroTensorOperator &p_x = p[0];
-        const RankZeroTensorOperator &p_y = p[1];
-        const RankZeroTensorOperator &p_z = p[2];
-        const RankZeroTensorOperator &x_rm3 = r_rm3[0];
-        const RankZeroTensorOperator &y_rm3 = r_rm3[1];
-        const RankZeroTensorOperator &z_rm3 = r_rm3[2];
+        RankZeroTensorOperator &p_x = p[0];
+        RankZeroTensorOperator &p_y = p[1];
+        RankZeroTensorOperator &p_z = p[2];
+        RankZeroTensorOperator &x_rm3 = r_rm3[0];
+        RankZeroTensorOperator &y_rm3 = r_rm3[1];
+        RankZeroTensorOperator &z_rm3 = r_rm3[2];
 
         // Invoke operator= to assign *this operator
         RankOneTensorOperator<3> &h = (*this);

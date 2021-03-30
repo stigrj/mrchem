@@ -47,7 +47,7 @@ public:
     explicit KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
             : KineticOperator(MomentumOperator(D)) {}
 
-    explicit KineticOperator(const MomentumOperator &p) {
+    explicit KineticOperator(MomentumOperator p) {
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &t = (*this);
         t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);

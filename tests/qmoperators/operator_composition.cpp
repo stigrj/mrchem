@@ -172,7 +172,6 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             IS.clear();
         }
     }
-
     SECTION("potential operator") {
         PositionOperator V;
         SECTION("product V*I") {
@@ -446,8 +445,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SD.setup(prec);
             const ComplexDouble ref = {0.0, -std::sqrt(2.0) / 4.0};
             const ComplexDouble val = SD(phi_0, phi_1);
-            REQUIRE(val.real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val.imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val.real() == Approx(ref.real()).margin(thrs));
+            REQUIRE(val.imag() == Approx(ref.imag()).epsilon(thrs));
             SD.clear();
         }
         SECTION("composition S(D)") {
@@ -459,8 +458,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SD.setup(prec);
             const ComplexDouble ref = {0.0, -std::sqrt(2.0) / 4.0};
             const ComplexDouble val = SD(phi_0, phi_1);
-            REQUIRE(val.real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val.imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val.real() == Approx(ref.real()).margin(thrs));
+            REQUIRE(val.imag() == Approx(ref.imag()).epsilon(thrs));
             SD.clear();
         }
         SECTION("product S*S") {
@@ -472,8 +471,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SS.setup(prec);
             const ComplexDouble ref = {1.0 / 4.0, 0.0};
             const ComplexDouble val = SS(phi_0, phi_0);
-            REQUIRE(val.real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val.imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val.real() == Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val.imag() == Approx(ref.imag()).margin(thrs));
             SS.clear();
         }
         SECTION("composition S(S)") {
@@ -485,8 +484,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SS.setup(prec);
             const ComplexDouble ref = {1.0 / 4.0, 0.0};
             const ComplexDouble val = SS(phi_0, phi_0);
-            REQUIRE(val.real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val.imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val.real() == Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val.imag() == Approx(ref.imag()).margin(thrs));
             SS.clear();
         }
     }
