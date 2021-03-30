@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <MRCPP/Printer>
 
 #include "mrchem.h"
@@ -50,6 +52,9 @@
  *
  */
 namespace mrchem {
+
+// Convenience typedef
+using QMOperatorVector = std::vector<std::shared_ptr<QMOperator>>;
 
 class Orbital;
 
@@ -85,9 +90,11 @@ protected:
     virtual void setup(double prec) { setApplyPrec(prec); }
     virtual void clear() { clearApplyPrec(); }
 
-    virtual ComplexDouble evalf(const mrcpp::Coord<3> &r) const { NOT_REACHED_ABORT; }
+    virtual ComplexDouble evalf(const mrcpp::Coord<3> &r) const = 0;
+
     virtual Orbital apply(Orbital inp) = 0;
     virtual Orbital dagger(Orbital inp) = 0;
+    virtual QMOperatorVector apply(std::shared_ptr<QMOperator> &O) = 0;
 };
 
 } // namespace mrchem

@@ -14,6 +14,7 @@ target_sources(mrchem-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/xc_hessian_lda.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/xc_hessian_pbe.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/electric_field_operator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/operator_composition.cpp
   )
 
 add_Catch_test(
@@ -89,4 +90,9 @@ add_Catch_test(
 add_Catch_test(
   NAME electric_field_energy
   LABELS "electric_field_energy"
+  )
+
+add_Catch_test(
+  NAME operator_composition
+  LABELS "operator_composition"
   )

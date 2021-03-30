@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "QMOperator.h"
 
 #include "chemistry/chemistry_fwd.h"
@@ -63,9 +61,6 @@ namespace mrchem {
  *
  */
 
-// Convenience typedef
-using QMOperatorVector = std::vector<std::shared_ptr<QMOperator>>;
-
 class RankZeroTensorOperator {
 public:
     RankZeroTensorOperator() {}
@@ -100,6 +95,8 @@ public:
 
     RankZeroTensorOperator get(int i);
     RankZeroTensorOperator get(int i, int j);
+
+    RankZeroTensorOperator operator()(RankZeroTensorOperator &inp);
 
     RankZeroTensorOperator &operator=(std::shared_ptr<QMOperator> O);
     RankZeroTensorOperator &operator+=(std::shared_ptr<QMOperator> O);

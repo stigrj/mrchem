@@ -72,11 +72,11 @@ private:
     void setupBank() override;
     void clearBank();
 
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+
     Orbital apply(Orbital phi_p) override;
     Orbital dagger(Orbital phi_p) override;
-
-    using QMOperator::apply;
-    using QMOperator::dagger;
+    QMOperatorVector apply(std::shared_ptr<QMOperator> &O) override;
 };
 
 } // namespace mrchem

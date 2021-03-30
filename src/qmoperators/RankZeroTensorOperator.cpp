@@ -70,6 +70,39 @@ RankZeroTensorOperator RankZeroTensorOperator::get(int i, int j) {
     return this->oper_exp[i][j];
 }
 
+RankZeroTensorOperator RankZeroTensorOperator::operator()(RankZeroTensorOperator &B) {
+    RankZeroTensorOperator &A = *this;
+    RankZeroTensorOperator out;
+    out.name() = A.name() + " (" + B.name() + ")";
+
+    int a_terms = A.oper_exp.size();
+    int b_terms = B.oper_exp.size();
+
+    for (int i = 0; i < a_terms; i++) {
+        ComplexDouble a_i = A.coef_exp[i];
+        for (int k = 0; k < b_terms; k++) {
+            ComplexDouble b_k = B.coef_exp[k];
+
+            // we are composing (merging) only the two operators in the middle:
+            // A(B) = (a_0 ... a_{J-1}) a_J(b_0) (b_1 ... b_L)
+            auto &A_last = A.oper_exp[i].back();
+            auto &B_first = B.oper_exp[k].front();
+            QMOperatorVector AB = A_last->apply(B_first);
+
+            QMOperatorVector tmp;
+            int Na = A.oper_exp[i].size();
+            int Nb = B.oper_exp[k].size();
+            for (int l = 0; l < Nb - 1; l++) tmp.push_back(B.oper_exp[k][l]);
+            for (auto &ab : AB) tmp.push_back(ab);
+            for (int j = 1; j < Na; j++) tmp.push_back(A.oper_exp[i][j]);
+
+            out.coef_exp.push_back(b_k * a_i);
+            out.oper_exp.push_back(tmp);
+        }
+    }
+    return out;
+}
+
 /** @brief assignment operator
  *
  * Clears the operator expansion and sets the right hand side as the only component.

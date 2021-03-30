@@ -84,6 +84,7 @@ protected:
 
     Orbital apply(Orbital phi) override;
     Orbital dagger(Orbital phi) override;
+    QMOperatorVector apply(std::shared_ptr<QMOperator> &O) override;
 };
 
 } // namespace mrchem

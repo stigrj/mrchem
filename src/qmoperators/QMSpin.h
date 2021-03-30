@@ -33,12 +33,17 @@ class QMSpin final : public QMOperator {
 public:
     QMSpin(int d)
             : D(d) {}
+    QMSpin(const QMSpin &S)
+            : D(S.D) {}
 
 private:
     const int D;
 
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
+    QMOperatorVector apply(std::shared_ptr<QMOperator> &O) override;
 };
 
 } // namespace mrchem

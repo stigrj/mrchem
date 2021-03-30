@@ -28,13 +28,19 @@
 
 #include "QMPotential.h"
 
+#include "QMDerivative.h"
+#include "QMIdentity.h"
+#include "QMSpin.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
 using mrcpp::Printer;
 using mrcpp::Timer;
+
+using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
 
 namespace mrchem {
 
@@ -52,6 +58,11 @@ QMPotential::QMPotential(int adap, bool shared)
         : QMFunction(shared)
         , QMOperator()
         , adap_build(adap) {}
+
+QMPotential::QMPotential(const QMPotential &inp)
+        : QMFunction(inp.isShared())
+        , QMOperator()
+        , adap_build(inp.adap_build) {}
 
 /** @brief apply potential
  *
@@ -87,6 +98,41 @@ Orbital QMPotential::dagger(Orbital inp) {
     return out;
 }
 
+QMOperatorVector QMPotential::apply(QMOperator_p &O) {
+    QMOperatorVector out;
+
+    QMIdentity *I = dynamic_cast<QMIdentity *>(&(*O));
+    if (I) {
+        auto V = std::make_shared<QMPotential>(*this);
+        qmfunction::deep_copy(*V, *this);
+        out.push_back(V);
+    }
+    QMPotential *V_inp = dynamic_cast<QMPotential *>(&(*O));
+    if (V_inp) {
+        auto V_out = std::make_shared<QMPotential>(*this);
+        calcRealPart(*V_out, *V_inp, false);
+        calcImagPart(*V_out, *V_inp, false);
+        out.push_back(V_out);
+    }
+    QMDerivative *D = dynamic_cast<QMDerivative *>(&(*O));
+    if (D) {
+        auto V = std::make_shared<QMPotential>(*this);
+        qmfunction::deep_copy(*V, *this);
+        out.push_back(O);
+        out.push_back(V);
+    }
+    QMSpin *S = dynamic_cast<QMSpin *>(&(*O));
+    if (S) {
+        auto V = std::make_shared<QMPotential>(*this);
+        qmfunction::deep_copy(*V, *this);
+        out.push_back(O);
+        out.push_back(V);
+    }
+
+    if (out.size() == 0) MSG_ERROR("Empty operator after composition");
+    return out;
+}
+
 /** @brief compute real part of output
  *
  * @param inp: input orbital
@@ -95,7 +141,7 @@ Orbital QMPotential::dagger(Orbital inp) {
  * Computes the real part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
+void QMPotential::calcRealPart(QMFunction &out, QMFunction &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
@@ -105,7 +151,7 @@ void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
     QMFunction &V = *this;
     if (V.hasReal() and inp.hasReal()) {
         double coef = 1.0;
-        Orbital tmp = out.paramCopy();
+        QMFunction tmp(false);
         tmp.alloc(NUMBER::Real);
         mrcpp::copy_grid(tmp.real(), inp.real());
         mrcpp::multiply(prec, tmp.real(), coef, V.real(), inp.real(), adap);
@@ -115,7 +161,7 @@ void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
         double coef = -1.0;
         if (dagger) coef *= -1.0;
         if (inp.conjugate()) coef *= -1.0;
-        Orbital tmp = out.paramCopy();
+        QMFunction tmp(false);
         tmp.alloc(NUMBER::Real);
         mrcpp::copy_grid(tmp.real(), inp.imag());
         mrcpp::multiply(prec, tmp.real(), coef, V.imag(), inp.imag(), adap);
@@ -131,7 +177,7 @@ void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
  * Computes the imaginary part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-void QMPotential::calcImagPart(Orbital &out, Orbital &inp, bool dagger) {
+void QMPotential::calcImagPart(QMFunction &out, QMFunction &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
@@ -142,7 +188,7 @@ void QMPotential::calcImagPart(Orbital &out, Orbital &inp, bool dagger) {
     if (V.hasReal() and inp.hasImag()) {
         double coef = 1.0;
         if (inp.conjugate()) coef *= -1.0;
-        Orbital tmp = out.paramCopy();
+        QMFunction tmp(false);
         tmp.alloc(NUMBER::Imag);
         mrcpp::copy_grid(tmp.imag(), inp.imag());
         mrcpp::multiply(prec, tmp.imag(), coef, V.real(), inp.imag(), adap);
@@ -151,7 +197,7 @@ void QMPotential::calcImagPart(Orbital &out, Orbital &inp, bool dagger) {
     if (V.hasImag() and inp.hasReal()) {
         double coef = 1.0;
         if (dagger) coef *= -1.0;
-        Orbital tmp = out.paramCopy();
+        QMFunction tmp(false);
         tmp.alloc(NUMBER::Imag);
         mrcpp::copy_grid(tmp.imag(), inp.real());
         mrcpp::multiply(prec, tmp.imag(), coef, V.imag(), inp.real(), adap);

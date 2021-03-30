@@ -41,6 +41,7 @@ using mrcpp::Timer;
 using PoissonOperator = mrcpp::PoissonOperator;
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
+using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
 
 namespace mrchem {
 
@@ -209,5 +210,10 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
     print_utils::qmfunction(3, "Applied exchange", ex_p, timer);
     return ex_p;
 }
+
+QMOperatorVector ExchangePotentialD2::apply(QMOperator_p &O) {
+    NOT_IMPLEMENTED_ABORT;
+}
+
 
 } // namespace mrchem

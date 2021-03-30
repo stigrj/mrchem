@@ -28,12 +28,17 @@
 
 #include "QMSpin.h"
 
+#include "QMDerivative.h"
+#include "QMIdentity.h"
+#include "QMPotential.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
+
+using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
 
 namespace mrchem {
 
@@ -71,6 +76,33 @@ Orbital QMSpin::apply(Orbital inp) {
 
 Orbital QMSpin::dagger(Orbital inp) {
     NOT_IMPLEMENTED_ABORT;
+}
+
+QMOperatorVector QMSpin::apply(QMOperator_p &O) {
+    QMOperatorVector out;
+
+    QMIdentity *I = dynamic_cast<QMIdentity *>(&(*O));
+    if (I) {
+        out.push_back(std::make_shared<QMSpin>(*this));
+    }
+    QMPotential *V = dynamic_cast<QMPotential *>(&(*O));
+    if (V) {
+        out.push_back(O);
+        out.push_back(std::make_shared<QMSpin>(*this));
+    }
+    QMDerivative *D = dynamic_cast<QMDerivative *>(&(*O));
+    if (D) {
+        out.push_back(O);
+        out.push_back(std::make_shared<QMSpin>(*this));
+    }
+    QMSpin *S = dynamic_cast<QMSpin *>(&(*O));
+    if (S) {
+        out.push_back(O);
+        out.push_back(std::make_shared<QMSpin>(*this));
+    }
+
+    if (out.size() == 0) MSG_ERROR("Empty operator after composition");
+    return out;
 }
 
 } // namespace mrchem

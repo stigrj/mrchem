@@ -34,6 +34,7 @@ namespace mrchem {
 class QMDerivative final : public QMOperator {
 public:
     QMDerivative(int d, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool im = false);
+    QMDerivative(const QMDerivative &inp);
 
 private:
     const bool imag;     // add imaginary unit prefactor, for faster application
@@ -43,8 +44,11 @@ private:
     bool isReal() const { return not(imag); }
     bool isImag() const { return imag; }
 
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
+    QMOperatorVector apply(std::shared_ptr<QMOperator> &O) override;
 };
 
 } // namespace mrchem

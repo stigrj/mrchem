@@ -36,6 +36,8 @@ using mrcpp::FunctionTree;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
+using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
+
 namespace mrchem {
 
 /** @brief Prepare the operator for application
@@ -161,6 +163,10 @@ Orbital XCPotential::dagger(Orbital phi) {
     Orbital Vphi = QMPotential::dagger(phi);
     V.setReal(nullptr);
     return Vphi;
+}
+
+QMOperatorVector XCPotential::apply(QMOperator_p &O) {
+    NOT_IMPLEMENTED_ABORT;
 }
 
 } // namespace mrchem

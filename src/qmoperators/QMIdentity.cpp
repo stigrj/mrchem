@@ -31,6 +31,8 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
+using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
+
 namespace mrchem {
 
 /** Identity operator is a deep copy */
@@ -44,6 +46,12 @@ Orbital QMIdentity::apply(Orbital inp) {
 /** Identity operator is a deep copy */
 Orbital QMIdentity::dagger(Orbital inp) {
     return apply(inp);
+}
+
+QMOperatorVector QMIdentity::apply(QMOperator_p &O) {
+    QMOperatorVector out;
+    out.push_back(O);
+    return out;
 }
 
 } // namespace mrchem
