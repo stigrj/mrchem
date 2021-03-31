@@ -28,18 +28,19 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 
+#include "mrchem.h"
+#include "parallel.h"
+
 #include "analyticfunctions/HarmonicOscillatorFunction.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmoperators/RankTwoTensorOperator.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/MomentumOperator.h"
 #include "qmoperators/one_electron/NablaOperator.h"
 #include "qmoperators/one_electron/PositionOperator.h"
 #include "qmoperators/one_electron/SpinOperator.h"
-
-#include "mrchem.h"
-#include "parallel.h"
+#include "tensor/RankTwoOperator.h"
+#include "tensor/tensor_utils.h"
 
 using namespace mrchem;
 
@@ -69,7 +70,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
     SECTION("identity operator") {
         IdentityOperator I;
         SECTION("product I*I") {
-            RankZeroTensorOperator II = I * I;
+            RankZeroOperator II = I * I;
             REQUIRE(II.size() == 1);
             REQUIRE(II.size(0) == 2);
 
@@ -81,7 +82,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             II.clear();
         }
         SECTION("composition I(I)") {
-            RankZeroTensorOperator II = I(I);
+            RankZeroOperator II = I(I);
             REQUIRE(II.size() == 1);
             REQUIRE(II.size(0) == 1);
 
@@ -94,7 +95,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product I*V") {
             PositionOperator V;
-            RankZeroTensorOperator IV = I * V[0];
+            RankZeroOperator IV = I * V[0];
             REQUIRE(IV.size() == 1);
             REQUIRE(IV.size(0) == 2);
 
@@ -107,7 +108,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition I(V)") {
             PositionOperator V;
-            RankZeroTensorOperator IV = I(V[0]);
+            RankZeroOperator IV = I(V[0]);
             REQUIRE(IV.size() == 1);
             REQUIRE(IV.size(0) == 1);
 
@@ -120,7 +121,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product I*D") {
             MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
-            RankZeroTensorOperator ID = I * D[0];
+            RankZeroOperator ID = I * D[0];
             REQUIRE(ID.size() == 1);
             REQUIRE(ID.size(0) == 2);
 
@@ -133,7 +134,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition I(D)") {
             MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
-            RankZeroTensorOperator ID = I(D[0]);
+            RankZeroOperator ID = I(D[0]);
             REQUIRE(ID.size() == 1);
             REQUIRE(ID.size(0) == 1);
 
@@ -146,7 +147,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product I*S") {
             SpinOperator S;
-            RankZeroTensorOperator IS = I * S[1];
+            RankZeroOperator IS = I * S[1];
             REQUIRE(IS.size() == 1);
             REQUIRE(IS.size(0) == 2);
 
@@ -159,7 +160,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition I(S)") {
             SpinOperator S;
-            RankZeroTensorOperator IS = I(S[1]);
+            RankZeroOperator IS = I(S[1]);
             REQUIRE(IS.size() == 1);
             REQUIRE(IS.size(0) == 1);
 
@@ -175,7 +176,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         PositionOperator V;
         SECTION("product V*I") {
             IdentityOperator I;
-            RankZeroTensorOperator VI = V[0] * I;
+            RankZeroOperator VI = V[0] * I;
             REQUIRE(VI.size() == 1);
             REQUIRE(VI.size(0) == 2);
 
@@ -188,7 +189,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition V(I)") {
             IdentityOperator I;
-            RankZeroTensorOperator VI = V[0](I);
+            RankZeroOperator VI = V[0](I);
             REQUIRE(VI.size() == 1);
             REQUIRE(VI.size(0) == 1);
 
@@ -200,7 +201,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VI.clear();
         }
         SECTION("product V*V") {
-            RankZeroTensorOperator VV = V[0] * V[0];
+            RankZeroOperator VV = V[0] * V[0];
             REQUIRE(VV.size() == 1);
             REQUIRE(VV.size(0) == 2);
 
@@ -212,7 +213,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VV.clear();
         }
         SECTION("composition V(V)") {
-            RankZeroTensorOperator VV = V[0](V[0]);
+            RankZeroOperator VV = V[0](V[0]);
             REQUIRE(VV.size() == 1);
             REQUIRE(VV.size(0) == 1);
 
@@ -225,7 +226,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product V*D") {
             MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
-            RankZeroTensorOperator VD = V[0] * D[0];
+            RankZeroOperator VD = V[0] * D[0];
             REQUIRE(VD.size() == 1);
             REQUIRE(VD.size(0) == 2);
 
@@ -238,7 +239,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition V(D)") {
             MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
-            RankZeroTensorOperator VD = V[0](D[0]);
+            RankZeroOperator VD = V[0](D[0]);
             REQUIRE(VD.size() == 1);
             REQUIRE(VD.size(0) == 2);
 
@@ -251,7 +252,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product V*S") {
             SpinOperator S;
-            RankZeroTensorOperator VS = V[0] * S[2];
+            RankZeroOperator VS = V[0] * S[2];
             REQUIRE(VS.size() == 1);
             REQUIRE(VS.size(0) == 2);
 
@@ -264,7 +265,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition V(S)") {
             SpinOperator S;
-            RankZeroTensorOperator VS = V[0](S[2]);
+            RankZeroOperator VS = V[0](S[2]);
             REQUIRE(VS.size() == 1);
             REQUIRE(VS.size(0) == 2);
 
@@ -280,7 +281,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
         SECTION("product D*I") {
             IdentityOperator I;
-            RankZeroTensorOperator DI = D[0] * I;
+            RankZeroOperator DI = D[0] * I;
             REQUIRE(DI.size() == 1);
             REQUIRE(DI.size(0) == 2);
 
@@ -293,7 +294,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition D(I)") {
             IdentityOperator I;
-            RankZeroTensorOperator DI = D[0](I);
+            RankZeroOperator DI = D[0](I);
             REQUIRE(DI.size() == 1);
             REQUIRE(DI.size(0) == 1);
 
@@ -306,7 +307,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product D*V") {
             PositionOperator V;
-            RankZeroTensorOperator DV = D[0] * V[0];
+            RankZeroOperator DV = D[0] * V[0];
             REQUIRE(DV.size() == 1);
             REQUIRE(DV.size(0) == 2);
 
@@ -319,7 +320,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition D(V)") {
             PositionOperator V;
-            RankZeroTensorOperator DV = D[0](V[0]);
+            RankZeroOperator DV = D[0](V[0]);
             REQUIRE(DV.size() == 1);
             REQUIRE(DV.size(0) == 1);
 
@@ -331,7 +332,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DV.clear();
         }
         SECTION("product D*D") {
-            RankZeroTensorOperator DD = D[0] * D[0];
+            RankZeroOperator DD = D[0] * D[0];
             REQUIRE(DD.size() == 1);
             REQUIRE(DD.size(0) == 2);
 
@@ -343,7 +344,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DD.clear();
         }
         SECTION("composition D(D)") {
-            RankZeroTensorOperator DD = D[0](D[0]);
+            RankZeroOperator DD = D[0](D[0]);
             REQUIRE(DD.size() == 1);
             REQUIRE(DD.size(0) == 2);
 
@@ -356,7 +357,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product D*S") {
             SpinOperator S;
-            RankZeroTensorOperator DS = D[0] * S[2];
+            RankZeroOperator DS = D[0] * S[2];
             REQUIRE(DS.size() == 1);
             REQUIRE(DS.size(0) == 2);
 
@@ -369,7 +370,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition D(S)") {
             SpinOperator S;
-            RankZeroTensorOperator DS = D[0](S[2]);
+            RankZeroOperator DS = D[0](S[2]);
             REQUIRE(DS.size() == 1);
             REQUIRE(DS.size(0) == 2);
 
@@ -385,7 +386,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         SpinOperator S;
         SECTION("product S*I") {
             IdentityOperator I;
-            RankZeroTensorOperator SI = S[1] * I;
+            RankZeroOperator SI = S[1] * I;
             REQUIRE(SI.size() == 1);
             REQUIRE(SI.size(0) == 2);
 
@@ -398,7 +399,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition S(I)") {
             IdentityOperator I;
-            RankZeroTensorOperator SI = S[1](I);
+            RankZeroOperator SI = S[1](I);
             REQUIRE(SI.size() == 1);
             REQUIRE(SI.size(0) == 1);
 
@@ -411,7 +412,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product S*V") {
             PositionOperator V;
-            RankZeroTensorOperator SV = S[2] * V[0];
+            RankZeroOperator SV = S[2] * V[0];
             REQUIRE(SV.size() == 1);
             REQUIRE(SV.size(0) == 2);
 
@@ -424,7 +425,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product S(V)") {
             PositionOperator V;
-            RankZeroTensorOperator SV = S[2](V[0]);
+            RankZeroOperator SV = S[2](V[0]);
             REQUIRE(SV.size() == 1);
             REQUIRE(SV.size(0) == 2);
 
@@ -437,7 +438,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product S*D") {
             MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
-            RankZeroTensorOperator SD = S[0] * D[0];
+            RankZeroOperator SD = S[0] * D[0];
             REQUIRE(SD.size() == 1);
             REQUIRE(SD.size(0) == 2);
 
@@ -450,7 +451,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition S(D)") {
             MomentumOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
-            RankZeroTensorOperator SD = S[0](D[0]);
+            RankZeroOperator SD = S[0](D[0]);
             REQUIRE(SD.size() == 1);
             REQUIRE(SD.size(0) == 2);
 
@@ -463,7 +464,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("product S*S") {
             SpinOperator S;
-            RankZeroTensorOperator SS = S[1] * S[1];
+            RankZeroOperator SS = S[1] * S[1];
             REQUIRE(SS.size() == 1);
             REQUIRE(SS.size(0) == 2);
 
@@ -476,7 +477,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         }
         SECTION("composition S(S)") {
             SpinOperator S;
-            RankZeroTensorOperator SS = S[1](S[1]);
+            RankZeroOperator SS = S[1](S[1]);
             REQUIRE(SS.size() == 1);
             REQUIRE(SS.size(0) == 2);
 
@@ -492,7 +493,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
         NablaOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
         PositionOperator V;
         SECTION("gradient Del(V_scalar)") {
-            RankOneTensorOperator<3> gradV = D(V[0]);
+            RankOneOperator<3> gradV = D(V[0]);
             REQUIRE(gradV[0].size() == 1);
             REQUIRE(gradV[1].size() == 1);
             REQUIRE(gradV[2].size() == 1);
@@ -510,7 +511,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             gradV.clear();
         }
         SECTION("divergence De . V_vector") {
-            RankZeroTensorOperator divV = tensor::dot(D, V);
+            RankZeroOperator divV = tensor::dot(D, V);
             REQUIRE(divV.size() == 3);
             REQUIRE(divV.size(0) == 1);
             REQUIRE(divV.size(1) == 1);
@@ -525,10 +526,10 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             divV.clear();
         }
         SECTION("curl Del x V_vector") {
-            RankOneTensorOperator<3> curlV = tensor::cross(D, V);
+            RankOneOperator<3> curlV = tensor::cross(D, V);
             curlV.setup(prec);
             for (int i = 0; i < 3; i++) {
-                RankZeroTensorOperator curlV_i = curlV[i];
+                RankZeroOperator curlV_i = curlV[i];
                 REQUIRE(curlV[i].size() == 2);
                 REQUIRE(curlV[i].size(0) == 1);
                 REQUIRE(curlV[i].size(1) == 1);
@@ -538,11 +539,11 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             curlV.clear();
         }
         SECTION("jacobian Del (x) V_vector") {
-            RankTwoTensorOperator<3, 3> jacV = tensor::outer(D, V);
+            RankTwoOperator<3, 3> jacV = tensor::outer(D, V);
             jacV.setup(prec);
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
-                    RankZeroTensorOperator jacV_ij = jacV[i][j];
+                    RankZeroOperator jacV_ij = jacV[i][j];
                     REQUIRE(jacV_ij.size() == 1);
                     REQUIRE(jacV_ij.size(0) == 1);
                     Orbital psi_0 = jacV_ij(phi_0);

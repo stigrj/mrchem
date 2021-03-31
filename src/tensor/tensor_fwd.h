@@ -25,21 +25,24 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 /* NOTES ON OPERATORS:
  *
  * The QMOperator is a fundamental quantum mechanical operator \hat{q} that can
  * be applied to an Orbital. However, its application is a private and can only
  * be done though a TensorOperator.
  *
- * The RankZeroTensorOperator is a general expansion of fundamental QMOperators:
+ * The RankZeroOperator is a general expansion of fundamental QMOperators:
  *      \hat{Q} = c_1 \hat{q}_{11}\hat{q}_{12}\cdots
  *              + c_2 \hat{q}_{21}\hat{q}_{22}\cdots
  *              + \cdots
  *
- * The RankOneTensorOperator is a vector of rank 0 operators:
+ * The RankOneOperator is a vector of rank 0 operators:
  *      \hat{Q} = [Q_1, Q_2, \cdots, Q_N]
  *
- * The RankTwoTensorOperator is a matrix of rank 0 operators:
+ * The RankTwoOperator is a matrix of rank 0 operators:
  *      \hat{Q} = [Q_11,   Q_12,   \cdots, Q_1N  ]
  *                [Q_21,   Q_22,   \cdots, Q_2N  ]
  *                [\cdots, \cdots, \cdots, \cdots]
@@ -66,8 +69,10 @@
 namespace mrchem {
 
 class QMOperator;
-class RankZeroTensorOperator;
-template <int I> class RankOneTensorOperator;
-template <int I, int J> class RankTwoTensorOperator;
+using QMOperatorVector = std::vector<std::shared_ptr<QMOperator>>;
+
+class RankZeroOperator;
+template <int I> class RankOneOperator;
+template <int I, int J> class RankTwoOperator;
 
 } // namespace mrchem

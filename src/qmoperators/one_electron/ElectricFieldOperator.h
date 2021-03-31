@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "H_E_dip.h"
 
@@ -48,7 +48,7 @@ namespace mrchem {
  * @param[in] f the external electric field
  *
  */
-class ElectricFieldOperator final : public RankZeroTensorOperator {
+class ElectricFieldOperator final : public RankZeroOperator {
 public:
     ElectricFieldOperator(const Eigen::Vector3d &f, const mrcpp::Coord<3> &o)
             : ElectricFieldOperator(std::array<double, 3>{f[0], f[1], f[2]}, H_E_dip(o)) {}
@@ -61,7 +61,7 @@ public:
 
     ElectricFieldOperator(const std::array<double, 3> &f, H_E_dip mu) {
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &HEF = (*this);
+        RankZeroOperator &HEF = (*this);
         HEF = -f[0] * mu[0] - f[1] * mu[1] - f[2] * mu[2];
         HEF.name() = "E . mu_E";
     }

@@ -26,7 +26,7 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
-#include "RankZeroTensorOperator.h"
+#include "RankZeroOperator.h"
 
 #include "chemistry/Nucleus.h"
 #include "parallel.h"
@@ -44,7 +44,7 @@ namespace mrchem {
  *
  * Converts std::vector<std::complex<double> > to Eigen::VectorXcd
  */
-ComplexVector RankZeroTensorOperator::getCoefVector() const {
+ComplexVector RankZeroOperator::getCoefVector() const {
     int nCoefs = this->coef_exp.size();
     ComplexVector out(nCoefs);
     for (int i = 0; i < nCoefs; i++) out(i) = this->coef_exp[i];
@@ -52,9 +52,9 @@ ComplexVector RankZeroTensorOperator::getCoefVector() const {
 }
 
 /** @brief return the i-th term (c_i*q_i1*q_i2*...) in the expansion: sum_i c_i * prod_j q_ij */
-RankZeroTensorOperator RankZeroTensorOperator::get(int i) {
+RankZeroOperator RankZeroOperator::get(int i) {
     if (i < 0 or i >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
-    RankZeroTensorOperator out;
+    RankZeroOperator out;
     out.name() = this->name();
     auto c_i = this->coef_exp[i];
     auto Q_i = this->oper_exp[i];
@@ -64,15 +64,15 @@ RankZeroTensorOperator RankZeroTensorOperator::get(int i) {
 }
 
 /** @brief return ij-the operator (q_ij) in the expansion: sum_i c_i * prod_j q_ij */
-RankZeroTensorOperator RankZeroTensorOperator::get(int i, int j) {
+RankZeroOperator RankZeroOperator::get(int i, int j) {
     if (i < 0 or i >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
     if (j < 0 or j >= this->size(i)) MSG_ABORT("Invalid operator term (j): " << i);
     return this->oper_exp[i][j];
 }
 
-RankZeroTensorOperator RankZeroTensorOperator::operator()(RankZeroTensorOperator B) {
-    RankZeroTensorOperator &A = *this;
-    RankZeroTensorOperator out;
+RankZeroOperator RankZeroOperator::operator()(RankZeroOperator B) {
+    RankZeroOperator &A = *this;
+    RankZeroOperator out;
     out.name() = A.name() + " (" + B.name() + ")";
 
     int a_terms = A.oper_exp.size();
@@ -107,7 +107,7 @@ RankZeroTensorOperator RankZeroTensorOperator::operator()(RankZeroTensorOperator
  *
  * Clears the operator expansion and sets the right hand side as the only component.
  */
-RankZeroTensorOperator &RankZeroTensorOperator::operator=(QMOperator_p O) {
+RankZeroOperator &RankZeroOperator::operator=(QMOperator_p O) {
     this->clear();
     this->coef_exp.push_back(1.0);
     QMOperatorVector tmp;
@@ -120,7 +120,7 @@ RankZeroTensorOperator &RankZeroTensorOperator::operator=(QMOperator_p O) {
  *
  * Adds a new term to the operator expansion.
  */
-RankZeroTensorOperator &RankZeroTensorOperator::operator+=(QMOperator_p O) {
+RankZeroOperator &RankZeroOperator::operator+=(QMOperator_p O) {
     this->coef_exp.push_back(1.0);
     QMOperatorVector tmp;
     tmp.push_back(O);
@@ -132,7 +132,7 @@ RankZeroTensorOperator &RankZeroTensorOperator::operator+=(QMOperator_p O) {
  *
  * Adds a new term to the operator expansion with -1 coefficient.
  */
-RankZeroTensorOperator &RankZeroTensorOperator::operator-=(QMOperator_p O) {
+RankZeroOperator &RankZeroOperator::operator-=(QMOperator_p O) {
     this->coef_exp.push_back(-1.0);
     QMOperatorVector tmp;
     tmp.push_back(O);
@@ -144,7 +144,7 @@ RankZeroTensorOperator &RankZeroTensorOperator::operator-=(QMOperator_p O) {
  *
  * This will shallow copy the operator expansion. Ownership not transferred.
  */
-RankZeroTensorOperator &RankZeroTensorOperator::operator=(const RankZeroTensorOperator &O) {
+RankZeroOperator &RankZeroOperator::operator=(const RankZeroOperator &O) {
     if (this != &O) {
         this->name() = O.name();
         this->coef_exp = O.coef_exp;
@@ -157,7 +157,7 @@ RankZeroTensorOperator &RankZeroTensorOperator::operator=(const RankZeroTensorOp
  *
  * This will append an operator expansion. Ownership not transferred.
  */
-RankZeroTensorOperator &RankZeroTensorOperator::operator+=(const RankZeroTensorOperator &O) {
+RankZeroOperator &RankZeroOperator::operator+=(const RankZeroOperator &O) {
     if (this != &O) {
         if (this->size() == 0) {
             this->name() = O.name();
@@ -177,7 +177,7 @@ RankZeroTensorOperator &RankZeroTensorOperator::operator+=(const RankZeroTensorO
  * This will append an operator expansion with negated coefficients.
  * Ownership not transferred.
  */
-RankZeroTensorOperator &RankZeroTensorOperator::operator-=(const RankZeroTensorOperator &O) {
+RankZeroOperator &RankZeroOperator::operator-=(const RankZeroOperator &O) {
     if (this != &O) {
         if (this->size() == 0) {
             this->name() = O.name();
@@ -199,7 +199,7 @@ RankZeroTensorOperator &RankZeroTensorOperator::operator-=(const RankZeroTensorO
  * This prepares each of the fundamental operators in the expansion to be
  * applied with the given precision. Must be called prior to application.
  */
-void RankZeroTensorOperator::setup(double prec) {
+void RankZeroOperator::setup(double prec) {
     for (auto &i : this->oper_exp) {
         for (int j = 0; j < i.size(); j++) { i[j]->setup(prec); }
     }
@@ -207,7 +207,7 @@ void RankZeroTensorOperator::setup(double prec) {
 
 /** @brief run clear on all operators in the expansion
  */
-void RankZeroTensorOperator::clear() {
+void RankZeroOperator::clear() {
     for (auto &i : this->oper_exp) {
         for (int j = 0; j < i.size(); j++) { i[j]->clear(); }
     }
@@ -221,10 +221,10 @@ void RankZeroTensorOperator::clear() {
  * components of each term are applied consecutively, then the output of each term
  * is added upp with the corresponding coefficient.
  */
-Orbital RankZeroTensorOperator::operator()(Orbital inp) {
+Orbital RankZeroOperator::operator()(Orbital inp) {
     if (not mpi::my_orb(inp)) return inp.paramCopy();
 
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
     QMFunctionVector func_vec;
     ComplexVector coef_vec = getCoefVector();
     for (int n = 0; n < O.size(); n++) {
@@ -242,10 +242,10 @@ Orbital RankZeroTensorOperator::operator()(Orbital inp) {
  *
  * NOT IMPLEMENTED
  */
-Orbital RankZeroTensorOperator::dagger(Orbital inp) {
+Orbital RankZeroOperator::dagger(Orbital inp) {
     if (not mpi::my_orb(inp)) return inp.paramCopy();
 
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
     QMFunctionVector func_vec;
     ComplexVector coef_vec = getCoefVector();
     for (int n = 0; n < O.size(); n++) {
@@ -264,8 +264,8 @@ Orbital RankZeroTensorOperator::dagger(Orbital inp) {
  * This produces a new OrbitalVector of the same size as the input, containing
  * the corresponding output orbitals after applying the operator.
  */
-OrbitalVector RankZeroTensorOperator::operator()(OrbitalVector &inp) {
-    RankZeroTensorOperator &O = *this;
+OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
+    RankZeroOperator &O = *this;
     OrbitalVector out;
     for (auto i = 0; i < inp.size(); i++) {
         Timer t1;
@@ -284,8 +284,8 @@ OrbitalVector RankZeroTensorOperator::operator()(OrbitalVector &inp) {
  *
  * NOT IMPLEMENTED
  */
-OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
-    RankZeroTensorOperator &O = *this;
+OrbitalVector RankZeroOperator::dagger(OrbitalVector &inp) {
+    RankZeroOperator &O = *this;
     OrbitalVector out;
     for (auto i = 0; i < inp.size(); i++) {
         Timer t1;
@@ -307,8 +307,8 @@ OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
  * corresponding expectation value. Then the expectation values are added up with
  * the corresponding coefficient to yield the final result.
  */
-ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
-    RankZeroTensorOperator &O = *this;
+ComplexDouble RankZeroOperator::operator()(Orbital bra, Orbital ket) {
+    RankZeroOperator &O = *this;
     Orbital Oket = O(ket);
     ComplexDouble out = orbital::dot(bra, Oket);
     return out;
@@ -321,8 +321,8 @@ ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
  *
  * NOT IMPLEMENTED
  */
-ComplexDouble RankZeroTensorOperator::dagger(Orbital bra, Orbital ket) {
-    RankZeroTensorOperator &O = *this;
+ComplexDouble RankZeroOperator::dagger(Orbital bra, Orbital ket) {
+    RankZeroOperator &O = *this;
     Orbital Oket = O.dagger(ket);
     ComplexDouble out = orbital::dot(bra, Oket);
     return out;
@@ -338,9 +338,9 @@ ComplexDouble RankZeroTensorOperator::dagger(Orbital bra, Orbital ket) {
  * expectation matrices are added up with the corresponding coefficient to yield
  * the final result.
  */
-ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix RankZeroOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t1;
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
     OrbitalVector Oket = O(ket);
     ComplexMatrix out = orbital::calc_overlap_matrix(bra, Oket);
     std::stringstream o_name;
@@ -356,9 +356,9 @@ ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVect
  *
  * NOT IMPLEMENTED
  */
-ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix RankZeroOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t1;
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
     OrbitalVector Oket = O.dagger(ket);
     ComplexMatrix out = orbital::calc_overlap_matrix(bra, Oket);
     std::stringstream o_name;
@@ -376,9 +376,9 @@ ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra, OrbitalVector &
  *      result = \sum_i n_i * <Phi_i|O|Phi_i>
  * Includes a MPI reduction operation in case of distributed orbitals.
  */
-ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
+ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi) {
     Timer t1;
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
     OrbitalVector OPhi = O(Phi);
     ComplexVector eta = orbital::get_occupations(Phi).cast<ComplexDouble>();
     ComplexVector phi_vec = orbital::dot(Phi, OPhi);
@@ -403,9 +403,9 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
  *      result = \sum_i n_i * (<Phi_i|O|X_i> + <Y_i|O|Phi_i>)
  * Includes a MPI reduction operation in case of distributed orbitals.
  */
-ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y) {
+ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y) {
     Timer t1;
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
 
     OrbitalVector OPhi = O(Phi);
     auto y_nodes = orbital::get_n_nodes(OPhi);
@@ -427,9 +427,9 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi, OrbitalVector &X
     return eta.dot(x_vec + y_vec);
 }
 
-ComplexDouble RankZeroTensorOperator::trace(const Nuclei &nucs) {
+ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
     Timer t1;
-    RankZeroTensorOperator &O = *this;
+    RankZeroOperator &O = *this;
     ComplexVector coef_vec = getCoefVector();
     ComplexDouble out = 0.0;
     for (int n = 0; n < O.size(); n++) out += coef_vec[n] * O.traceOperTerm(n, nucs);
@@ -449,7 +449,7 @@ ComplexDouble RankZeroTensorOperator::trace(const Nuclei &nucs) {
  * This consecutively applies all components of a particular term of the operator
  * expansion to the input orbital.
  */
-Orbital RankZeroTensorOperator::applyOperTerm(int n, Orbital inp) {
+Orbital RankZeroOperator::applyOperTerm(int n, Orbital inp) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
     if (not mpi::my_orb(inp)) return inp.paramCopy();
 
@@ -461,7 +461,7 @@ Orbital RankZeroTensorOperator::applyOperTerm(int n, Orbital inp) {
     return out;
 }
 
-Orbital RankZeroTensorOperator::daggerOperTerm(int n, Orbital inp) {
+Orbital RankZeroOperator::daggerOperTerm(int n, Orbital inp) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
     if (not mpi::my_orb(inp)) return inp.paramCopy();
 
@@ -474,7 +474,7 @@ Orbital RankZeroTensorOperator::daggerOperTerm(int n, Orbital inp) {
     return out;
 }
 
-ComplexDouble RankZeroTensorOperator::traceOperTerm(int n, const Nuclei &nucs) {
+ComplexDouble RankZeroOperator::traceOperTerm(int n, const Nuclei &nucs) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
 
     ComplexDouble out = 0.0;

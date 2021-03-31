@@ -25,13 +25,13 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "qmoperators/QMSpin.h"
 
 namespace mrchem {
 
-class SpinOperator final : public RankOneTensorOperator<3> {
+class SpinOperator final : public RankOneOperator<3> {
 public:
     SpinOperator() {
         auto s_x = std::make_shared<QMSpin>(0);
@@ -39,7 +39,7 @@ public:
         auto s_z = std::make_shared<QMSpin>(2);
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator &s = *this;
+        RankOneOperator &s = *this;
         s[0] = s_x;
         s[1] = s_y;
         s[2] = s_z;

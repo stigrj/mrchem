@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "ReactionPotential.h"
 
@@ -40,16 +40,16 @@
 namespace mrchem {
 class SCRF;
 
-class ReactionOperator final : public RankZeroTensorOperator {
+class ReactionOperator final : public RankZeroOperator {
 public:
     ReactionOperator(std::shared_ptr<mrchem::OrbitalVector> Phi_p, SCRF help) {
         potential = std::make_shared<ReactionPotential>(Phi_p, help);
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &J = (*this);
+        RankZeroOperator &J = (*this);
         J = potential;
     }
 
-    ComplexDouble trace(OrbitalVector &Phi) { return RankZeroTensorOperator::trace(Phi); }
+    ComplexDouble trace(OrbitalVector &Phi) { return RankZeroOperator::trace(Phi); }
 
     double getTotalEnergy() { return this->potential->getTotalEnergy(); }
     double getElectronicEnergy() { return this->potential->getElectronicEnergy(); }

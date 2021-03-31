@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankTwoTensorOperator.h"
+#include "tensor/RankTwoOperator.h"
 
 #include "NuclearGradientOperator.h"
 #include "PositionOperator.h"
@@ -47,7 +47,7 @@ namespace mrchem {
  * This operator is the transpose of H_MB_dia.
  */
 
-class H_BM_dia final : public RankTwoTensorOperator<3, 3> {
+class H_BM_dia final : public RankTwoOperator<3, 3> {
 public:
     H_BM_dia(const mrcpp::Coord<3> &o, const mrcpp::Coord<3> &k, double proj_prec, double smooth_prec = -1.0)
             : H_BM_dia(PositionOperator(o), NuclearGradientOperator(1.0, k, proj_prec, smooth_prec)) {}
@@ -55,15 +55,15 @@ public:
     H_BM_dia(PositionOperator r_o, NuclearGradientOperator r_rm3) {
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 
-        RankZeroTensorOperator &o_x = r_o[0];
-        RankZeroTensorOperator &o_y = r_o[1];
-        RankZeroTensorOperator &o_z = r_o[2];
-        RankZeroTensorOperator &k_x = r_rm3[0];
-        RankZeroTensorOperator &k_y = r_rm3[1];
-        RankZeroTensorOperator &k_z = r_rm3[2];
+        RankZeroOperator &o_x = r_o[0];
+        RankZeroOperator &o_y = r_o[1];
+        RankZeroOperator &o_z = r_o[2];
+        RankZeroOperator &k_x = r_rm3[0];
+        RankZeroOperator &k_y = r_rm3[1];
+        RankZeroOperator &k_z = r_rm3[2];
 
         // Invoke operator= to assign *this operator
-        RankTwoTensorOperator<3, 3> &h = (*this);
+        RankTwoOperator<3, 3> &h = (*this);
         h[0][0] = -(alpha_2 / 2.0) * (o_y(k_y) + o_z(k_z));
         h[0][1] = (alpha_2 / 2.0) * o_x(k_y);
         h[0][2] = (alpha_2 / 2.0) * o_x(k_z);

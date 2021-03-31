@@ -27,7 +27,7 @@
 
 #include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
-#include "qmoperators/qmoperator_fwd.h"
+#include "tensor/tensor_fwd.h"
 
 /** @class HelmholtzVector
  *
@@ -45,7 +45,7 @@ public:
 
     DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
 
-    OrbitalVector apply(RankZeroTensorOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
+    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
     OrbitalVector operator()(OrbitalVector &Phi) const;
 
 private:

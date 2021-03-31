@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "ExchangePotentialD1.h"
 #include "ExchangePotentialD2.h"
@@ -44,7 +44,7 @@
 
 namespace mrchem {
 
-class ExchangeOperator final : public RankZeroTensorOperator {
+class ExchangeOperator final : public RankZeroOperator {
 public:
     ExchangeOperator(std::shared_ptr<mrcpp::PoissonOperator> P,
                      std::shared_ptr<OrbitalVector> Phi,
@@ -52,7 +52,7 @@ public:
         exchange = std::make_shared<ExchangePotentialD1>(P, Phi, exchange_prec);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &K = (*this);
+        RankZeroOperator &K = (*this);
         K = exchange;
         K.name() = "K";
     }
@@ -65,7 +65,7 @@ public:
         exchange = std::make_shared<ExchangePotentialD2>(P, Phi, X, Y, exchange_prec);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &K = (*this);
+        RankZeroOperator &K = (*this);
         K = exchange;
         K.name() = "K";
     }
@@ -76,7 +76,7 @@ public:
     void setPreCompute() { exchange->setPreCompute(); }
     void rotate(const ComplexMatrix &U) { exchange->rotate(U); }
 
-    ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroTensorOperator::trace(Phi); }
+    ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroOperator::trace(Phi); }
 
 private:
     std::shared_ptr<ExchangePotential> exchange{nullptr};

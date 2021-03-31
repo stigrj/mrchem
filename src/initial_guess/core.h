@@ -27,7 +27,7 @@
 
 #include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
-#include "qmoperators/qmoperator_fwd.h"
+#include "tensor/tensor_fwd.h"
 
 #include "qmoperators/one_electron/KineticOperator.h"
 
@@ -48,7 +48,7 @@ namespace core {
 bool setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
 void project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
 void rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi);
-ComplexMatrix diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroTensorOperator &V);
+ComplexMatrix diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroOperator &V);
 
 } // namespace core
 } // namespace initial_guess

@@ -25,14 +25,14 @@
 
 #pragma once
 
-#include "QMOperator.h"
+#include "qmoperators/QMOperator.h"
 
 #include "chemistry/chemistry_fwd.h"
 #include "qmfunctions/qmfunction_fwd.h"
 
 namespace mrchem {
 
-/** @class RankZeroTensorOperator
+/** @class RankZeroOperator
  *
  *  @brief General expansion of QMOperators
  *
@@ -61,12 +61,12 @@ namespace mrchem {
  *
  */
 
-class RankZeroTensorOperator {
+class RankZeroOperator {
 public:
-    RankZeroTensorOperator() {}
-    RankZeroTensorOperator(std::shared_ptr<QMOperator> O) { *this = O; }
-    RankZeroTensorOperator(const RankZeroTensorOperator &O) { *this = O; }
-    virtual ~RankZeroTensorOperator() {}
+    RankZeroOperator() {}
+    RankZeroOperator(std::shared_ptr<QMOperator> O) { *this = O; }
+    RankZeroOperator(const RankZeroOperator &O) { *this = O; }
+    virtual ~RankZeroOperator() {}
 
     int size() const { return this->oper_exp.size(); }
     int size(int i) const { return this->oper_exp[i].size(); }
@@ -93,22 +93,22 @@ public:
     ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y);
     ComplexDouble trace(const Nuclei &nucs);
 
-    RankZeroTensorOperator get(int i);
-    RankZeroTensorOperator get(int i, int j);
+    RankZeroOperator get(int i);
+    RankZeroOperator get(int i, int j);
 
-    RankZeroTensorOperator operator()(RankZeroTensorOperator B);
+    RankZeroOperator operator()(RankZeroOperator B);
 
-    RankZeroTensorOperator &operator=(std::shared_ptr<QMOperator> O);
-    RankZeroTensorOperator &operator+=(std::shared_ptr<QMOperator> O);
-    RankZeroTensorOperator &operator-=(std::shared_ptr<QMOperator> O);
-    RankZeroTensorOperator &operator=(const RankZeroTensorOperator &O);
-    RankZeroTensorOperator &operator+=(const RankZeroTensorOperator &O);
-    RankZeroTensorOperator &operator-=(const RankZeroTensorOperator &O);
+    RankZeroOperator &operator=(std::shared_ptr<QMOperator> O);
+    RankZeroOperator &operator+=(std::shared_ptr<QMOperator> O);
+    RankZeroOperator &operator-=(std::shared_ptr<QMOperator> O);
+    RankZeroOperator &operator=(const RankZeroOperator &O);
+    RankZeroOperator &operator+=(const RankZeroOperator &O);
+    RankZeroOperator &operator-=(const RankZeroOperator &O);
 
-    friend RankZeroTensorOperator operator*(ComplexDouble a, RankZeroTensorOperator A);
-    friend RankZeroTensorOperator operator*(RankZeroTensorOperator A, RankZeroTensorOperator B);
-    friend RankZeroTensorOperator operator+(RankZeroTensorOperator A, RankZeroTensorOperator B);
-    friend RankZeroTensorOperator operator-(RankZeroTensorOperator A, RankZeroTensorOperator B);
+    friend RankZeroOperator operator*(ComplexDouble a, RankZeroOperator A);
+    friend RankZeroOperator operator*(RankZeroOperator A, RankZeroOperator B);
+    friend RankZeroOperator operator+(RankZeroOperator A, RankZeroOperator B);
+    friend RankZeroOperator operator-(RankZeroOperator A, RankZeroOperator B);
 
 protected:
     std::string oper_name{"O"};
@@ -121,8 +121,8 @@ protected:
     ComplexVector getCoefVector() const;
 };
 
-inline RankZeroTensorOperator operator*(ComplexDouble a, RankZeroTensorOperator A) {
-    RankZeroTensorOperator out;
+inline RankZeroOperator operator*(ComplexDouble a, RankZeroOperator A) {
+    RankZeroOperator out;
     out.name() = A.name();
     for (int i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(a * A.coef_exp[i]);
@@ -131,8 +131,8 @@ inline RankZeroTensorOperator operator*(ComplexDouble a, RankZeroTensorOperator 
     return out;
 }
 
-inline RankZeroTensorOperator operator*(RankZeroTensorOperator A, RankZeroTensorOperator B) {
-    RankZeroTensorOperator out;
+inline RankZeroOperator operator*(RankZeroOperator A, RankZeroOperator B) {
+    RankZeroOperator out;
     out.name() = A.name() + " * " + B.name();
 
     int a_terms = A.oper_exp.size();
@@ -152,8 +152,8 @@ inline RankZeroTensorOperator operator*(RankZeroTensorOperator A, RankZeroTensor
     return out;
 }
 
-inline RankZeroTensorOperator operator+(RankZeroTensorOperator A, RankZeroTensorOperator B) {
-    RankZeroTensorOperator out;
+inline RankZeroOperator operator+(RankZeroOperator A, RankZeroOperator B) {
+    RankZeroOperator out;
     out.name() = A.name() + " + " + B.name();
     for (int i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(A.coef_exp[i]);
@@ -166,8 +166,8 @@ inline RankZeroTensorOperator operator+(RankZeroTensorOperator A, RankZeroTensor
     return out;
 }
 
-inline RankZeroTensorOperator operator-(RankZeroTensorOperator A, RankZeroTensorOperator B) {
-    RankZeroTensorOperator out;
+inline RankZeroOperator operator-(RankZeroOperator A, RankZeroOperator B) {
+    RankZeroOperator out;
     out.name() = A.name() + " - " + B.name();
     for (int i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(A.coef_exp[i]);

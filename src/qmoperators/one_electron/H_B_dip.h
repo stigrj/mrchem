@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "AngularMomentumOperator.h"
 
@@ -45,14 +45,14 @@ namespace mrchem {
  * where l_{jO} is the orbital angular momentum.
  */
 
-class H_B_dip final : public RankOneTensorOperator<3> {
+class H_B_dip final : public RankOneOperator<3> {
 public:
     H_B_dip(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
             : H_B_dip(AngularMomentumOperator(D, o)) {}
 
     explicit H_B_dip(AngularMomentumOperator l) {
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator<3> &h = (*this);
+        RankOneOperator<3> &h = (*this);
         h[0] = 0.5 * l[0];
         h[1] = 0.5 * l[1];
         h[2] = 0.5 * l[2];

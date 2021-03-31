@@ -25,28 +25,35 @@
 
 #pragma once
 
-#include "tensor/RankOneOperator.h"
-
-#include "MomentumOperator.h"
-#include "PositionOperator.h"
+#include "RankZeroOperator.h"
+#include "TensorOperator.h"
 
 namespace mrchem {
 
-class AngularMomentumOperator final : public RankOneOperator<3> {
-public:
-    AngularMomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
-            : AngularMomentumOperator(PositionOperator(o), MomentumOperator(D)) {}
+class Orbital;
 
-    AngularMomentumOperator(PositionOperator r, MomentumOperator p) {
-        // Invoke operator= to assign *this operator
-        RankOneOperator<3> &h = (*this);
-        h[0] = (r[1] * p[2] - r[2] * p[1]);
-        h[1] = (r[2] * p[0] - r[0] * p[2]);
-        h[2] = (r[0] * p[1] - r[1] * p[0]);
-        h[0].name() = "l[x]";
-        h[1].name() = "l[y]";
-        h[2].name() = "l[z]";
-    }
+/** @class RankOneOperator
+ *
+ *  @brief Vector of RankZeroOperator
+ *
+ * This class provides a base for all vector operators, and implements some simple
+ * collective operations returning vector quantities.
+ *
+ */
+
+template <int I> class RankOneOperator : public TensorOperator<I, RankZeroOperator> {
+public:
+    RankOneOperator<I> operator()(RankZeroOperator B);
+    OrbitalVector operator()(Orbital phi);
+    ComplexVector operator()(Orbital bra, Orbital ket);
+    ComplexVector trace(OrbitalVector &phi);
+    ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
+    ComplexVector trace(const Nuclei &nucs);
 };
+
+namespace tensor {
+template <int I> RankZeroOperator dot(RankOneOperator<I> A, RankOneOperator<I> B);
+RankOneOperator<3> cross(RankOneOperator<3> A, RankOneOperator<3> B);
+} // namespace tensor
 
 } // namespace mrchem

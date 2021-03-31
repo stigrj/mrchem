@@ -45,9 +45,9 @@ namespace mrchem {
  * of symmetry and getting away with only first-derivative operators.
  */
 ComplexMatrix qmoperator::calc_kinetic_matrix(KineticOperator &T, OrbitalVector &bra, OrbitalVector &ket) {
-    RankZeroTensorOperator p_x = T.get(0, 0);
-    RankZeroTensorOperator p_y = T.get(1, 0);
-    RankZeroTensorOperator p_z = T.get(2, 0);
+    RankZeroOperator p_x = T.get(0, 0);
+    RankZeroOperator p_y = T.get(1, 0);
+    RankZeroOperator p_z = T.get(2, 0);
 
     int Ni = bra.size();
     int Nj = ket.size();

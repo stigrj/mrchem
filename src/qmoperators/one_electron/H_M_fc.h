@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "DeltaOperator.h"
 #include "H_B_spin.h"
@@ -46,7 +46,7 @@ namespace mrchem {
  * where m_j is the magnetic moment of the electron.
  */
 
-class H_M_fc final : public RankOneTensorOperator<3> {
+class H_M_fc final : public RankOneOperator<3> {
 public:
     H_M_fc(const mrcpp::Coord<3> &o, double proj_prec, double smooth_prec = -1.0)
             : H_M_fc(H_B_spin(), DeltaOperator(o, proj_prec, smooth_prec)) {}
@@ -56,7 +56,7 @@ public:
         const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator<3> &h = (*this);
+        RankOneOperator<3> &h = (*this);
         h[0] = (coef * alpha_2) * delta * s[0];
         h[1] = (coef * alpha_2) * delta * s[1];
         h[2] = (coef * alpha_2) * delta * s[2];

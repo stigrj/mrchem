@@ -25,13 +25,13 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "qmoperators/QMDerivative.h"
 
 namespace mrchem {
 
-class MomentumOperator final : public RankOneTensorOperator<3> {
+class MomentumOperator final : public RankOneOperator<3> {
 public:
     MomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
         auto p_x = std::make_shared<QMDerivative>(0, D, true);
@@ -39,7 +39,7 @@ public:
         auto p_z = std::make_shared<QMDerivative>(2, D, true);
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator<3> &p = (*this);
+        RankOneOperator<3> &p = (*this);
         p[0] = p_x;
         p[1] = p_y;
         p[2] = p_z;

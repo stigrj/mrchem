@@ -30,7 +30,7 @@
 #include <MRCPP/Printer>
 
 #include "mrchem.h"
-#include "qmoperator_fwd.h"
+#include "tensor/tensor_fwd.h"
 
 /** @class QMOperator
  *
@@ -39,7 +39,7 @@
  * Base class to handle operators and their application in the QM sense. Used to
  * build more complicated operators through the TensorOperator classes. This class
  * hierarchy should NOT be used directly, as the most important functionality is
- * protected. A proper interface is provided through RankZeroTensorOperator.
+ * protected. A proper interface is provided through RankZeroOperator.
  *
  * Notes on naming conventions of derived operator classes:
  * Direct decendants of QMOperator should START with "QM", like QMPotential, QMSpin,
@@ -53,9 +53,6 @@
  */
 namespace mrchem {
 
-// Convenience typedef
-using QMOperatorVector = std::vector<std::shared_ptr<QMOperator>>;
-
 class Orbital;
 
 class QMOperator {
@@ -67,7 +64,7 @@ public:
 
     double prec() { return this->apply_prec; }
 
-    friend RankZeroTensorOperator;
+    friend RankZeroOperator;
 
 protected:
     double apply_prec{-1.0};

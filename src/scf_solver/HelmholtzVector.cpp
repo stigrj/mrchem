@@ -33,7 +33,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -107,7 +107,7 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
  * MPI: Output vector gets the same MPI distribution as input vector. Only
  *      local orbitals are computed.
  */
-OrbitalVector HelmholtzVector::apply(RankZeroTensorOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const {
+OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const {
     Timer t_tot, t_lap;
     auto pprec = Printer::getPrecision();
     auto plevel = Printer::getPrintLevel();

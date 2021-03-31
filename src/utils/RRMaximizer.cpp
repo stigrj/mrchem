@@ -52,9 +52,9 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     PositionOperator r;
     r.setup(prec);
 
-    RankZeroTensorOperator &r_x = r[0];
-    RankZeroTensorOperator &r_y = r[1];
-    RankZeroTensorOperator &r_z = r[2];
+    RankZeroOperator &r_x = r[0];
+    RankZeroOperator &r_y = r[1];
+    RankZeroOperator &r_z = r[2];
 
     ComplexMatrix R_x = ComplexMatrix::Zero(Phi.size(), Phi.size());
     ComplexMatrix R_y = ComplexMatrix::Zero(Phi.size(), Phi.size());

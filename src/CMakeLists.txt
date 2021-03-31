@@ -39,14 +39,15 @@ else()
 endif()
 file(TO_NATIVE_PATH "${_rpath}/${CMAKE_INSTALL_LIBDIR}" MRChem_RPATH)
 
-add_subdirectory(chemistry)
 add_subdirectory(analyticfunctions)
+add_subdirectory(chemistry)
+add_subdirectory(environment)
+add_subdirectory(mrdft)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
-add_subdirectory(mrdft)
 add_subdirectory(scf_solver)
+add_subdirectory(tensor)
 add_subdirectory(utils)
-add_subdirectory(environment)
 
 target_link_libraries(mrchem
   PRIVATE

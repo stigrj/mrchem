@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "MomentumOperator.h"
 
@@ -42,14 +42,14 @@
 
 namespace mrchem {
 
-class KineticOperator final : public RankZeroTensorOperator {
+class KineticOperator final : public RankZeroOperator {
 public:
     explicit KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
             : KineticOperator(MomentumOperator(D)) {}
 
     explicit KineticOperator(MomentumOperator p) {
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &t = (*this);
+        RankZeroOperator &t = (*this);
         t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
         t.name() = "T";
     }

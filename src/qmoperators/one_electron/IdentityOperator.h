@@ -25,19 +25,19 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "qmoperators/QMIdentity.h"
 
 namespace mrchem {
 
-class IdentityOperator final : public RankZeroTensorOperator {
+class IdentityOperator final : public RankZeroOperator {
 public:
     IdentityOperator() {
         auto id = std::make_shared<QMIdentity>();
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &I = (*this);
+        RankZeroOperator &I = (*this);
         I = id;
         I.name() = "I";
     }

@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "XCPotential.h"
 #include "XCPotentialD1.h"
@@ -41,7 +41,7 @@
 
 namespace mrchem {
 
-class XCOperator final : public RankZeroTensorOperator {
+class XCOperator final : public RankZeroOperator {
 public:
     explicit XCOperator(std::unique_ptr<mrdft::MRDFT> &F,
                         std::shared_ptr<OrbitalVector> Phi = nullptr,
@@ -49,7 +49,7 @@ public:
         potential = std::make_shared<XCPotentialD1>(F, Phi, mpi_shared);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &XC = (*this);
+        RankZeroOperator &XC = (*this);
         XC = potential;
         XC.name() = "V_xc";
     }
@@ -61,7 +61,7 @@ public:
         potential = std::make_shared<XCPotentialD2>(F, Phi, X, Y, mpi_shared);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &XC = (*this);
+        RankZeroOperator &XC = (*this);
         XC = potential;
         XC.name() = "V_xc";
     }

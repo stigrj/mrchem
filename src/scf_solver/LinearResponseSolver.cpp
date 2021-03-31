@@ -75,8 +75,8 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
     ComplexMatrix F_mat_x = F_mat_0 + omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
     ComplexMatrix F_mat_y = F_mat_0 - omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
 
-    RankZeroTensorOperator V_0 = F_0.potential();
-    RankZeroTensorOperator V_1 = F_1.potential() + F_1.perturbation();
+    RankZeroOperator V_0 = F_0.potential();
+    RankZeroOperator V_1 = F_1.potential() + F_1.perturbation();
 
     double err_o = 1.0;
     double err_t = 1.0;

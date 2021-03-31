@@ -86,10 +86,10 @@ FockOperator::FockOperator(KineticOperator_p t,
  */
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
-    this->T = RankZeroTensorOperator();
+    this->T = RankZeroOperator();
     if (this->kin != nullptr) this->T += (*this->kin);
 
-    this->V = RankZeroTensorOperator();
+    this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
     if (this->coul != nullptr) this->V += (*this->coul);
     if (this->ex != nullptr) this->V -= this->exact_exchange * (*this->ex);
@@ -97,7 +97,7 @@ void FockOperator::build(double exx) {
     if (this->ext != nullptr) this->V += (*this->ext);
     if (this->Ro != nullptr) this->V -= (*this->Ro);
 
-    RankZeroTensorOperator &F = (*this);
+    RankZeroOperator &F = (*this);
     F = this->kinetic() + this->potential();
 }
 

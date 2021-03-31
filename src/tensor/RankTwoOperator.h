@@ -25,35 +25,29 @@
 
 #pragma once
 
-#include "RankZeroTensorOperator.h"
+#include "RankOneOperator.h"
 #include "TensorOperator.h"
 
 namespace mrchem {
 
 class Orbital;
 
-/** @class RankOneTensorOperator
+/** @class RankTwoOperator
  *
- *  @brief Vector of RankZeroTensorOperator
+ *  @brief Matrix of RankZeroOperator
  *
- * This class provides a base for all vector operators, and implements some simple
- * collective operations returning vector quantities.
+ * This class provides a base for all matrix operators (implemented as a vector
+ * of vectors), and implements some simple collective operations returning matrix
+ * quantities.
  *
  */
 
-template <int I> class RankOneTensorOperator : public TensorOperator<I, RankZeroTensorOperator> {
+template <int I, int J> class RankTwoOperator : public TensorOperator<I, RankOneOperator<J>> {
 public:
-    RankOneTensorOperator<I> operator()(RankZeroTensorOperator B);
-    OrbitalVector operator()(Orbital phi);
-    ComplexVector operator()(Orbital bra, Orbital ket);
-    ComplexVector trace(OrbitalVector &phi);
-    ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
-    ComplexVector trace(const Nuclei &nucs);
+    ComplexMatrix operator()(Orbital bra, Orbital ket);
+    ComplexMatrix trace(OrbitalVector &phi);
+    ComplexMatrix trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
+    ComplexMatrix trace(const Nuclei &nucs);
 };
-
-namespace tensor {
-template <int I> RankZeroTensorOperator dot(RankOneTensorOperator<I> A, RankOneTensorOperator<I> B);
-RankOneTensorOperator<3> cross(RankOneTensorOperator<3> A, RankOneTensorOperator<3> B);
-} // namespace tensor
 
 } // namespace mrchem

@@ -25,28 +25,14 @@
 
 #pragma once
 
-#include "tensor/RankOneOperator.h"
-
-#include "MomentumOperator.h"
-#include "PositionOperator.h"
+#include "tensor_fwd.h"
 
 namespace mrchem {
+namespace tensor {
 
-class AngularMomentumOperator final : public RankOneOperator<3> {
-public:
-    AngularMomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)
-            : AngularMomentumOperator(PositionOperator(o), MomentumOperator(D)) {}
+RankOneOperator<3> cross(RankOneOperator<3> A, RankOneOperator<3> B);
+template <int I> RankZeroOperator dot(RankOneOperator<I> A, RankOneOperator<I> B);
+template <int I, int J> RankTwoOperator<I, J> outer(RankOneOperator<I> A, RankOneOperator<J> B);
 
-    AngularMomentumOperator(PositionOperator r, MomentumOperator p) {
-        // Invoke operator= to assign *this operator
-        RankOneOperator<3> &h = (*this);
-        h[0] = (r[1] * p[2] - r[2] * p[1]);
-        h[1] = (r[2] * p[0] - r[0] * p[2]);
-        h[2] = (r[0] * p[1] - r[1] * p[0]);
-        h[0].name() = "l[x]";
-        h[1].name() = "l[y]";
-        h[2].name() = "l[z]";
-    }
-};
-
+} // namespace tensor
 } // namespace mrchem

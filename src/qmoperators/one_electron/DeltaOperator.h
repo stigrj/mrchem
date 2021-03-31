@@ -27,14 +27,14 @@
 
 #include <MRCPP/Gaussians>
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 
-class DeltaOperator final : public RankZeroTensorOperator {
+class DeltaOperator final : public RankZeroOperator {
 public:
     /*! @brief DeltaOperator represents the Dirac delta function: delta|r - o|
      *  @param o: Coordinate of origin
@@ -55,7 +55,7 @@ public:
         qmfunction::project(*delta, f, NUMBER::Real, proj_prec);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &h = (*this);
+        RankZeroOperator &h = (*this);
         h = delta;
         h.name() = "delta";
     }

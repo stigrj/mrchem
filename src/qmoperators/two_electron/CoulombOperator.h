@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "CoulombPotential.h"
 #include "CoulombPotentialD1.h"
@@ -41,13 +41,13 @@
 
 namespace mrchem {
 
-class CoulombOperator final : public RankZeroTensorOperator {
+class CoulombOperator final : public RankZeroOperator {
 public:
     explicit CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, bool mpi_share = false) {
         potential = std::make_shared<CoulombPotential>(P, nullptr, mpi_share);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &J = (*this);
+        RankZeroOperator &J = (*this);
         J = potential;
         J.name() = "J";
     }
@@ -57,7 +57,7 @@ public:
         potential = std::make_shared<CoulombPotentialD1>(P, Phi, mpi_share);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &J = (*this);
+        RankZeroOperator &J = (*this);
         J = potential;
         J.name() = "J";
     }
@@ -69,7 +69,7 @@ public:
         potential = std::make_shared<CoulombPotentialD2>(P, Phi, X, Y, mpi_share);
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &J = (*this);
+        RankZeroOperator &J = (*this);
         J = potential;
         J.name() = "J";
     }

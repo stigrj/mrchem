@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "analyticfunctions/NuclearGradientFunction.h"
 #include "qmfunctions/qmfunction_utils.h"
@@ -33,7 +33,7 @@
 
 namespace mrchem {
 
-class NuclearGradientOperator final : public RankOneTensorOperator<3> {
+class NuclearGradientOperator final : public RankOneOperator<3> {
 public:
     /*!
      *  @brief NuclearGradientOperator represents the vector potential: Z * hat{r}/|r - o|^3
@@ -62,7 +62,7 @@ public:
         qmfunction::project(*z_rm3, f_z, NUMBER::Real, proj_prec);
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator &v = (*this);
+        RankOneOperator &v = (*this);
         v[0] = x_rm3;
         v[1] = y_rm3;
         v[2] = z_rm3;

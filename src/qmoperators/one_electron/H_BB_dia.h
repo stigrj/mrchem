@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankTwoTensorOperator.h"
+#include "tensor/RankTwoOperator.h"
 
 #include "PositionOperator.h"
 
@@ -43,14 +43,14 @@ namespace mrchem {
  * H_BB_dia = \sum_j (r_{jO} \cdot r_{jO})1 - r_{jO}r_{jO}^T
  */
 
-class H_BB_dia final : public RankTwoTensorOperator<3, 3> {
+class H_BB_dia final : public RankTwoOperator<3, 3> {
 public:
     explicit H_BB_dia(const mrcpp::Coord<3> &o)
             : H_BB_dia(PositionOperator(o)) {}
 
     explicit H_BB_dia(PositionOperator r) {
         // Invoke operator= to assign *this operator
-        RankTwoTensorOperator<3, 3> &h = (*this);
+        RankTwoOperator<3, 3> &h = (*this);
         h[0][0] = (1.0 / 4.0) * (r[1](r[1]) + r[2](r[2]));
         h[0][1] = (-1.0 / 4.0) * r[0](r[1]);
         h[0][2] = (-1.0 / 4.0) * r[0](r[2]);

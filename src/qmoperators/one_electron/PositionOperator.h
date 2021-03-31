@@ -25,14 +25,14 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 
-class PositionOperator : public RankOneTensorOperator<3> {
+class PositionOperator : public RankOneOperator<3> {
 public:
     /*! @brief PositionOperator represents the vector operator: hat{r} = [r_x - o_x, r_y - o_y, r_z - o_z]
      *  @param o: Coordinate of origin
@@ -53,7 +53,7 @@ public:
         qmfunction::project(*r_z, f_z, NUMBER::Real, -1.0);
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator &r = (*this);
+        RankOneOperator &r = (*this);
         r[0] = r_x;
         r[1] = r_y;
         r[2] = r_z;

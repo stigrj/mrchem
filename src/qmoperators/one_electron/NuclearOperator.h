@@ -25,13 +25,13 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 namespace mrchem {
 
 class NuclearFunction;
 
-class NuclearOperator final : public RankZeroTensorOperator {
+class NuclearOperator final : public RankZeroOperator {
 public:
     NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false);
 

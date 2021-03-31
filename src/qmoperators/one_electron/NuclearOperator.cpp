@@ -83,7 +83,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     mrcpp::print::footer(2, t_tot, 2);
 
     // Invoke operator= to assign *this operator
-    RankZeroTensorOperator &O = (*this);
+    RankZeroOperator &O = (*this);
     O = V_tot;
     O.name() = "V_nuc";
 }

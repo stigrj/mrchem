@@ -25,13 +25,13 @@
 
 #pragma once
 
-#include "qmoperators/RankOneTensorOperator.h"
+#include "tensor/RankOneOperator.h"
 
 #include "qmoperators/QMDerivative.h"
 
 namespace mrchem {
 
-class NablaOperator final : public RankOneTensorOperator<3> {
+class NablaOperator final : public RankOneOperator<3> {
 public:
     NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
         auto d_x = std::make_shared<QMDerivative>(0, D);
@@ -39,7 +39,7 @@ public:
         auto d_z = std::make_shared<QMDerivative>(2, D);
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator<3> &d = (*this);
+        RankOneOperator<3> &d = (*this);
         d[0] = d_x;
         d[1] = d_y;
         d[2] = d_z;

@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 /** @class FockOperator
  *
@@ -48,7 +48,7 @@ class XCOperator;
 class ElectricFieldOperator;
 class ReactionOperator;
 
-class FockOperator final : public RankZeroTensorOperator {
+class FockOperator final : public RankZeroOperator {
 public:
     FockOperator(std::shared_ptr<KineticOperator> t = nullptr,
                  std::shared_ptr<NuclearOperator> v = nullptr,
@@ -58,9 +58,9 @@ public:
                  std::shared_ptr<ElectricFieldOperator> ext = nullptr,
                  std::shared_ptr<ReactionOperator> reo = nullptr);
 
-    RankZeroTensorOperator &kinetic() { return this->T; }
-    RankZeroTensorOperator &potential() { return this->V; }
-    RankZeroTensorOperator &perturbation() { return this->H_1; }
+    RankZeroOperator &kinetic() { return this->T; }
+    RankZeroOperator &potential() { return this->V; }
+    RankZeroOperator &perturbation() { return this->H_1; }
 
     std::shared_ptr<KineticOperator> &getKineticOperator() { return this->kin; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -81,14 +81,14 @@ public:
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
-    using RankZeroTensorOperator::operator();
-    using RankZeroTensorOperator::dagger;
+    using RankZeroOperator::operator();
+    using RankZeroOperator::dagger;
 
 private:
     double exact_exchange{1.0};
-    RankZeroTensorOperator T;   ///< Total kinetic energy operator
-    RankZeroTensorOperator V;   ///< Total potential energy operator
-    RankZeroTensorOperator H_1; ///< Perturbation operators
+    RankZeroOperator T;   ///< Total kinetic energy operator
+    RankZeroOperator V;   ///< Total potential energy operator
+    RankZeroOperator H_1; ///< Perturbation operators
 
     std::shared_ptr<KineticOperator> kin;
     std::shared_ptr<NuclearOperator> nuc;

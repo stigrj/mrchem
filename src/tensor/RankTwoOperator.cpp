@@ -23,52 +23,41 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "RankTwoTensorOperator.h"
+#include "RankTwoOperator.h"
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 
 namespace mrchem {
 
-template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::operator()(Orbital bra, Orbital ket) {
-    RankTwoTensorOperator<I, J> &O = *this;
+template <int I, int J> ComplexMatrix RankTwoOperator<I, J>::operator()(Orbital bra, Orbital ket) {
+    RankTwoOperator<I, J> &O = *this;
     ComplexMatrix out(I, J);
     for (int i = 0; i < I; i++) out.row(i) = O[i](bra, ket);
     return out;
 }
 
-template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::trace(OrbitalVector &phi) {
-    RankTwoTensorOperator<I, J> &O = *this;
+template <int I, int J> ComplexMatrix RankTwoOperator<I, J>::trace(OrbitalVector &phi) {
+    RankTwoOperator<I, J> &O = *this;
     ComplexMatrix out(I, J);
     for (int i = 0; i < I; i++) out.row(i) = O[i].trace(phi);
     return out;
 }
 
-template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
-    RankTwoTensorOperator<I, J> &O = *this;
+template <int I, int J> ComplexMatrix RankTwoOperator<I, J>::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+    RankTwoOperator<I, J> &O = *this;
     ComplexMatrix out(I, J);
     for (int i = 0; i < I; i++) out.row(i) = O[i].trace(phi, x, y);
     return out;
 }
 
-template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::trace(const Nuclei &nucs) {
-    RankTwoTensorOperator<I, J> &O = *this;
+template <int I, int J> ComplexMatrix RankTwoOperator<I, J>::trace(const Nuclei &nucs) {
+    RankTwoOperator<I, J> &O = *this;
     ComplexMatrix out(I, J);
     for (int i = 0; i < I; i++) out.row(i) = O[i].trace(nucs);
     return out;
 }
 
-template <int I, int J> RankTwoTensorOperator<I, J> tensor::outer(RankOneTensorOperator<I> A, RankOneTensorOperator<J> B) {
-    RankTwoTensorOperator<I, J> out;
-    for (int i = 0; i < I; i++)
-        for (int j = 0; j < J; j++) out[i][j] = A[i](B[j]);
-    return out;
-}
-
-namespace tensor {
-template RankTwoTensorOperator<3, 3> outer<3, 3>(RankOneTensorOperator<3> A, RankOneTensorOperator<3> B);
-} // namespace tensor
-
 } // namespace mrchem
 
-template class mrchem::RankTwoTensorOperator<3, 3>;
+template class mrchem::RankTwoOperator<3, 3>;

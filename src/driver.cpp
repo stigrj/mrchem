@@ -94,8 +94,8 @@ namespace mrchem {
 namespace driver {
 
 DerivativeOperator_p get_derivative(const std::string &name);
-template <int I> RankOneTensorOperator<I> get_operator(const std::string &name, const json &json_oper);
-template <int I, int J> RankTwoTensorOperator<I, J> get_operator(const std::string &name, const json &json_oper);
+template <int I> RankOneOperator<I> get_operator(const std::string &name, const json &json_oper);
+template <int I, int J> RankTwoOperator<I, J> get_operator(const std::string &name, const json &json_oper);
 void build_fock_operator(const json &input, Molecule &mol, FockOperator &F, int order);
 void init_properties(const json &json_prop, Molecule &mol);
 
@@ -1052,8 +1052,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
 }
 
 /** @brief Construct perturbation operator based on input keyword */
-template <int I> RankOneTensorOperator<I> driver::get_operator(const std::string &name, const json &json_inp) {
-    RankOneTensorOperator<I> h;
+template <int I> RankOneOperator<I> driver::get_operator(const std::string &name, const json &json_inp) {
+    RankOneOperator<I> h;
     if (name == "h_e_dip") {
         h = H_E_dip(json_inp["r_O"]);
     } else if (name == "h_b_dip") {
@@ -1068,8 +1068,8 @@ template <int I> RankOneTensorOperator<I> driver::get_operator(const std::string
     return h;
 }
 
-template <int I, int J> RankTwoTensorOperator<I, J> driver::get_operator(const std::string &name, const json &json_inp) {
-    RankTwoTensorOperator<I, J> h;
+template <int I, int J> RankTwoOperator<I, J> driver::get_operator(const std::string &name, const json &json_inp) {
+    RankTwoOperator<I, J> h;
     if (name == "h_e_quad") {
         h = H_E_quad(json_inp["r_O"]);
     } else if (name == "h_bb_dia") {

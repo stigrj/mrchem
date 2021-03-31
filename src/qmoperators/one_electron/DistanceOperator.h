@@ -25,14 +25,14 @@
 
 #pragma once
 
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "tensor/RankZeroOperator.h"
 
 #include "analyticfunctions/NuclearFunction.h"
 #include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 
-class DistanceOperator final : public RankZeroTensorOperator {
+class DistanceOperator final : public RankZeroOperator {
 public:
     /*! @brief DistanceOperator represents the function: 1.0/|r - o|^p
      *  @param p: Power in denominator
@@ -65,7 +65,7 @@ public:
         o_name << "r^{" << std::setprecision(1) << std::fixed << p << "}";
 
         // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &O = (*this);
+        RankZeroOperator &O = (*this);
         O = r_pow;
         O.name() = o_name.str();
     }
