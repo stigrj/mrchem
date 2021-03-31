@@ -29,13 +29,12 @@
 #include <MRCPP/Printer>
 
 #include "analyticfunctions/HarmonicOscillatorFunction.h"
-#include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmoperators/one_electron/AngularMomentumOperator.h"
+#include "qmoperators/RankTwoTensorOperator.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/MomentumOperator.h"
-#include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/NablaOperator.h"
 #include "qmoperators/one_electron/PositionOperator.h"
 #include "qmoperators/one_electron/SpinOperator.h"
 
@@ -487,6 +486,74 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(val.real() == Approx(ref.real()).epsilon(thrs));
             REQUIRE(val.imag() == Approx(ref.imag()).margin(thrs));
             SS.clear();
+        }
+    }
+    SECTION("vector operators") {
+        NablaOperator D(std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5));
+        PositionOperator V;
+        SECTION("gradient Del(V_scalar)") {
+            RankOneTensorOperator<3> gradV = D(V[0]);
+            REQUIRE(gradV[0].size() == 1);
+            REQUIRE(gradV[1].size() == 1);
+            REQUIRE(gradV[2].size() == 1);
+            REQUIRE(gradV[0].size(0) == 1);
+            REQUIRE(gradV[1].size(0) == 1);
+            REQUIRE(gradV[2].size(0) == 1);
+
+            gradV.setup(prec);
+            OrbitalVector dPhi_0 = gradV(phi_0);
+            DoubleVector norms = orbital::get_norms(dPhi_0);
+            REQUIRE(dPhi_0.size() == 3);
+            REQUIRE(norms[0] == Approx(1.0).epsilon(thrs));
+            REQUIRE(norms[1] == Approx(0.0).margin(thrs));
+            REQUIRE(norms[2] == Approx(0.0).margin(thrs));
+            gradV.clear();
+        }
+        SECTION("divergence De . V_vector") {
+            RankZeroTensorOperator divV = tensor::dot(D, V);
+            REQUIRE(divV.size() == 3);
+            REQUIRE(divV.size(0) == 1);
+            REQUIRE(divV.size(1) == 1);
+            REQUIRE(divV.size(2) == 1);
+
+            divV.setup(prec);
+            Orbital psi_0 = divV(phi_0);
+            const ComplexDouble ref = 3.0 * phi_0.integrate();
+            const ComplexDouble val = psi_0.integrate();
+            REQUIRE(val.real() == Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val.imag() == Approx(ref.imag()).margin(thrs));
+            divV.clear();
+        }
+        SECTION("curl Del x V_vector") {
+            RankOneTensorOperator<3> curlV = tensor::cross(D, V);
+            curlV.setup(prec);
+            for (int i = 0; i < 3; i++) {
+                RankZeroTensorOperator curlV_i = curlV[i];
+                REQUIRE(curlV[i].size() == 2);
+                REQUIRE(curlV[i].size(0) == 1);
+                REQUIRE(curlV[i].size(1) == 1);
+                Orbital psi_0 = curlV[i](phi_0);
+                REQUIRE(psi_0.norm() == Approx(0.0).margin(thrs));
+            }
+            curlV.clear();
+        }
+        SECTION("jacobian Del (x) V_vector") {
+            RankTwoTensorOperator<3, 3> jacV = tensor::outer(D, V);
+            jacV.setup(prec);
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    RankZeroTensorOperator jacV_ij = jacV[i][j];
+                    REQUIRE(jacV_ij.size() == 1);
+                    REQUIRE(jacV_ij.size(0) == 1);
+                    Orbital psi_0 = jacV_ij(phi_0);
+                    if (i == j) {
+                        REQUIRE(psi_0.norm() == Approx(1.0).epsilon(thrs));
+                    } else {
+                        REQUIRE(psi_0.norm() == Approx(0.0).margin(thrs));
+                    }
+                }
+            }
+            jacV.clear();
         }
     }
 }

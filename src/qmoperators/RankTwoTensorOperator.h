@@ -50,4 +50,8 @@ public:
     ComplexMatrix trace(const Nuclei &nucs);
 };
 
+namespace tensor {
+template <int I, int J> RankTwoTensorOperator<I, J> outer(RankOneTensorOperator<I> A, RankOneTensorOperator<J> B);
+} // namespace tensor
+
 } // namespace mrchem

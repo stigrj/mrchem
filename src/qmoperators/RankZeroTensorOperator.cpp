@@ -70,7 +70,7 @@ RankZeroTensorOperator RankZeroTensorOperator::get(int i, int j) {
     return this->oper_exp[i][j];
 }
 
-RankZeroTensorOperator RankZeroTensorOperator::operator()(RankZeroTensorOperator &B) {
+RankZeroTensorOperator RankZeroTensorOperator::operator()(RankZeroTensorOperator B) {
     RankZeroTensorOperator &A = *this;
     RankZeroTensorOperator out;
     out.name() = A.name() + " (" + B.name() + ")";

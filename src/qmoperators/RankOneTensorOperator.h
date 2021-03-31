@@ -43,11 +43,17 @@ class Orbital;
 
 template <int I> class RankOneTensorOperator : public TensorOperator<I, RankZeroTensorOperator> {
 public:
+    RankOneTensorOperator<I> operator()(RankZeroTensorOperator B);
     OrbitalVector operator()(Orbital phi);
     ComplexVector operator()(Orbital bra, Orbital ket);
     ComplexVector trace(OrbitalVector &phi);
     ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
     ComplexVector trace(const Nuclei &nucs);
 };
+
+namespace tensor {
+template <int I> RankZeroTensorOperator dot(RankOneTensorOperator<I> A, RankOneTensorOperator<I> B);
+RankOneTensorOperator<3> cross(RankOneTensorOperator<3> A, RankOneTensorOperator<3> B);
+} // namespace tensor
 
 } // namespace mrchem

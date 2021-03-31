@@ -50,8 +50,8 @@ namespace mrchem {
 
 template <int I, class T> class TensorOperator {
 public:
-    TensorOperator() {}
-    virtual ~TensorOperator() {}
+    TensorOperator() = default;
+    virtual ~TensorOperator() = default;
 
     void setup(double prec) {
         for (int i = 0; i < I; i++) this->oper[i].setup(prec);

@@ -44,8 +44,7 @@ template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::trace(Orbital
     return out;
 }
 
-template <int I, int J>
-ComplexMatrix RankTwoTensorOperator<I, J>::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
+template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y) {
     RankTwoTensorOperator<I, J> &O = *this;
     ComplexMatrix out(I, J);
     for (int i = 0; i < I; i++) out.row(i) = O[i].trace(phi, x, y);
@@ -58,6 +57,17 @@ template <int I, int J> ComplexMatrix RankTwoTensorOperator<I, J>::trace(const N
     for (int i = 0; i < I; i++) out.row(i) = O[i].trace(nucs);
     return out;
 }
+
+template <int I, int J> RankTwoTensorOperator<I, J> tensor::outer(RankOneTensorOperator<I> A, RankOneTensorOperator<J> B) {
+    RankTwoTensorOperator<I, J> out;
+    for (int i = 0; i < I; i++)
+        for (int j = 0; j < J; j++) out[i][j] = A[i](B[j]);
+    return out;
+}
+
+namespace tensor {
+template RankTwoTensorOperator<3, 3> outer<3, 3>(RankOneTensorOperator<3> A, RankOneTensorOperator<3> B);
+} // namespace tensor
 
 } // namespace mrchem
 

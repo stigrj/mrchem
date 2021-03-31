@@ -96,7 +96,7 @@ public:
     RankZeroTensorOperator get(int i);
     RankZeroTensorOperator get(int i, int j);
 
-    RankZeroTensorOperator operator()(RankZeroTensorOperator &inp);
+    RankZeroTensorOperator operator()(RankZeroTensorOperator B);
 
     RankZeroTensorOperator &operator=(std::shared_ptr<QMOperator> O);
     RankZeroTensorOperator &operator+=(std::shared_ptr<QMOperator> O);

@@ -30,6 +30,13 @@
 
 namespace mrchem {
 
+template <int I> RankOneTensorOperator<I> RankOneTensorOperator<I>::operator()(RankZeroTensorOperator B) {
+    RankOneTensorOperator<I> &A = *this;
+    RankOneTensorOperator<I> out;
+    for (int i = 0; i < I; i++) out[i] = A[i](B);
+    return out;
+}
+
 template <int I> OrbitalVector RankOneTensorOperator<I>::operator()(Orbital phi) {
     RankOneTensorOperator<I> &O = *this;
     OrbitalVector out;
@@ -64,6 +71,24 @@ template <int I> ComplexVector RankOneTensorOperator<I>::trace(const Nuclei &nuc
     for (int i = 0; i < I; i++) out(i) = O[i].trace(nucs);
     return out;
 }
+
+template <int I> RankZeroTensorOperator tensor::dot(RankOneTensorOperator<I> A, RankOneTensorOperator<I> B) {
+    RankZeroTensorOperator out;
+    for (int i = 0; i < I; i++) out += A[i](B[i]);
+    return out;
+}
+
+RankOneTensorOperator<3> tensor::cross(RankOneTensorOperator<3> A, RankOneTensorOperator<3> B) {
+    RankOneTensorOperator<3> out;
+    out[0] = A[1](B[2]) - A[2](B[1]);
+    out[1] = A[2](B[0]) - A[0](B[2]);
+    out[2] = A[0](B[1]) - A[1](B[0]);
+    return out;
+}
+
+namespace tensor {
+template RankZeroTensorOperator dot<3>(RankOneTensorOperator<3> A, RankOneTensorOperator<3> B);
+} // namespace tensor
 
 } // namespace mrchem
 
