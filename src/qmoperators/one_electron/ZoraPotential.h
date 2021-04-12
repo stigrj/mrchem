@@ -25,39 +25,26 @@
 
 #pragma once
 
-#include "mrchem.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "tensor/tensor_fwd.h"
-
-/** @class HelmholtzVector
- *
- * @brief Container of HelmholtzOperators for a corresponding OrbtialVector
- *
- * This class assigns one HelmholtzOperator to each orbital in an OrbitalVector.
- * The operators are produced on the fly based on a vector of lambda parameters.
- */
+#include "analyticfunctions/NuclearFunction.h"
+#include "qmoperators/QMPotential.h"
+#include "tensor/RankZeroOperator.h"
 
 namespace mrchem {
 
-class HelmholtzVector final {
+class ZoraPotential final : public QMPotential {
 public:
-    HelmholtzVector(double pr, const DoubleVector &l);
+    ZoraPotential(const Nuclei &nucs, double zora_factor, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false);
+    ~ZoraPotential() override { free(NUMBER::Total); }
 
-    DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
-
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
-
-    OrbitalVector apply_zora(RankZeroOperator &V, RankZeroOperator &GlnkG, RankZeroOperator &zora, OrbitalVector &Phi, OrbitalVector &Psi) const;
-
-    OrbitalVector apply_zora_v3(RankZeroOperator &V, RankZeroOperator &kappa, OrbitalVector &Phi, OrbitalVector &Psi) const;
-
-    OrbitalVector operator()(OrbitalVector &Phi) const;
+    void setup(double prec) override { setApplyPrec(prec); }
+    void clear() override { clearApplyPrec(); }
 
 private:
-    double prec;         ///< Precision for construction and application of Helmholtz operators
-    DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
+    double zoraFactor;
+    NuclearFunction func;
 
-    Orbital apply(int i, Orbital &phi) const;
+    void computeKappa(double prec = -1.0);
+    void allreducePotential(double prec, QMFunction &V_loc);
 };
 
 } // namespace mrchem

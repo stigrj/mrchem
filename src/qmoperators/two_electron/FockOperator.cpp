@@ -38,6 +38,7 @@
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/ZoraKineticOperator.h"
 #include "utils/math_utils.h"
 
 using mrcpp::Printer;
@@ -50,8 +51,10 @@ namespace mrchem {
  */
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
+
     this->T = RankZeroOperator();
     if (this->kin != nullptr) this->T += (*this->kin);
+    if (this->zkin != nullptr) this->T += (*this->zkin);
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -146,7 +149,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
         Er_el = 0.5 * this->Ro->getElectronicEnergy();
     }
     // Electronic part
-    if (this->kin != nullptr) E_kin = this->kin->trace(Phi).real();
+    E_kin = kinetic().trace(Phi).real();
     if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
@@ -163,11 +166,11 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
-    auto t = this->getKineticOperator();
+    auto t = this->kinetic();
     auto v = this->potential();
 
     ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
-    if (t != nullptr) T += qmoperator::calc_kinetic_matrix(*t, bra, ket);
+    if (t.size() > 0) T += t(bra, ket); // qmoperator::calc_kinetic_matrix(*t, bra, ket);
 
     ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
     if (v.size() > 0) V += v(bra, ket);

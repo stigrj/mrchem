@@ -41,6 +41,8 @@ namespace mrchem {
 
 class SCFEnergy;
 class KineticOperator;
+class ZoraKineticOperator;
+class ZoraOperator;
 class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
@@ -55,6 +57,8 @@ public:
     RankZeroOperator &perturbation() { return this->H_1; }
 
     std::shared_ptr<KineticOperator> &getKineticOperator() { return this->kin; }
+    std::shared_ptr<ZoraKineticOperator> &getZoraKineticOperator() { return this->zkin; }
+    std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->zora; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
@@ -83,6 +87,8 @@ private:
     RankZeroOperator H_1; ///< Perturbation operators
 
     std::shared_ptr<KineticOperator> kin{nullptr};
+    std::shared_ptr<ZoraKineticOperator> zkin{nullptr};
+    std::shared_ptr<ZoraOperator> zora{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
     std::shared_ptr<CoulombOperator> coul{nullptr};
     std::shared_ptr<ExchangeOperator> ex{nullptr};
