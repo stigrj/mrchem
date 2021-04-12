@@ -43,43 +43,7 @@
 using mrcpp::Printer;
 using mrcpp::Timer;
 
-using KineticOperator_p = std::shared_ptr<mrchem::KineticOperator>;
-using NuclearOperator_p = std::shared_ptr<mrchem::NuclearOperator>;
-using CoulombOperator_p = std::shared_ptr<mrchem::CoulombOperator>;
-using ExchangeOperator_p = std::shared_ptr<mrchem::ExchangeOperator>;
-using XCOperator_p = std::shared_ptr<mrchem::XCOperator>;
-using ElectricFieldOperator_p = std::shared_ptr<mrchem::ElectricFieldOperator>;
-using ReactionOperator_p = std::shared_ptr<mrchem::ReactionOperator>;
-
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
-
-/** @brief constructor
- *
- * @param t:   Kinetic operator
- * @param v:   Nuclear potential operator
- * @param j:   Coulomb operator
- * @param k:   HF exchange operator
- * @param xc:  Exchange-Correlation operator
- * @param ext: External Field operator
- *
- * Each of the arguments can be NULL, so this operators includes both core Hamiltonian,
- * the Hartree(-Fock) method and (pure/hybrid) Density Functional Theory.
- */
-FockOperator::FockOperator(KineticOperator_p t,
-                           NuclearOperator_p v,
-                           CoulombOperator_p j,
-                           ExchangeOperator_p k,
-                           XCOperator_p xc,
-                           ElectricFieldOperator_p ext,
-                           ReactionOperator_p reo)
-        : kin(t)
-        , nuc(v)
-        , coul(j)
-        , ex(k)
-        , xc(xc)
-        , ext(ext)
-        , Ro(reo) {}
 
 /** @brief build the Fock operator once all contributions are in place
  *
