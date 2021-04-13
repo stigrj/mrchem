@@ -25,24 +25,24 @@
 
 #pragma once
 
-#include "ZoraPotential.h"
-#include "analyticfunctions/NuclearFunction.h"
-#include "qmoperators/QMPotential.h"
 #include "tensor/RankZeroOperator.h"
 
-using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
+#include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(const Nuclei &nucs, double zora_factor, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false) {
-        auto kappa = std::make_shared<ZoraPotential>(nucs, zora_factor, proj_prec, smooth_prec, mpi_share);
+    ZoraOperator(RankZeroOperator V, double zora_factor, double proj_prec, bool mpi_share = false) {
+        auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
+        auto f_zora = [zora_factor, &V](const mrcpp::Coord<3> &r) -> double { return zora_factor / (zora_factor - V(r).real()); };
+        qmfunction::project(*V_zora, f_zora, NUMBER::Real, proj_prec);
 
         // Invoke operator= to assign *this operator
-        RankZeroOperator &v = (*this);
-        v = kappa;
-        v.name() = "V_zora";
+        RankZeroOperator &O = (*this);
+        O = V_zora;
+        O.name() = "V_zora";
     }
 };
 
