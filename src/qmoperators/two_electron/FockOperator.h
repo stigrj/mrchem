@@ -40,6 +40,7 @@
 namespace mrchem {
 
 class SCFEnergy;
+class MomentumOperator;
 class KineticOperator;
 class ZoraKineticOperator;
 class ZoraOperator;
@@ -52,17 +53,19 @@ class ReactionOperator;
 
 class FockOperator final : public RankZeroOperator {
 public:
+    bool isZora() const { return (this->vz != nullptr); }
+    ZoraOperator &zora() { return *this->vz; }
+    MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &kinetic() { return this->T; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
 
-    std::shared_ptr<KineticOperator> &getKineticOperator() { return this->kin; }
-    std::shared_ptr<ZoraKineticOperator> &getZoraKineticOperator() { return this->zkin; }
-    std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->zora; }
+    std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
+    std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->vz; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
 
@@ -86,9 +89,8 @@ private:
     RankZeroOperator V;   ///< Total potential energy operator
     RankZeroOperator H_1; ///< Perturbation operators
 
-    std::shared_ptr<KineticOperator> kin{nullptr};
-    std::shared_ptr<ZoraKineticOperator> zkin{nullptr};
-    std::shared_ptr<ZoraOperator> zora{nullptr};
+    std::shared_ptr<MomentumOperator> mom{nullptr};
+    std::shared_ptr<ZoraOperator> vz{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
     std::shared_ptr<CoulombOperator> coul{nullptr};
     std::shared_ptr<ExchangeOperator> ex{nullptr};

@@ -54,19 +54,18 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
     fock_dict = {}
 
 
-    # Determine which kinetic operator to use
+    # ZORA
     if user_dict['WaveFunction']["zora"]:
-        fock_dict["kinzora_operator"] = {
+        fock_dict["zora_operator"] = {
             "light_speed": user_dict["ZORA"]["light_speed"],
-            "derivative": user_dict["Derivatives"]["kinetic"],
             "proj_prec": user_dict["Precisions"]["nuclear_prec"],
-            "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
             "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
         }
-    else:
-        fock_dict["kinetic_operator"] = {
-            "derivative": user_dict["Derivatives"]["kinetic"]
-        }
+
+    # Kinetic
+    fock_dict["kinetic_operator"] = {
+        "derivative": user_dict["Derivatives"]["kinetic"]
+    }
 
 
     # Nuclear
@@ -201,7 +200,6 @@ def write_scf_solver(user_dict, method_name):
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
-        "zora": user_dict["WaveFunction"]["zora"],
         "light_speed": user_dict["ZORA"]["light_speed"],
         "proj_prec": user_dict["Precisions"]["nuclear_prec"],
         "smooth_prec": user_dict["Precisions"]["nuclear_prec"],

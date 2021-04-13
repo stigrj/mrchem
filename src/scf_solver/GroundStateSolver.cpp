@@ -273,8 +273,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // Apply Helmholtz operator
         // Not logical to check if zora in every iteration...
         OrbitalVector Phi_np1;
-        if (this->zora) {
-            Phi_np1 = H.apply_zora_v3(F.potential(), *(F.getZoraOperator()), Phi_n, Psi);
+        if (F.isZora()) {
+            Phi_np1 = H.apply_zora_v3(F.potential(), F.zora(), Phi_n, Psi);
         } else {
             Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
         }

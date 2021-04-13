@@ -58,13 +58,11 @@ public:
     void setRotation(int iter) { this->rotation = iter; }
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
-    void setZora(bool isZora) { this->zora = isZora; }
 
     nlohmann::json optimize(Molecule &mol, FockOperator &F);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization
-    bool zora{false};     ///< ZORA scalar relativistic calculation
     bool localize{false}; ///< Use localized or canonical orbitals
     std::string chkFile;  ///< Name of checkpoint file
     std::vector<SCFEnergy> energy;
