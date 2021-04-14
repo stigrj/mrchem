@@ -34,10 +34,13 @@ namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(RankZeroOperator V, double zora_factor, double proj_prec, bool mpi_share = false) {
+    ZoraOperator(QMPotential &V, double zfac, bool mpi_share = false) {
         auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
-        auto f_zora = [zora_factor, &V](const mrcpp::Coord<3> &r) -> double { return zora_factor / (zora_factor - V(r).real()); };
-        qmfunction::project(*V_zora, f_zora, NUMBER::Real, proj_prec);
+        qmfunction::deep_copy(*V_zora, V);
+
+        // Re-map the ZORA function on the same grid as the input potential
+        auto zmap = [zfac](double val) -> double { return zfac / (zfac - val); };
+        V_zora->real().map(zmap);
 
         // Invoke operator= to assign *this operator
         RankZeroOperator &O = (*this);
