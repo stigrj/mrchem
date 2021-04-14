@@ -53,10 +53,13 @@ namespace mrchem {
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
 
-    if (isZora()) {
-        this->T = ZoraKineticOperator(momentum(), zora());
-    } else {
-        this->T = KineticOperator(momentum());
+    this->T = RankZeroOperator();
+    if (this->mom != nullptr) {
+        if (isZora()) {
+            this->T += ZoraKineticOperator(momentum(), zora());
+        } else {
+            this->T += KineticOperator(momentum());
+        }
     }
 
     this->V = RankZeroOperator();
