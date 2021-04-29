@@ -80,7 +80,7 @@ public:
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
-    RankZeroOperator buildHelmholtzArgumentOperator();
+    RankZeroOperator buildHelmholtzArgumentOperator(double prec);
 
     using RankZeroOperator::operator();
     using RankZeroOperator::dagger;

@@ -267,7 +267,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         
         ComplexMatrix L_mat = H.getLambdaMatrix();
         OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat, orb_prec);
-        RankZeroOperator O = F.buildHelmholtzArgumentOperator();
+        RankZeroOperator O = F.buildHelmholtzArgumentOperator(helm_prec);
         O.setup(helm_prec);
 
         mrcpp::print::time(2, "Rotating orbitals", t_arg);

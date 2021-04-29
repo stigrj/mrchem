@@ -200,7 +200,7 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-RankZeroOperator FockOperator::buildHelmholtzArgumentOperator() {
+RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
     RankZeroOperator O;
     if (isZora()) {
         auto diff = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
@@ -214,9 +214,8 @@ RankZeroOperator FockOperator::buildHelmholtzArgumentOperator() {
         O += V;
         O += (I - kappa) * T;
         O += -0.5 * tensor::dot(dkappa, nabla);
-    } else {
-        O += V;
     }
-    return O;
+    O.setup(prec);
+    return O + V;
 }
 } // namespace mrchem
