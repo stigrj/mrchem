@@ -264,23 +264,26 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // Setup argument
         Timer t_arg;
         mrcpp::print::header(2, "Computing Helmholtz argument");
+        
         ComplexMatrix L_mat = H.getLambdaMatrix();
         OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat, orb_prec);
+        RankZeroOperator O = F.buildHelmholtzArgumentOperator();
+        O.setup(helm_prec);
+
         mrcpp::print::time(2, "Rotating orbitals", t_arg);
         mrcpp::print::footer(2, t_arg, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
         // Apply Helmholtz operator
-        // Not logical to check if zora in every iteration...
         OrbitalVector Phi_np1;
-        if (F.isZora()) {
-            Phi_np1 = H.apply_zora_v3(F.potential(), F.zora(), Phi_n, Psi);
-        } else {
-            Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
-        }
+        Phi_np1 = H.apply(O, Phi_n, Psi);
+        
+        // Clear operators
+        O.clear();
         Psi.clear();
-
         F.clear();
+
+        // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
         // Compute orbital updates

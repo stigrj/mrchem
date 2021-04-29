@@ -38,6 +38,8 @@
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/NablaOperator.h"
+#include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/ZoraKineticOperator.h"
 #include "qmoperators/qmoperator_utils.h"
 #include "utils/math_utils.h"
@@ -198,4 +200,23 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+RankZeroOperator FockOperator::buildHelmholtzArgumentOperator() {
+    RankZeroOperator O;
+    if (isZora()) {
+        auto diff = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
+        NablaOperator nabla(diff);
+        KineticOperator T(diff);
+        RankZeroOperator &kappa = this->zora();
+        RankZeroOperator &V = this->potential();
+        IdentityOperator I;
+        RankOneOperator<3> dkappa = nabla(kappa);
+
+        O += V;
+        O += (I - kappa) * T;
+        O += -0.5 * tensor::dot(dkappa, nabla);
+    } else {
+        O += V;
+    }
+    return O;
+}
 } // namespace mrchem
