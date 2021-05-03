@@ -209,11 +209,10 @@ RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
         RankZeroOperator &kappa = this->zora();
         RankZeroOperator &V = this->potential();
         IdentityOperator I;
-        RankOneOperator<3> dkappa = nabla(kappa);
+        RankOneOperator<3> dKappa = nabla(kappa);
 
-        O += V;
         O += (I - kappa) * T;
-        O += -0.5 * tensor::dot(dkappa, nabla);
+        O += -0.5 * tensor::dot(dKappa, nabla);
     }
     O.setup(prec);
     return O + V;
