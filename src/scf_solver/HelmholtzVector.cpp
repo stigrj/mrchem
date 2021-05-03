@@ -126,7 +126,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &O, OrbitalVector &Phi, Or
 
         t_lap.start();
         Orbital Ophi_i = O(Phi[i]);
-        Ophi_i.add(1.0, Psi[i]);
+        Ophi_i.add(-1.0, Psi[i]);
         Ophi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
         out[i] = apply(i, Ophi_i);
 
