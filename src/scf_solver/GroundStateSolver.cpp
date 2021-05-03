@@ -240,7 +240,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         printConvergenceHeader("Total energy");
         printConvergenceRow(0);
     }
-
+    
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -268,7 +268,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         ComplexMatrix L_mat = H.getLambdaMatrix();
         OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat, orb_prec);
         RankZeroOperator O = F.buildHelmholtzArgumentOperator(helm_prec);
-        O.setup(helm_prec);
 
         mrcpp::print::time(2, "Rotating orbitals", t_arg);
         mrcpp::print::footer(2, t_arg, 2);
