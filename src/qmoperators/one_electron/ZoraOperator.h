@@ -34,7 +34,8 @@ namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(QMPotential &V, double zfac, bool mpi_share = false) {
+    ZoraOperator(QMPotential &V, double zfac, std::array<int, 2> pre_factors, bool mpi_share = false) 
+        : pre_factors(pre_factors) {
         auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
         qmfunction::deep_copy(*V_zora, V);
 
@@ -47,6 +48,8 @@ public:
         O = V_zora;
         O.name() = "V_zora";
     }
+public:
+    std::array<int, 2> pre_factors;
 };
 
 } // namespace mrchem
