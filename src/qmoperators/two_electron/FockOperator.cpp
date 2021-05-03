@@ -212,7 +212,7 @@ RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
         RankOneOperator<3> dKappa = nabla(kappa);
         std::array<int, 2> pre = kappa.pre_factors;
 
-        if (pre[0] == 1) O += (I - kappa) * T;
+        if (pre[0] == 1) O += (kappa - I) * T;
         if (pre[1] == 1) O += -0.5 * tensor::dot(dKappa, nabla);
     }
     O.setup(prec);
