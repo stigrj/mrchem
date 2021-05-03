@@ -320,6 +320,12 @@ User input reference
   
     **Default** ``-1.0``
   
+   :dev_prefactors: Select which ZORA operators to include in Helmholtz evaluation. 1st element: (I - kappa) * T 2nd element: -0.5 * dot(dkappa, nabla) [0, 0]: Identical to NR calculation 
+  
+    **Type** ``List[int]``
+  
+    **Default** ``[1, 1]``
+  
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
   :red:`Keywords`
