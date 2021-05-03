@@ -85,7 +85,7 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
 
         t_lap.start();
         out[i] = apply(i, Phi[i]);
-        out[i].rescale(-1.0 / (2.0 * MATHCONST::pi));
+        out[i].rescale(1.0 / (2.0 * MATHCONST::pi));
 
         std::stringstream o_txt;
         o_txt << std::setw(4) << i;
@@ -126,7 +126,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &O, OrbitalVector &Phi, Or
 
         t_lap.start();
         Orbital Ophi_i = O(Phi[i]);
-        Ophi_i.add(-1.0, Psi[i]);
+        Ophi_i.add(1.0, Psi[i]);
         Ophi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
         out[i] = apply(i, Ophi_i);
 
