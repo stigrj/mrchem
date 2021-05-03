@@ -202,12 +202,12 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
 
 RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
     RankZeroOperator O;
+    RankZeroOperator &V = this->potential();
     if (isZora()) {
         auto diff = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
         NablaOperator nabla(diff);
         KineticOperator T(diff);
         ZoraOperator &kappa = this->zora();
-        RankZeroOperator &V = this->potential();
         IdentityOperator I;
         RankOneOperator<3> dKappa = nabla(kappa);
         std::array<int, 2> pre = kappa.pre_factors;
