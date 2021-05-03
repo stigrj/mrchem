@@ -126,7 +126,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &O, OrbitalVector &Phi, Or
 
         t_lap.start();
         Orbital Ophi_i = O(Phi[i]);
-        Ophi_i.add(-1.0, Psi[i]);
+        Ophi_i.add(1.0, Psi[i]);
         Ophi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
         out[i] = apply(i, Ophi_i);
 
@@ -137,63 +137,6 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &O, OrbitalVector &Phi, Or
     }
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Applying Helmholtz operators", t_tot);
-    return out;
-}
-
-
-// OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const {
-//     Timer t_tot, t_lap;
-//     auto pprec = Printer::getPrecision();
-//     auto plevel = Printer::getPrintLevel();
-//     mrcpp::print::header(2, "Applying Helmholtz operators");
-//     if (Phi.size() != Psi.size()) MSG_ABORT("OrbitalVector size mismatch");
-// 
-//     OrbitalVector out = orbital::param_copy(Phi);
-//     for (int i = 0; i < Phi.size(); i++) {
-//         if (not mpi::my_orb(out[i])) continue;
-// 
-//         t_lap.start();
-//         Orbital Vphi_i = V(Phi[i]);
-//         Vphi_i.add(1.0, Psi[i]);
-//         Vphi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
-//         out[i] = apply(i, Vphi_i);
-// 
-//         std::stringstream o_txt;
-//         o_txt << std::setw(4) << i;
-//         o_txt << std::setw(19) << std::setprecision(pprec) << std::scientific << out[i].norm();
-//         print_utils::qmfunction(2, o_txt.str(), out[i], t_lap);
-//     }
-//     mrcpp::print::footer(2, t_tot, 2);
-//     if (plevel == 1) mrcpp::print::time(1, "Applying Helmholtz operators", t_tot);
-//     return out;
-// }
-
-OrbitalVector HelmholtzVector::apply_zora_v3(RankZeroOperator &V, RankZeroOperator &kappa, OrbitalVector &Phi, OrbitalVector &Psi) const {
-
-    // Construct necessary operators
-    auto diff = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-    NablaOperator nabla(diff);
-    KineticOperator T(diff);
-    IdentityOperator I;
-    RankOneOperator<3> dKappa = nabla(kappa);
-
-    // Build the terms in eq. 56
-    RankZeroOperator O;
-    O += (I - kappa) * T;
-    O += -0.5 * tensor::dot(dKappa, nabla);
-    O.setup(this->prec);
-
-    // Apply O on all orbitals
-    OrbitalVector out = orbital::param_copy(Phi);
-    for (int i = 0; i < Phi.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
-        Orbital OPhi_i = (O + V)(Phi[i]);
-        OPhi_i.add(-1.0, Psi[i]);
-        OPhi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
-        out[i] = apply(i, OPhi_i);
-    }
-
-    O.clear();
     return out;
 }
 
