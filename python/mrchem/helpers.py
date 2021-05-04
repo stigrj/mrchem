@@ -59,6 +59,7 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
         fock_dict["zora_operator"] = {
             "light_speed": user_dict["ZORA"]["light_speed"],
             "dev_prefactors": user_dict["ZORA"]["dev_prefactors"],
+            "derivative": user_dict["Derivatives"]["zora"],
             "proj_prec": user_dict["Precisions"]["nuclear_prec"],
             "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
         }

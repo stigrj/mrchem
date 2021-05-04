@@ -223,6 +223,11 @@ sections:
         default: 'abgv_00'
         docstring: |
           Derivative used in paramagnetic spin-orbit operator.
+      - name: zora
+        type: str
+        default: 'abgv_55'
+        docstring: |
+          Derivative used ZORA potential.
   - name: Molecule
     docstring: |
       Define molecule.

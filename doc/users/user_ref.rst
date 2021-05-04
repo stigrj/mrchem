@@ -264,6 +264,12 @@ User input reference
   
     **Default** ``abgv_00``
   
+   :zora: Derivative used ZORA potential. 
+  
+    **Type** ``str``
+  
+    **Default** ``abgv_55``
+  
  :Molecule: Define molecule. 
 
   :red:`Keywords`
