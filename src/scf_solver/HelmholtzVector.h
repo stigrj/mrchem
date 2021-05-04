@@ -47,10 +47,6 @@ public:
 
     OrbitalVector apply(RankZeroOperator &O, OrbitalVector &Phi, OrbitalVector &Psi) const;
 
-    OrbitalVector apply_zora(RankZeroOperator &V, RankZeroOperator &GlnkG, RankZeroOperator &zora, OrbitalVector &Phi, OrbitalVector &Psi) const;
-
-    OrbitalVector apply_zora_v3(RankZeroOperator &V, RankZeroOperator &kappa, OrbitalVector &Phi, OrbitalVector &Psi) const;
-
     OrbitalVector operator()(OrbitalVector &Phi) const;
 
 private:
