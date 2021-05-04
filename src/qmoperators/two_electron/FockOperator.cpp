@@ -202,9 +202,9 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
 
 RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
     RankZeroOperator O;
+    RankZeroOperator &V = this->potential();
     if (isZora()) {
         ZoraOperator &kappa = this->zora();
-        RankZeroOperator &V = this->potential();
         auto &diff = kappa.derivative;
         NablaOperator nabla(diff);
         KineticOperator T(diff);
