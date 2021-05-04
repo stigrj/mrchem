@@ -275,6 +275,15 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
+        
+        if (F.isZora()) {
+            auto zoraTerms = F.zora().pre_factors;
+            auto light_speed = F.zora().light_speed;
+            solver.setZora(F.isZora());
+            solver.setZoraTerms(zoraTerms);
+            solver.setLightSpeed(light_speed);
+        }
+        
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
     }
@@ -957,15 +966,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     //////////////////   Kinetic Zora Operator   //////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
-        double light_speed = json_fock["zora_operator"]["light_speed"];
-        if (light_speed <= 0.0) light_speed = PHYSCONST::alpha_inv;
-        double zora_factor = 2.0 * light_speed * light_speed;
+        double c = json_fock["zora_operator"]["light_speed"];
+        if (c <= 0.0) c = PHYSCONST::alpha_inv;
         auto shared_memory = json_fock["zora_operator"]["shared_memory"];
         auto pre_factors = json_fock["zora_operator"]["dev_prefactors"].get<std::array<int, 2>>();
         auto zora_diff = json_fock["zora_operator"]["derivative"];
         auto D_p = driver::get_derivative(zora_diff);
         auto &V_nuc = static_cast<QMPotential &>(F.getNuclearOperator()->getRaw(0, 0));
-        auto Z_p = std::make_shared<ZoraOperator>(V_nuc, zora_factor, pre_factors, D_p, shared_memory);
+        auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, pre_factors, D_p, shared_memory);
         F.getZoraOperator() = Z_p;
     }
     ///////////////////////////////////////////////////////////

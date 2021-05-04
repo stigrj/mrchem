@@ -55,6 +55,9 @@ public:
     void setHelmholtzPrec(double prec) { this->helmPrec = prec; }
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
+    void setZora(const bool &isZora) { this->isZora = isZora; }
+    void setZoraTerms(std::array<int, 2> &terms) { this->zoraTerms = terms; }
+    void setLightSpeed(double &c) { this->light_speed = c; }
 
 protected:
     int history{0};                      ///< Maximum length of KAIN history
@@ -68,6 +71,10 @@ protected:
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error
+
+    bool isZora{false};
+    std::array<int, 2> zoraTerms;
+    double light_speed;
 
     virtual void reset();
 

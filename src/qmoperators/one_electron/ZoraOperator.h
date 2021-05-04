@@ -34,14 +34,16 @@ namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(QMPotential &V, double zfac, std::array<int, 2> pre_factors, 
+    ZoraOperator(QMPotential &V, double c, std::array<int, 2> pre_factors, 
                  std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false) 
         : pre_factors(pre_factors)
+        , light_speed(c)
         , derivative(D) {
         auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
         qmfunction::deep_copy(*V_zora, V);
 
         // Re-map the ZORA function on the same grid as the input potential
+        double zfac = 2.0 * c * c;
         auto zmap = [zfac](double val) -> double { return zfac / (zfac - val); };
         V_zora->real().map(zmap);
 
@@ -52,6 +54,7 @@ public:
     }
 public:
     std::array<int, 2> pre_factors;
+    double light_speed;
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 };
 
