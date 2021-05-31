@@ -30,6 +30,8 @@
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/QMPotential.h"
 #include "qmoperators/one_electron/MomentumOperator.h"
 
 using mrcpp::Printer;
@@ -142,15 +144,23 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
     int Nj = ket.size();
     ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
 
+    // Lambda function for mapping square root onto V
+    auto srmap = [](double val) { return std::sqrt(val); };
+    QMPotential &W = static_cast<QMPotential &>(V.getRaw(0,0));
+    auto X = std::make_shared<QMPotential>(1);
+    qmfunction::deep_copy(*X, W);
+    X->real().map(srmap);
+    RankZeroOperator Y(X);
+
     int nNodes = 0, sNodes = 0;
     if (&bra == &ket) {
-        OrbitalVector dKet = p[d](ket);
+        OrbitalVector dKet = (Y*p[d])(ket);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
         T = V(dKet, dKet);
     } else {
-        OrbitalVector dBra = p[d](bra);
-        OrbitalVector dKet = p[d](ket);
+        OrbitalVector dBra = (Y*p[d])(bra);
+        OrbitalVector dKet = (Y*p[d])(ket);
         nNodes += orbital::get_n_nodes(dBra);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
