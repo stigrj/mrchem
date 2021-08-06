@@ -25,6 +25,7 @@
 
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
+#include "MRCPP/Plotter"
 #include "MRCPP/Timer"
 
 #include "parallel.h"
@@ -114,6 +115,11 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
     mrcpp::print::header(2, "Applying Helmholtz operators");
     if (Phi.size() != Psi.size()) MSG_ABORT("OrbitalVector size mismatch");
 
+    static int iter = 0;
+    mrcpp::Plotter<3> plt;
+    plt.setOrigin({0.0, 0.0, -15.0});
+    plt.setRange({0.0, 0.0, 30.0});
+
     OrbitalVector out = orbital::param_copy(Phi);
     for (int i = 0; i < Phi.size(); i++) {
         if (not mpi::my_orb(out[i])) continue;
@@ -124,11 +130,23 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
         Vphi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
         out[i] = apply(i, Vphi_i);
 
+        {
+            mrcpp::FunctionTree<3> tmp(out[i].real().getMRA());
+            mrcpp::copy_grid(tmp, out[i].real());
+            mrcpp::copy_func(tmp, out[i].real());
+            mrcpp::refine_grid(tmp, 1);
+            plt.linePlot({10000}, tmp, "phi_"+std::to_string(i)+"_"+std::to_string(iter));
+            println(0, "plotted phi_" << i);
+        }
+
         std::stringstream o_txt;
         o_txt << std::setw(4) << i;
         o_txt << std::setw(19) << std::setprecision(pprec) << std::scientific << out[i].norm();
         print_utils::qmfunction(2, o_txt.str(), out[i], t_lap);
     }
+
+    iter++;
+
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Applying Helmholtz operators", t_tot);
     return out;

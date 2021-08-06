@@ -23,14 +23,18 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/Printer>
+#include <MRCPP/Plotter>
+#include <MRCPP/Timer>
+#include <MRCPP/trees/MWNode.h>
+
 #include "XCPotential.h"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
 #include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
+#include "utils/math_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;
@@ -59,8 +63,33 @@ void XCPotential::setup(double prec) {
     if (this->mrdft == nullptr) MSG_ERROR("XCFunctional not initialized");
     if (this->potentials.size() != 0) MSG_ERROR("Potential not properly cleared");
 
+    static int iter = 0;
+
+    mrcpp::Plotter<3> plt;
+    plt.setOrigin({0.0, 0.0, -15.0});
+    plt.setRange({0.0, 0.0, 30.0});
+
     auto &grid = this->mrdft->grid().get();
     mrcpp::FunctionTreeVector<3> xc_inp = setupDensities(prec, grid);
+
+    auto &rho_a = mrcpp::get_func(xc_inp, 0);
+    auto &rho_b = mrcpp::get_func(xc_inp, 1);
+
+    {
+        mrcpp::FunctionTree<3> tmp(grid.getMRA());
+        mrcpp::copy_grid(tmp, rho_a);
+        mrcpp::copy_func(tmp, rho_a);
+        mrcpp::refine_grid(tmp, 1);
+        plt.linePlot({10000}, tmp, "rho_a_"+std::to_string(iter));
+    }
+    if (xc_inp.size() > 1) {
+        mrcpp::FunctionTree<3> tmp(grid.getMRA());
+        mrcpp::copy_grid(tmp, rho_b);
+        mrcpp::copy_func(tmp, rho_b);
+        mrcpp::refine_grid(tmp, 1);
+        plt.linePlot({10000}, tmp, "rho_b_"+std::to_string(iter));
+    }
+
     mrcpp::FunctionTreeVector<3> xc_out = this->mrdft->evaluate(xc_inp);
 
     // Fetch energy density
@@ -82,6 +111,24 @@ void XCPotential::setup(double prec) {
         mrcpp::copy_func(*v_global, v_local);
         this->potentials.push_back(std::make_tuple(1.0, v_global));
     }
+
+    auto &v_a = mrcpp::get_func(this->potentials, 0);
+    auto &v_b = mrcpp::get_func(this->potentials, 1);
+    {
+        mrcpp::FunctionTree<3> tmp(rho_a.getMRA());
+        mrcpp::copy_grid(tmp, v_a);
+        mrcpp::copy_func(tmp, v_a);
+        mrcpp::refine_grid(tmp, 1);
+        plt.linePlot({10000}, tmp, "v_a_"+std::to_string(iter));
+    }
+    if (xc_inp.size() > 1) {
+        mrcpp::FunctionTree<3> tmp(v_b.getMRA());
+        mrcpp::copy_grid(tmp, v_b);
+        mrcpp::copy_func(tmp, v_b);
+        mrcpp::refine_grid(tmp, 1);
+        plt.linePlot({10000}, tmp, "v_b_"+std::to_string(iter));
+    }
+    println(0, "plotted iter " << iter++);
 
     mrcpp::clear(xc_out, true);
 }
