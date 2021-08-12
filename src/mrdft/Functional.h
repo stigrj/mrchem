@@ -45,6 +45,7 @@ public:
 
     void setLogGradient(bool log) { log_grad = log; }
     void setDensityCutoff(double cut) { cutoff = cut; }
+    double bumpDensityCutoff() { cutoff *= 0.5; return cutoff; }
 
     virtual bool isSpin() const = 0;
     bool isLDA() const { return (not(isGGA() or isMetaGGA())); }

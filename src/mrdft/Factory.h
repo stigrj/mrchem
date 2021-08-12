@@ -53,7 +53,7 @@ private:
     bool gamma{false};
     bool log_grad{false};
     double cutoff{-1.0};
-    std::string diff_s{"abgv_00"};
+    std::string diff_s{"bspline"};
     const mrcpp::MultiResolutionAnalysis<3> mra;
 
     XC_p xcfun_p;

@@ -24,6 +24,7 @@
  */
 
 #include "MRCPP/MWOperators"
+#include "MRCPP/Plotter"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 #include <MRCPP/trees/FunctionNode.h>
@@ -60,11 +61,26 @@ namespace mrdft {
  * out_vec[2] = v_xc_b (XC beta potential)
  */
 mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) {
+    static int iter = 0;
+    mrcpp::Plotter<3> plt;
+    plt.setOrigin({0.0, 0.0,-15.0});
+    plt.setRange({0.0, 0.0, 30.0});
+
     mrcpp::Timer timer;
-    grid().unify(inp);
     functional().preprocess(inp);
     mrcpp::FunctionTreeVector<3> xcInpVec = functional().setupXCInput();
     mrcpp::FunctionTreeVector<3> ctrInpVec = functional().setupCtrInput();
+    grid().unify(xcInpVec);
+
+    auto &MRA = grid().get().getMRA();
+    for (int i = 0; i < xcInpVec.size(); i++) {
+        auto &inp = mrcpp::get_func(xcInpVec, i);
+        mrcpp::FunctionTree<3> tmp(MRA);
+        mrcpp::copy_grid(tmp, inp);
+        mrcpp::copy_func(tmp, inp);
+        mrcpp::refine_grid(tmp, 1);
+        plt.linePlot({10000}, tmp, "xc_inp_"+std::to_string(i)+"_"+std::to_string(iter));
+    }
 
     int nCoefs = mrcpp::get_func(inp, 0).getEndFuncNode(0).getNCoefs();
     int nOutCtr = functional().getCtrOutputLength();
@@ -151,6 +167,17 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     functional().clear();
     auto t = timer.elapsed();
     mrcpp::print::tree(2, "XC evaluate", totNodes, totSize, t);
+
+    for (int i = 0; i < potOutVec.size(); i++) {
+        auto &out = mrcpp::get_func(potOutVec, i);
+        mrcpp::FunctionTree<3> tmp(MRA);
+        mrcpp::copy_grid(tmp, out);
+        mrcpp::copy_func(tmp, out);
+        mrcpp::refine_grid(tmp, 1);
+        plt.linePlot({10000}, tmp, "xc_out_"+std::to_string(i)+"_"+std::to_string(iter));
+    }
+    //println(0, grid().get());
+    iter++;
 
     return potOutVec;
 }

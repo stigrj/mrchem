@@ -136,7 +136,8 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
             mrcpp::copy_func(tmp, out[i].real());
             mrcpp::refine_grid(tmp, 1);
             plt.linePlot({10000}, tmp, "phi_"+std::to_string(i)+"_"+std::to_string(iter));
-            println(0, "plotted phi_" << i);
+            //out[i].real().setName("phi_"+std::to_string(i));
+            //println(0, out[i].real());
         }
 
         std::stringstream o_txt;
@@ -144,7 +145,6 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
         o_txt << std::setw(19) << std::setprecision(pprec) << std::scientific << out[i].norm();
         print_utils::qmfunction(2, o_txt.str(), out[i], t_lap);
     }
-
     iter++;
 
     mrcpp::print::footer(2, t_tot, 2);
@@ -167,6 +167,10 @@ Orbital HelmholtzVector::apply(int i, Orbital &phi) const {
     Orbital out = phi.paramCopy();
     if (phi.hasReal()) {
         out.alloc(NUMBER::Real);
+        out.real().setZero();
+        mrcpp::refine_grid(out.real(), 1);
+        mrcpp::refine_grid(out.real(), 1);
+        mrcpp::clear_grid(out.real());
         mrcpp::apply(this->prec, out.real(), H, phi.real(), -1, true); // Absolute prec
     }
     if (phi.hasImag()) {
