@@ -42,6 +42,7 @@ namespace mrchem {
 namespace qmoperator {
 ComplexMatrix calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket);
 ComplexMatrix calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
+ComplexMatrix calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
 } // namespace qmoperator
 
 double qmoperator::calc_kinetic_trace(MomentumOperator &p, OrbitalVector &Phi) {
@@ -105,9 +106,9 @@ ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, OrbitalVector
  * of symmetry and getting away with only first-derivative operators.
  */
 ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
-    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component(0, p, V, bra, ket);
-    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component(1, p, V, bra, ket);
-    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component(2, p, V, bra, ket);
+    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component_symmetrized(0, p, V, bra, ket);
+    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component_symmetrized(1, p, V, bra, ket);
+    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component_symmetrized(2, p, V, bra, ket);
     return T_x + T_y + T_z;
 }
 
@@ -138,7 +139,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
     return 0.5 * T;
 }
 
-ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
     Timer timer;
     int Ni = bra.size();
     int Nj = ket.size();
@@ -161,6 +162,33 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
     } else {
         OrbitalVector dBra = (Y*p[d])(bra);
         OrbitalVector dKet = (Y*p[d])(ket);
+        nNodes += orbital::get_n_nodes(dBra);
+        nNodes += orbital::get_n_nodes(dKet);
+        sNodes += orbital::get_size_nodes(dBra);
+        sNodes += orbital::get_size_nodes(dKet);
+        T = V(dBra, dKet);
+    }
+    if (d == 0) mrcpp::print::tree(2, "<i|p[x]p[x]|j>", nNodes, sNodes, timer.elapsed());
+    if (d == 1) mrcpp::print::tree(2, "<i|p[y]p[y]|j>", nNodes, sNodes, timer.elapsed());
+    if (d == 2) mrcpp::print::tree(2, "<i|p[z]p[z]|j>", nNodes, sNodes, timer.elapsed());
+    return 0.5 * T;
+}
+
+ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
+    Timer timer;
+    int Ni = bra.size();
+    int Nj = ket.size();
+    ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
+
+    int nNodes = 0, sNodes = 0;
+    if (&bra == &ket) {
+        OrbitalVector dKet = p[d](ket);
+        nNodes += orbital::get_n_nodes(dKet);
+        sNodes += orbital::get_size_nodes(dKet);
+        T = V(dKet, dKet);
+    } else {
+        OrbitalVector dBra = p[d](bra);
+        OrbitalVector dKet = p[d](ket);
         nNodes += orbital::get_n_nodes(dBra);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
