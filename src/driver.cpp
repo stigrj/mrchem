@@ -967,11 +967,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         double c = json_fock["zora_operator"]["light_speed"];
         if (c <= 0.0) c = PHYSCONST::alpha_inv;
         auto shared_memory = json_fock["zora_operator"]["shared_memory"];
-        auto pre_factors = json_fock["zora_operator"]["dev_prefactors"].get<std::array<int, 2>>();
         auto zora_diff = json_fock["zora_operator"]["derivative"];
         auto D_p = driver::get_derivative(zora_diff);
         auto &V_nuc = static_cast<QMPotential &>(F.getNuclearOperator()->getRaw(0, 0));
-        auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, pre_factors, D_p, shared_memory);
+        auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, D_p, shared_memory);
         F.getZoraOperator() = Z_p;
     }
     ///////////////////////////////////////////////////////////
