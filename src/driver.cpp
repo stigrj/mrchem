@@ -277,10 +277,8 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setThreshold(orbital_thrs, energy_thrs);
         
         if (F.isZora()) {
-            auto zoraTerms = F.zora().pre_factors;
             auto light_speed = F.zora().light_speed;
             solver.setZora(F.isZora());
-            solver.setZoraTerms(zoraTerms);
             solver.setLightSpeed(light_speed);
         }
         

@@ -167,13 +167,6 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     o_prec_0 << std::setprecision(5) << std::scientific << this->orbPrec[1];
     o_prec_1 << std::setprecision(5) << std::scientific << this->orbPrec[2];
 
-    std::stringstream o_zoraterms;
-    std::stringstream o_c;
-    if (this->isZora) {
-        o_zoraterms << "[" << this->zoraTerms[0] << ", " << this->zoraTerms[1] << "]";
-        o_c << std::setprecision(5) << std::scientific << this->light_speed;
-    }
-
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation        ", calculation);
     print_utils::text(0, "Method             ", this->methodName);
@@ -188,10 +181,6 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     print_utils::text(0, "Energy threshold   ", o_thrs_p.str());
     print_utils::text(0, "Orbital threshold  ", o_thrs_o.str());
     print_utils::text(0, "ZORA               ", (this->isZora) ? "On" : "Off");
-    if (this->isZora) {
-        print_utils::text(0, "Speed of Light     ", o_c.str());
-        print_utils::text(0, "ZORA terms         ", o_zoraterms.str());
-    }
     mrcpp::print::separator(0, '~', 2);
 }
 
