@@ -34,10 +34,8 @@ namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(QMPotential &V, double c, std::array<int, 2> pre_factors, 
-                 std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false) 
-        : pre_factors(pre_factors)
-        , light_speed(c)
+    ZoraOperator(QMPotential &V, double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false) 
+        : light_speed(c)
         , derivative(D) {
         auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
         qmfunction::deep_copy(*V_zora, V);
@@ -53,7 +51,6 @@ public:
         O.name() = "V_zora";
     }
 public:
-    std::array<int, 2> pre_factors;
     double light_speed;
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 };
