@@ -971,7 +971,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto D_p = driver::get_derivative(zora_diff);
         auto &V_nuc = static_cast<QMPotential &>(F.getNuclearOperator()->getRaw(0, 0));
         auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, D_p, shared_memory);
+
+        std::shared_ptr<QMPotential> tmp = Z_p->sqKappa();
+        auto sqrt_Z_p = std::make_shared<RankZeroOperator>(tmp);
+
+        std::shared_ptr<RankZeroOperator> mod_Z_p = Z_p->divKappaOverSqKappa();
         F.getZoraOperator() = Z_p;
+        F.getSqrtZora() = sqrt_Z_p;
+        F.getModZora() = mod_Z_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////

@@ -26,6 +26,7 @@
 #pragma once
 
 #include "tensor/RankZeroOperator.h"
+#include "qmoperators/QMPotential.h"
 
 /** @class FockOperator
  *
@@ -59,6 +60,8 @@ public:
     RankZeroOperator &kinetic() { return this->T; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
+    RankZeroOperator &sqrt_zora_pot() { return this->sqrt_zora; }
+    RankZeroOperator &mod_zora_pot() { return this->mod_zora; }
 
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -68,6 +71,8 @@ public:
     std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->vz; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
+    std::shared_ptr<RankZeroOperator> &getSqrtZora() { return this->sqrt_vz; }
+    std::shared_ptr<RankZeroOperator> &getModZora() { return this->mod_vz; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -87,9 +92,11 @@ public:
 
 private:
     double exact_exchange{1.0};
-    RankZeroOperator T;   ///< Total kinetic energy operator
-    RankZeroOperator V;   ///< Total potential energy operator
-    RankZeroOperator H_1; ///< Perturbation operators
+    RankZeroOperator T;       ///< Total kinetic energy operator
+    RankZeroOperator V;       ///< Total potential energy operator
+    RankZeroOperator H_1;     ///< Perturbation operators
+    RankZeroOperator sqrt_zora;
+    RankZeroOperator mod_zora;
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<ZoraOperator> vz{nullptr};
@@ -99,6 +106,8 @@ private:
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};       ///< Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr}; ///< Total external potential
+    std::shared_ptr<RankZeroOperator> sqrt_vz{nullptr};
+    std::shared_ptr<RankZeroOperator> mod_vz{nullptr};
 };
 
 } // namespace mrchem

@@ -92,6 +92,8 @@ void FockOperator::setup(double prec) {
     this->kinetic().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
+    this->sqrt_zora_pot().setup(prec);
+    this->mod_zora_pot().setup(prec);
     t_tot.stop();
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_tot);
@@ -106,6 +108,8 @@ void FockOperator::clear() {
     this->kinetic().clear();
     this->potential().clear();
     this->perturbation().clear();
+    this->sqrt_zora_pot().clear();
+    this->mod_zora_pot().clear();
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -183,7 +187,20 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
-        T_mat = qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
+        // T_mat = qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
+
+        RankZeroOperator sqrtK(this->sqrt_zora_pot());
+        RankZeroOperator modK = this->mod_zora_pot();
+
+        OrbitalVector kKet = sqrtK(ket);
+        OrbitalVector kBra = sqrtK(bra);
+        
+        ComplexMatrix T_1 = ComplexMatrix::Zero(kBra.size(), kKet.size());
+        ComplexMatrix T_2 = ComplexMatrix::Zero(kBra.size(), kKet.size());
+
+        T_1 = qmoperator::calc_kinetic_matrix(momentum(), kBra, kKet);
+        T_2 = qmoperator::calc_kinetic_matrix(momentum(), modK, kBra, kKet);
+        T_mat = T_1 - T_2;
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
