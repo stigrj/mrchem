@@ -77,7 +77,7 @@ public:
     }
 
     std::shared_ptr<QMPotential> invSqKappa() {
-        auto srmap = [](double val) -> double {return 1 / std::sqrt(val); };
+        auto srmap = [](double val) -> double {return 1.0 / std::sqrt(val); };
         auto inv_sq_V_zora = std::make_shared<QMPotential>(1, false);
         qmfunction::deep_copy(*inv_sq_V_zora, *(this->potential));
         inv_sq_V_zora->real().map(srmap);
