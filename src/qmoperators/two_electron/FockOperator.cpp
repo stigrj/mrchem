@@ -64,6 +64,10 @@ void FockOperator::build(double exx) {
         }
     }
 
+    this->sqrt_zora = RankZeroOperator();
+    if (this->sqrt_vz != nullptr) this->sqrt_zora += (*this->sqrt_vz);
+    if (this->mod_vz != nullptr) this->mod_zora += (*this->mod_vz);
+
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
     if (this->coul != nullptr) this->V += (*this->coul);
@@ -194,12 +198,13 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
         OrbitalVector kKet = sqrtK(ket);
         OrbitalVector kBra = sqrtK(bra);
-        
+
         ComplexMatrix T_1 = ComplexMatrix::Zero(kBra.size(), kKet.size());
         ComplexMatrix T_2 = ComplexMatrix::Zero(kBra.size(), kKet.size());
 
         T_1 = qmoperator::calc_kinetic_matrix(momentum(), kBra, kKet);
         T_2 = qmoperator::calc_kinetic_matrix(momentum(), modK, kBra, kKet);
+
         T_mat = T_1 - T_2;
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
