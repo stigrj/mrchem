@@ -310,6 +310,13 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         F_mat = F(Phi_n, Phi_n);
         E_n = F.trace(Phi_n, nucs);
 
+        // Print orbital energies
+        // OrbitalEnergies e = mol.getOrbitalEnergies();
+        // e.getEpsilon() = orbital::calc_eigenvalues(Phi_n, F_mat);
+        // std::stringstream id;
+        // id << "SCF Iteration: " << nIter;
+        // e.print(id.str());
+
         // Collect convergence data
         this->error.push_back(err_t);
         this->energy.push_back(E_n);
