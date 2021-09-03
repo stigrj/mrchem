@@ -205,7 +205,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
         T_1 = qmoperator::calc_kinetic_matrix(momentum(), kBra, kKet);
         T_2 = modK(kBra, kKet);
 
-        T_mat = T_1 - T_2;
+        T_mat = T_1 + 0.5 * T_2;
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
