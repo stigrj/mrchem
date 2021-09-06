@@ -112,6 +112,13 @@ ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, RankZeroOpera
     return T_x + T_y + T_z;
 }
 
+ComplexMatrix qmoperator::calc_kinetic_matrix_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
+    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component_symmetrized(0, p, V, bra, ket);
+    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component_symmetrized(1, p, V, bra, ket);
+    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component_symmetrized(2, p, V, bra, ket);
+    return T_x + T_y + T_z;
+}
+
 ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket) {
     Timer timer;
     int Ni = bra.size();
@@ -145,28 +152,20 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, Momen
     int Nj = ket.size();
     ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
 
-    // Lambda function for mapping square root onto V
-    auto srmap = [](double val) { return std::sqrt(val); };
-    QMPotential &W = static_cast<QMPotential &>(V.getRaw(0,0));
-    auto X = std::make_shared<QMPotential>(1);
-    qmfunction::deep_copy(*X, W);
-    X->real().map(srmap);
-    RankZeroOperator Y(X);
-
     int nNodes = 0, sNodes = 0;
     if (&bra == &ket) {
-        OrbitalVector dKet = (Y*p[d])(ket);
+        OrbitalVector dKet = (V*p[d])(ket);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
-        T = V(dKet, dKet);
+        T = orbital::calc_overlap_matrix(dKet, dKet);
     } else {
-        OrbitalVector dBra = (Y*p[d])(bra);
-        OrbitalVector dKet = (Y*p[d])(ket);
+        OrbitalVector dBra = (V*p[d])(bra);
+        OrbitalVector dKet = (V*p[d])(ket);
         nNodes += orbital::get_n_nodes(dBra);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
         sNodes += orbital::get_size_nodes(dKet);
-        T = V(dBra, dKet);
+        T = orbital::calc_overlap_matrix(dBra, dKet);
     }
     if (d == 0) mrcpp::print::tree(2, "<i|p[x]p[x]|j>", nNodes, sNodes, timer.elapsed());
     if (d == 1) mrcpp::print::tree(2, "<i|p[y]p[y]|j>", nNodes, sNodes, timer.elapsed());
