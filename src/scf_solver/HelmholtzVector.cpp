@@ -140,6 +140,16 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &O, OrbitalVector &Phi, Or
     return out;
 }
 
+OrbitalVector HelmholtzVector::apply(OrbitalVector &Phi) const {
+    OrbitalVector out = orbital::param_copy(Phi);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (not mpi::my_orb(out[i])) continue;
+        Orbital phi_i = Phi[i];
+        phi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
+        out[i] = apply(i, phi_i);
+    }
+    return out;
+}
 /** @brief Apply Helmholtz operator on individual Orbital
  *
  * This will construct a Helmholtz operator with the i-th component of the

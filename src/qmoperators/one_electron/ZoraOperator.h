@@ -83,6 +83,15 @@ public:
         inv_sq_V_zora->real().map(srmap);
         return inv_sq_V_zora;
     }
+
+    RankZeroOperator invKappa() {
+        auto map = [](double val) -> double {return 1.0 / val; };
+        auto inv_V_zora = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*inv_V_zora, *(this->potential));
+        inv_V_zora->real().map(map);
+        RankZeroOperator O(inv_V_zora);
+        return O;
+    }
  
     std::shared_ptr<QMPotential> divSqKappa() {
         mrcpp::FunctionTreeVector<3> gradK = mrcpp::gradient(*(this->derivative), this->sqKappa()->real());

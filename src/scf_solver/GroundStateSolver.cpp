@@ -35,6 +35,8 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/one_electron/NablaOperator.h"
+#include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
@@ -262,26 +264,82 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         }
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
+
         // Setup argument
-        Timer t_arg;
-        mrcpp::print::header(2, "Computing Helmholtz argument");
-        
+        // Timer t_arg;
+        // mrcpp::print::header(2, "Computing Helmholtz argument");
+        // 
         ComplexMatrix L_mat = H.getLambdaMatrix();
         OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat, orb_prec);
-        RankZeroOperator O = F.buildHelmholtzArgumentOperator(helm_prec);
+        // RankZeroOperator O = F.buildHelmholtzArgumentOperator(helm_prec);
 
-        mrcpp::print::time(2, "Rotating orbitals", t_arg);
-        mrcpp::print::footer(2, t_arg, 2);
-        if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+        // mrcpp::print::time(2, "Rotating orbitals", t_arg);
+        // mrcpp::print::footer(2, t_arg, 2);
+        // if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+
+        // // Apply Helmholtz operator
+        // OrbitalVector Phi_np1;
+        // Phi_np1 = H.apply(O, Phi_n, Psi);
+
+        ////////////////////////////////
+        // Take 2 in notes on Overleaf
+        ////////////////////////////////
+        RankZeroOperator &V = F.potential();
+        ZoraOperator &Vz = F.zora();
+
+        // Compute derivative of zora potential
+        NablaOperator nabla(Vz.derivative);
+        RankOneOperator<3> dKappa = nabla(Vz);
+        dKappa.setup(orb_prec);
+
+        // Set up operator for gradKappa gradPhi
+        RankZeroOperator gradKappaGrad;
+        gradKappaGrad += tensor::dot(dKappa, nabla);
+        gradKappaGrad.setup(orb_prec);
+
+        // Store 2*c^2 for convenience
+        double zfac = 2.0 * Vz.light_speed * Vz.light_speed;
+
+        // Apply potential E operator and gradKappa*grad on Phi
+        OrbitalVector VPhi_n = V(Phi_n);
+        OrbitalVector gradKappaGradPhi_n = gradKappaGrad(Phi_n);
+
+        // Compute VPhi orbitals rescaled by F_ii / 2c^2
+        OrbitalVector scaledVPhi_n = orbital::deep_copy(VPhi_n);
+        for (int i = 0; i < Phi_n.size(); i++) {
+            // if (not mpi::my_orb(VPhi_n[i])) continue;
+            scaledVPhi_n[i].rescale(F_mat.real()(i,i) / zfac);
+        }
+
+        // Apply zora potential on scaled orbitals
+        OrbitalVector kVPhi_n = Vz(scaledVPhi_n);
+
+        // Add together all the different orbital terms
+        OrbitalVector Phi_n_tmp = orbital::deep_copy(kVPhi_n); 
+        for (int i = 0; i < Phi_n.size(); i++) {
+            // if (not mpi::my_orb(Phi_n_tmp[i])) continue;
+            Phi_n_tmp[i].add(1.0, VPhi_n[i]);
+            Phi_n_tmp[i].add(-0.5, gradKappaGradPhi_n[i]);
+            Phi_n_tmp[i].add(1.0, Psi[i]);
+        }
+
+        // Apply zora potential
+        RankZeroOperator invK = Vz.invKappa();
+        invK.setup(orb_prec);
+        OrbitalVector OPhi_n = invK(Phi_n_tmp);
 
         // Apply Helmholtz operator
         OrbitalVector Phi_np1;
-        Phi_np1 = H.apply(O, Phi_n, Psi);
+        Phi_np1 = H.apply(OPhi_n);
+        /////////////////////////////////
         
         // Clear operators
-        O.clear();
+        // O.clear();
         Psi.clear();
         F.clear();
+        gradKappaGrad.clear();
+        dKappa.clear();
+        invK.clear();
 
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);

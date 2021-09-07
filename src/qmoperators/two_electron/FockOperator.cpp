@@ -188,7 +188,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
-    int algo = 1;
+    int algo = 0;
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
@@ -238,6 +238,7 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+// Take 1 in notes on Overleaf
 RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
     RankZeroOperator O;
     RankZeroOperator &V = this->potential();
