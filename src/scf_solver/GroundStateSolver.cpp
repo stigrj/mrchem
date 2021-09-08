@@ -307,7 +307,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // Compute VPhi orbitals rescaled by F_ii / 2c^2
         OrbitalVector scaledVPhi_n = orbital::deep_copy(VPhi_n);
         for (int i = 0; i < Phi_n.size(); i++) {
-            // if (not mpi::my_orb(VPhi_n[i])) continue;
+            if (not mpi::my_orb(VPhi_n[i])) continue;
             scaledVPhi_n[i].rescale(F_mat.real()(i,i) / zfac);
         }
 
@@ -317,7 +317,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // Add together all the different orbital terms
         OrbitalVector Phi_n_tmp = orbital::deep_copy(kVPhi_n); 
         for (int i = 0; i < Phi_n.size(); i++) {
-            // if (not mpi::my_orb(Phi_n_tmp[i])) continue;
+            if (not mpi::my_orb(Phi_n_tmp[i])) continue;
             Phi_n_tmp[i].add(1.0, VPhi_n[i]);
             Phi_n_tmp[i].add(-0.5, gradKappaGradPhi_n[i]);
             Phi_n_tmp[i].add(1.0, Psi[i]);
