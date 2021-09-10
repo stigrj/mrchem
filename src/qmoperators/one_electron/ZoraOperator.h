@@ -92,6 +92,16 @@ public:
         RankZeroOperator O(inv_V_zora);
         return O;
     }
+
+    RankZeroOperator zFacKappa() {
+        double zfac = this->light_speed * this->light_speed * 2;
+        auto map = [zfac](double val) -> double {return val / zfac; };
+        auto zfacV = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*zfacV, *(this->potential));
+        zfacV->real().map(map);
+        RankZeroOperator O(zfacV);
+        return O;
+    }
  
     std::shared_ptr<QMPotential> divSqKappa() {
         mrcpp::FunctionTreeVector<3> gradK = mrcpp::gradient(*(this->derivative), this->sqKappa()->real());
