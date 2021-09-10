@@ -279,7 +279,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // Apply Helmholtz operator
         OrbitalVector Harg;
         if (isZora) {
-            Harg = F.buildHelmholtzArgument(Phi_n, Psi, F_mat);
+            OrbitalVector tPhi_n = F.sqrt_zora_pot()(Phi_n);
+            OrbitalVector tPsi = F.sqrt_zora_pot()(Psi);
+            Harg = F.buildHelmholtzArgument(tPhi_n, tPsi, F_mat);
         } else {
             Harg = F.buildHelmholtzArgument(Phi_n, Psi);
         }
