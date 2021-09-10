@@ -237,6 +237,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
     const auto &json_guess = json_scf["initial_guess"];
+
     if (scf::guess_orbitals(json_guess, mol)) {
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
@@ -277,7 +278,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setThreshold(orbital_thrs, energy_thrs);
         
         if (F.isZora()) {
-            auto light_speed = F.zora().light_speed;
+            double light_speed = F.zora().light_speed;
             solver.setZora(F.isZora());
             solver.setLightSpeed(light_speed);
         }
@@ -976,9 +977,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto sqrt_Z_p = std::make_shared<RankZeroOperator>(tmp);
 
         std::shared_ptr<RankZeroOperator> mod_Z_p = Z_p->divKappaOverSqKappa();
+        std::shared_ptr<RankZeroOperator> scaled_Z_p = std::make_shared<RankZeroOperator>(Z_p->zFacKappa());
+        std::shared_ptr<RankZeroOperator> inv_Z_p = std::make_shared<RankZeroOperator>(Z_p->invKappa());
         F.getZoraOperator() = Z_p;
         F.getSqrtZora() = sqrt_Z_p;
         F.getModZora() = mod_Z_p;
+        F.getScaledZora() = scaled_Z_p;
+        F.getInvZora() = inv_Z_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////

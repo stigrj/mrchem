@@ -64,9 +64,10 @@ void FockOperator::build(double exx) {
         }
     }
 
-    this->sqrt_zora = RankZeroOperator();
     if (this->sqrt_vz != nullptr) this->sqrt_zora += (*this->sqrt_vz);
     if (this->mod_vz != nullptr) this->mod_zora += (*this->mod_vz);
+    if (this->scaled_vz != nullptr) this->scaled_zora += (*this->scaled_vz);
+    if (this->inv_vz != nullptr) this->inv_zora += (*this->inv_vz);
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -96,8 +97,14 @@ void FockOperator::setup(double prec) {
     this->kinetic().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
+    
+    if (isZora()) {
     this->sqrt_zora_pot().setup(prec);
     this->mod_zora_pot().setup(prec);
+    this->scaled_zora_pot().setup(prec);
+    this->inv_zora_pot().setup(prec);
+    this->zora().setup(prec);
+    };
     t_tot.stop();
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_tot);
@@ -112,8 +119,14 @@ void FockOperator::clear() {
     this->kinetic().clear();
     this->potential().clear();
     this->perturbation().clear();
+    
+    if (isZora()) {
     this->sqrt_zora_pot().clear();
     this->mod_zora_pot().clear();
+    this->scaled_zora_pot().clear();
+    this->inv_zora_pot().clear();
+    this->zora().clear();
+    };
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -206,7 +219,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
                 }
             case 2:  // Using transformed orbitals, Florian Bischoff
                 {
-                RankZeroOperator sqrtK(this->sqrt_zora_pot());
+                RankZeroOperator sqrtK = this->sqrt_zora_pot();
                 RankZeroOperator modK = this->mod_zora_pot();
 
                 OrbitalVector kKet = sqrtK(ket);
@@ -238,7 +251,7 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-// Take 1 in notes on Overleaf
+// Take 2 in notes on Overleaf
 RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
     RankZeroOperator O;
     RankZeroOperator &V = this->potential();
@@ -256,4 +269,55 @@ RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
     O.setup(prec);
     return O + V;
 }
+
+// Take 3 in notes on Overleaf
+OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, ComplexMatrix &F_mat) {
+    RankZeroOperator &V = this->potential();
+    ZoraOperator &kappa = this->zora();
+    RankZeroOperator &zfacKappa = this->scaled_zora_pot();
+    RankZeroOperator &divKappa = this->mod_zora_pot();
+    RankZeroOperator &sqKappa = this->sqrt_zora_pot();
+    RankZeroOperator &invKappa = this->inv_zora_pot();
+
+    // Compute transformed orbitals scaled by diagonal Fock elements
+    OrbitalVector epsPhi = orbital::deep_copy(Phi);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (not mpi::my_orb(epsPhi[i])) continue;
+        epsPhi[i].rescale(F_mat.real()(i,i));
+    };
+
+    // Compute OrbitalVectors
+    OrbitalVector termOne = divKappa(Phi);
+    OrbitalVector termTwo = (V * invKappa)(Phi);
+    OrbitalVector termThree = zfacKappa(epsPhi);
+
+    // Compute invKappa(Psi)
+    OrbitalVector termFour = invKappa(Psi);
+
+    // Add up all the terms
+    OrbitalVector out = orbital::deep_copy(termTwo);
+    for (int i = 0; i < out.size(); i++) {
+        if (not mpi::my_orb(out[i])) continue;
+        out[i].add(0.5, termOne[i]);
+        out[i].add(1.0, termThree[i]);
+        out[i].add(-1.0, termFour[i]);
+    };
+    return out;
+}
+
+OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
+    RankZeroOperator &V = this->potential();
+
+    // Compute OrbitalVectors
+    OrbitalVector termOne = V(Phi);
+
+    // Add up all the terms
+    OrbitalVector out = orbital::deep_copy(termOne);
+    for (int i = 0; i < out.size(); i++) {
+        if (not mpi::my_orb(out[i])) continue;
+        out[i].add(-1.0, Psi[i]);
+    };
+    return out;
+}
+
 } // namespace mrchem

@@ -62,6 +62,8 @@ public:
     RankZeroOperator &perturbation() { return this->H_1; }
     RankZeroOperator &sqrt_zora_pot() { return this->sqrt_zora; }
     RankZeroOperator &mod_zora_pot() { return this->mod_zora; }
+    RankZeroOperator &scaled_zora_pot() { return this->scaled_zora; }
+    RankZeroOperator &inv_zora_pot() { return this->inv_zora; }
 
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -73,6 +75,8 @@ public:
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
     std::shared_ptr<RankZeroOperator> &getSqrtZora() { return this->sqrt_vz; }
     std::shared_ptr<RankZeroOperator> &getModZora() { return this->mod_vz; }
+    std::shared_ptr<RankZeroOperator> &getScaledZora() { return this->scaled_vz; }
+    std::shared_ptr<RankZeroOperator> &getInvZora() { return this->inv_vz; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -86,6 +90,8 @@ public:
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
     RankZeroOperator buildHelmholtzArgumentOperator(double prec);
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, ComplexMatrix &F_mat);
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);
 
     using RankZeroOperator::operator();
     using RankZeroOperator::dagger;
@@ -97,6 +103,8 @@ private:
     RankZeroOperator H_1;     ///< Perturbation operators
     RankZeroOperator sqrt_zora;
     RankZeroOperator mod_zora;
+    RankZeroOperator scaled_zora;
+    RankZeroOperator inv_zora;
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<ZoraOperator> vz{nullptr};
@@ -106,8 +114,10 @@ private:
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};       ///< Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr}; ///< Total external potential
-    std::shared_ptr<RankZeroOperator> sqrt_vz{nullptr};
-    std::shared_ptr<RankZeroOperator> mod_vz{nullptr};
+    std::shared_ptr<RankZeroOperator> sqrt_vz{nullptr};  // square root of zora potential
+    std::shared_ptr<RankZeroOperator> mod_vz{nullptr};  // divSqrtKappa / sqrtKappa
+    std::shared_ptr<RankZeroOperator> scaled_vz{nullptr};  // zora pot scaled by 1/2c^2
+    std::shared_ptr<RankZeroOperator> inv_vz{nullptr};  // inverse zora potential
 };
 
 } // namespace mrchem
