@@ -90,7 +90,7 @@ public:
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
     RankZeroOperator buildHelmholtzArgumentOperator(double prec);
-    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, ComplexMatrix &F_mat);
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps);
     OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);
 
     using RankZeroOperator::operator();

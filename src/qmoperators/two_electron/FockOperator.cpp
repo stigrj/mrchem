@@ -105,6 +105,7 @@ void FockOperator::setup(double prec) {
     this->inv_zora_pot().setup(prec);
     this->zora().setup(prec);
     };
+
     t_tot.stop();
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_tot);
@@ -271,7 +272,8 @@ RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
 }
 
 // Take 3 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, ComplexMatrix &F_mat) {
+OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps) {
+    // Get necessary operators
     RankZeroOperator &V = this->potential();
     ZoraOperator &kappa = this->zora();
     RankZeroOperator &zfacKappa = this->scaled_zora_pot();
@@ -281,17 +283,15 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
 
     // Compute transformed orbitals scaled by diagonal Fock elements
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (int i = 0; i < epsPhi.size(); i++) {
         if (not mpi::my_orb(epsPhi[i])) continue;
-        epsPhi[i].rescale(F_mat.real()(i,i));
+        epsPhi[i].rescale(eps[i]);
     };
 
     // Compute OrbitalVectors
     OrbitalVector termOne = divKappa(Phi);
     OrbitalVector termTwo = (V * invKappa)(Phi);
     OrbitalVector termThree = zfacKappa(epsPhi);
-
-    // Compute invKappa(Psi)
     OrbitalVector termFour = invKappa(Psi);
 
     // Add up all the terms
@@ -306,6 +306,7 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
 }
 
 OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
+    // Get necessary operators
     RankZeroOperator &V = this->potential();
 
     // Compute OrbitalVectors
