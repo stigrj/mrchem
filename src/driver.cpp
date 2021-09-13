@@ -977,8 +977,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto sqrt_Z_p = std::make_shared<RankZeroOperator>(tmp);
 
         std::shared_ptr<RankZeroOperator> mod_Z_p = Z_p->divKappaOverSqKappa();
-        std::shared_ptr<RankZeroOperator> scaled_Z_p = std::make_shared<RankZeroOperator>(Z_p->zFacKappa());
-        std::shared_ptr<RankZeroOperator> inv_Z_p = std::make_shared<RankZeroOperator>(Z_p->invKappa());
+        auto scaled_Z_p = std::make_shared<RankZeroOperator>(Z_p->zFacKappa());
+        auto inv_Z_p = std::make_shared<RankZeroOperator>(Z_p->invKappa());
         F.getZoraOperator() = Z_p;
         F.getSqrtZora() = sqrt_Z_p;
         F.getModZora() = mod_Z_p;
