@@ -30,6 +30,7 @@
 #include "HelmholtzVector.h"
 #include "KAIN.h"
 
+#include "mrchem.h"
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
@@ -278,14 +279,23 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
         // Apply Helmholtz operator
         OrbitalVector Harg;
-        if (isZora) {
+        OrbitalVector Phi_np1;
+        if (F.getZoraOperator() != nullptr) {
             OrbitalVector tPhi_n = F.sqrt_zora_pot()(Phi_n);
             OrbitalVector tPsi = F.sqrt_zora_pot()(Psi);
-            Harg = F.buildHelmholtzArgument(tPhi_n, tPsi, F_mat);
+            
+            OrbitalVector tPhi_np1;
+            Harg = F.buildHelmholtzArgument(tPhi_n, tPsi, F_mat.real().diagonal());
+            tPhi_np1 = H(Harg);
+            
+            RankZeroOperator invSqK(F.zora().invSqKappa());
+            invSqK.setup(orb_prec);
+            Phi_np1 = invSqK(tPhi_np1);
+            invSqK.clear();
         } else {
             Harg = F.buildHelmholtzArgument(Phi_n, Psi);
-        }
-        OrbitalVector Phi_np1 = H(Harg);
+            Phi_np1 = H(Harg);
+        };
 
         // Clear operators
         Psi.clear();
