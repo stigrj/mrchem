@@ -40,8 +40,11 @@ public:
         : light_speed(c)
         , derivative(D) {
         auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
+        auto V_base = std::make_shared<QMPotential>(1, mpi_share);
         qmfunction::deep_copy(*V_zora, V);
-        
+        qmfunction::deep_copy(*V_base, V);
+        this->base_potential = V_base;
+
         // Re-map the ZORA function on the same grid as the input potential
         double zfac = 2.0 * c * c;
         auto zmap = [zfac](double val) -> double { return zfac / (zfac - val); };
@@ -55,6 +58,7 @@ public:
 };
 
 public:
+    std::shared_ptr<QMPotential> base_potential = std::make_shared<QMPotential>(1, false);
     double light_speed;
     std::shared_ptr<QMPotential> potential = std::make_shared<QMPotential>(1, false);
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
@@ -93,13 +97,13 @@ public:
         return O;
     }
 
-    RankZeroOperator zFacKappa() {
+    RankZeroOperator zFacVz() {
         double zfac = this->light_speed * this->light_speed * 2;
         auto map = [zfac](double val) -> double {return val / zfac; };
-        auto zfacV = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*zfacV, *(this->potential));
-        zfacV->real().map(map);
-        RankZeroOperator O(zfacV);
+        auto zfacVz = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*zfacVz, *(this->base_potential));
+        zfacVz->real().map(map);
+        RankZeroOperator O(zfacVz);
         return O;
     }
  
