@@ -122,11 +122,11 @@ void FockOperator::clear() {
     this->perturbation().clear();
     
     if (isZora()) {
-    this->sqrt_zora_pot().clear();
-    this->mod_zora_pot().clear();
-    this->scaled_zora_pot().clear();
-    this->inv_zora_pot().clear();
-    this->zora().clear();
+        this->sqrt_zora_pot().clear();
+        this->mod_zora_pot().clear();
+        this->scaled_zora_pot().clear();
+        this->inv_zora_pot().clear();
+        this->zora().clear();
     };
 }
 
@@ -274,12 +274,12 @@ RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
 // Take 3 in notes on Overleaf
 OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps) {
     // Get necessary operators
-    RankZeroOperator &V = this->potential();
-    ZoraOperator &kappa = this->zora();
-    RankZeroOperator &zfacKappa = this->scaled_zora_pot();
-    RankZeroOperator &divKappa = this->mod_zora_pot();
-    RankZeroOperator &sqKappa = this->sqrt_zora_pot();
-    RankZeroOperator &invKappa = this->inv_zora_pot();
+    RankZeroOperator &V = this->potential();                 // V
+    ZoraOperator &kappa = this->zora();                      // kappa
+    RankZeroOperator &zfacKappa = this->scaled_zora_pot();   // Vz / 2c^2
+    RankZeroOperator &divKappa = this->mod_zora_pot();       // div(sqrt(kappa)) / sqrt(kappa)
+    RankZeroOperator &sqKappa = this->sqrt_zora_pot();       // sqrt(kappa)
+    RankZeroOperator &invKappa = this->inv_zora_pot();       // 1 / kappa
 
     // Compute transformed orbitals scaled by diagonal Fock elements
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
@@ -289,16 +289,16 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
     };
 
     // Compute OrbitalVectors
-    OrbitalVector termOne = divKappa(Phi);
+    OrbitalVector termOne = (0.5 * divKappa)(Phi);
     OrbitalVector termTwo = (V * invKappa)(Phi);
     OrbitalVector termThree = zfacKappa(epsPhi);
     OrbitalVector termFour = invKappa(Psi);
 
     // Add up all the terms
-    OrbitalVector out = orbital::deep_copy(termTwo);
+    OrbitalVector out = orbital::deep_copy(termOne);
     for (int i = 0; i < out.size(); i++) {
         if (not mpi::my_orb(out[i])) continue;
-        out[i].add(0.5, termOne[i]);
+        out[i].add(1.0, termTwo[i]);
         out[i].add(1.0, termThree[i]);
         out[i].add(-1.0, termFour[i]);
     };
