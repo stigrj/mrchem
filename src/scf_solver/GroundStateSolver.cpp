@@ -284,9 +284,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
             OrbitalVector tPhi_n = F.sqrt_zora_pot()(Phi_n);
             OrbitalVector tPsi = F.sqrt_zora_pot()(Psi);
             
-            OrbitalVector tPhi_np1;
             Harg = F.buildHelmholtzArgument(tPhi_n, tPsi, F_mat.real().diagonal());
-            tPhi_np1 = H(Harg);
+            OrbitalVector tPhi_np1 = H(Harg);
             
             RankZeroOperator invSqK(F.zora().invSqKappa());
             invSqK.setup(orb_prec);
