@@ -55,6 +55,8 @@ class ReactionOperator;
 class FockOperator final : public RankZeroOperator {
 public:
     bool isZora() const { return (this->vz != nullptr); }
+    int zoraKineticAlgorithm;
+    int zoraTakeAlgorithm;
     ZoraOperator &zora() { return *this->vz; }
     MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &kinetic() { return this->T; }
@@ -89,9 +91,9 @@ public:
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
-    RankZeroOperator buildHelmholtzArgumentOperator(double prec);
-    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps);
-    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, double prec);       // ZORA Take 2
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps);  // ZORA Take 3
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);                    // NR
 
     using RankZeroOperator::operator();
     using RankZeroOperator::dagger;

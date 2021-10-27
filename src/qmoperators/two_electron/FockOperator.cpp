@@ -202,11 +202,10 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
-    int algo = 2;
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
-        switch (algo) {
+        switch (this->zoraKineticAlgorithm) {
             case 0:  // The "straightforward" way
                 {
                 T_mat = qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
@@ -253,22 +252,36 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
 }
 
 // Take 2 in notes on Overleaf
-RankZeroOperator FockOperator::buildHelmholtzArgumentOperator(double prec) {
+OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
+    // Get necessary operators
     RankZeroOperator O;
     RankZeroOperator &V = this->potential();
-    if (isZora()) {
-        ZoraOperator &kappa = this->zora();
-        auto &diff = kappa.derivative;
-        NablaOperator nabla(diff);
-        KineticOperator T(diff);
-        IdentityOperator I;
-        RankOneOperator<3> dKappa = nabla(kappa);
+    ZoraOperator &kappa = this->zora();
+    auto &diff = kappa.derivative;
+    NablaOperator nabla(diff);
+    KineticOperator T(diff);
+    IdentityOperator I;
+    RankOneOperator<3> dKappa = nabla(kappa);
 
-        O += (kappa - I) * T;
-        O += -0.5 * tensor::dot(dKappa, nabla);
-    }
+    // Construct and set up
+    O += (kappa - I) * T;
+    O += -0.5 * tensor::dot(dKappa, nabla);
+    O += V;
     O.setup(prec);
-    return O + V;
+
+    // Apply on orbitals
+    OrbitalVector termOne = O(Phi);
+
+    // Add Psi
+    OrbitalVector out = orbital::deep_copy(termOne);
+    for (int i = 0; i < out.size(); i++) {
+        if (not mpi::my_orb(out[i])) continue;
+        out[i].add(1.0, Psi[i]);
+    };
+
+    // Clear operator
+    O.clear();
+    return out;
 }
 
 // Take 3 in notes on Overleaf
@@ -300,7 +313,7 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
         if (not mpi::my_orb(out[i])) continue;
         out[i].add(1.0, termTwo[i]);
         out[i].add(1.0, termThree[i]);
-        out[i].add(-1.0, termFour[i]);
+        out[i].add(1.0, termFour[i]);
     };
     return out;
 }
@@ -316,7 +329,7 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
     OrbitalVector out = orbital::deep_copy(termOne);
     for (int i = 0; i < out.size(); i++) {
         if (not mpi::my_orb(out[i])) continue;
-        out[i].add(-1.0, Psi[i]);
+        out[i].add(1.0, Psi[i]);
     };
     return out;
 }
