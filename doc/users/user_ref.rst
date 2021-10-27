@@ -268,7 +268,7 @@ User input reference
   
     **Type** ``str``
   
-    **Default** ``abgv_55``
+    **Default** ``abgv_00``
   
  :Molecule: Define molecule. 
 
@@ -326,11 +326,17 @@ User input reference
   
     **Default** ``-1.0``
   
-   :dev_prefactors: Select which ZORA operators to include in Helmholtz evaluation. 1st element: (I - kappa) * T 2nd element: -0.5 * dot(dkappa, nabla) [0, 0]: Identical to NR calculation 
+   :kinetic_algorithm: Algorithms for kinetic energy operator expectation value 
   
-    **Type** ``List[int]``
+    **Type** ``int``
   
-    **Default** ``[1, 1]``
+    **Default** ``0``
+  
+   :take_algorithm: Algorithms for Take2 and Take3 in Overleaf notes. 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
   
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
