@@ -966,6 +966,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
         double c = json_fock["zora_operator"]["light_speed"];
+        int algo_kinetic = json_fock["zora_operator"]["kinetic_algorithm"];
+        int algo_take = json_fock["zora_operator"]["take_algorithm"];
+
         if (c <= 0.0) c = PHYSCONST::alpha_inv;
         auto shared_memory = json_fock["zora_operator"]["shared_memory"];
         auto zora_diff = json_fock["zora_operator"]["derivative"];
@@ -984,6 +987,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         F.getModZora() = mod_Z_p;
         F.getScaledZora() = scaled_Z_p;
         F.getInvZora() = inv_Z_p;
+
+        F.zoraKineticAlgorithm = algo_kinetic;
+        F.zoraTakeAlgorithm = algo_take;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////
