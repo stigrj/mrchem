@@ -68,6 +68,7 @@ void FockOperator::build(double exx) {
     if (this->mod_vz != nullptr) this->mod_zora += (*this->mod_vz);
     if (this->scaled_vz != nullptr) this->scaled_zora += (*this->scaled_vz);
     if (this->inv_vz != nullptr) this->inv_zora += (*this->inv_vz);
+    if (this->one_minus_vz != nullptr) this->one_minus_zora += *(this->one_minus_vz);
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -103,6 +104,7 @@ void FockOperator::setup(double prec) {
     this->mod_zora_pot().setup(prec);
     this->scaled_zora_pot().setup(prec);
     this->inv_zora_pot().setup(prec);
+    this->one_minus_zora_pot().setup(prec);
     this->zora().setup(prec);
     };
 
@@ -126,6 +128,7 @@ void FockOperator::clear() {
         this->mod_zora_pot().clear();
         this->scaled_zora_pot().clear();
         this->inv_zora_pot().clear();
+        this->one_minus_zora_pot().clear();
         this->zora().clear();
     };
 }
@@ -234,6 +237,11 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
                 T_mat = T_1 + 0.5 * T_2;
                 break;
                 }
+            case 3:  // Using 1-kappa (to be used with Take 4)
+                {
+                T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket) - qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
+                break;
+                }
         }
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
@@ -252,7 +260,7 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
 }
 
 // Take 2 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
+OrbitalVector FockOperator::buildHelmholtzArgumentTake2(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
     // Get necessary operators
     RankZeroOperator O;
     RankZeroOperator &V = this->potential();
@@ -285,7 +293,7 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
 }
 
 // Take 3 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps) {
+OrbitalVector FockOperator::buildHelmholtzArgumentTake3(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps) {
     // Get necessary operators
     RankZeroOperator &V = this->potential();                 // V
     ZoraOperator &kappa = this->zora();                      // kappa
@@ -315,6 +323,38 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
         out[i].add(1.0, termThree[i]);
         out[i].add(1.0, termFour[i]);
     };
+    return out;
+}
+
+// Take 4 in notes on Overleaf
+OrbitalVector FockOperator::buildHelmholtzArgumentTake4(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
+    // Get necessary operators
+    RankZeroOperator O;
+    RankZeroOperator &V = this->potential();
+    RankZeroOperator &omk = this->one_minus_zora_pot();
+    auto &diff = this->zora().derivative;
+    NablaOperator nabla(diff);
+    KineticOperator T(diff);
+    RankOneOperator<3> dOmk = nabla(omk);
+
+    // Construct and set up
+    O += -1.0 * omk * T;
+    O += 0.5 * tensor::dot(dOmk, nabla);
+    O += V;
+    O.setup(prec);
+
+    // Apply on orbitals
+    OrbitalVector termOne = O(Phi);
+
+    // Add Psi
+    OrbitalVector out = orbital::deep_copy(termOne);
+    for (int i = 0; i < out.size(); i++) {
+        if (not mpi::my_orb(out[i])) continue;
+        out[i].add(1.0, Psi[i]);
+    };
+
+    // Clear operator
+    O.clear();
     return out;
 }
 

@@ -284,7 +284,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
             switch (F.zoraTakeAlgorithm) {
                 case 0:  // Take 2 in the notes
                     {
-                    Harg = F.buildHelmholtzArgument(Phi_n, Psi, orb_prec);
+                    Harg = F.buildHelmholtzArgumentTake2(Phi_n, Psi, orb_prec);
                     Phi_np1 = H(Harg);
                     break;
                     }
@@ -293,13 +293,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
                     OrbitalVector tPhi_n = F.sqrt_zora_pot()(Phi_n);
                     OrbitalVector tPsi = F.sqrt_zora_pot()(Psi);
                     
-                    Harg = F.buildHelmholtzArgument(tPhi_n, tPsi, F_mat.real().diagonal());
+                    Harg = F.buildHelmholtzArgumentTake3(tPhi_n, tPsi, F_mat.real().diagonal());
                     OrbitalVector tPhi_np1 = H(Harg);
                     
                     RankZeroOperator invSqK(F.zora().invSqKappa());
                     invSqK.setup(orb_prec);
                     Phi_np1 = invSqK(tPhi_np1);
                     invSqK.clear();
+                    break;
+                    }
+                case 2:  // Take 4 in the notes
+                    {
+                    Harg = F.buildHelmholtzArgumentTake4(Phi_n, Psi, orb_prec);
+                    Phi_np1 = H(Harg);
                     break;
                     }
             }

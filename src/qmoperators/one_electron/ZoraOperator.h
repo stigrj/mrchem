@@ -98,7 +98,7 @@ public:
     }
 
     RankZeroOperator zFacVz() {
-        double zfac = this->light_speed * this->light_speed * 2;
+        double zfac = this->light_speed * this->light_speed * 2.0;
         auto map = [zfac](double val) -> double {return val / zfac; };
         auto zfacVz = std::make_shared<QMPotential>(1, false);
         qmfunction::deep_copy(*zfacVz, *(this->base_potential));
@@ -113,6 +113,15 @@ public:
         divK->alloc(NUMBER::Real);
         mrcpp::divergence(divK->real(), *(this->derivative), gradK);
         return divK;
+    }
+    
+    RankZeroOperator oneMinusKappa(){
+        double zfac = this->light_speed * this->light_speed * 2.0;
+        auto map = [zfac](double val) -> double {return val / (val - zfac);};
+        auto omk = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*omk, *(this->base_potential));
+        RankZeroOperator O(omk);
+        return O;
     }
 };
 } // namespace mrchem
