@@ -120,6 +120,7 @@ public:
         auto map = [zfac](double val) -> double {return val / (val - zfac);};
         auto omk = std::make_shared<QMPotential>(1, false);
         qmfunction::deep_copy(*omk, *(this->base_potential));
+        omk->real().map(map);
         RankZeroOperator O(omk);
         return O;
     }
