@@ -66,9 +66,10 @@ void FockOperator::build(double exx) {
 
     if (this->sqrt_vz != nullptr) this->sqrt_zora += (*this->sqrt_vz);
     if (this->mod_vz != nullptr) this->mod_zora += (*this->mod_vz);
-    if (this->scaled_vz != nullptr) this->scaled_zora += (*this->scaled_vz);
+    if (this->vz_divby_2cc != nullptr) this->zora_divby_2cc += (*this->vz_divby_2cc);
     if (this->inv_vz != nullptr) this->inv_zora += (*this->inv_vz);
     if (this->one_minus_vz != nullptr) this->one_minus_zora += *(this->one_minus_vz);
+    if (this->grad_vz != nullptr) this->grad_zora = *(this->grad_vz);
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -100,12 +101,13 @@ void FockOperator::setup(double prec) {
     this->perturbation().setup(prec);
     
     if (isZora()) {
-    this->sqrt_zora_pot().setup(prec);
-    this->mod_zora_pot().setup(prec);
-    this->scaled_zora_pot().setup(prec);
-    this->inv_zora_pot().setup(prec);
-    this->one_minus_zora_pot().setup(prec);
-    this->zora().setup(prec);
+        this->zora().setup(prec);
+        this->sqrt_zora_pot().setup(prec);
+        this->mod_zora_pot().setup(prec);
+        this->zora_pot_divby_2cc().setup(prec);
+        this->inv_zora_pot().setup(prec);
+        this->one_minus_zora_pot().setup(prec);
+        this->grad_zora_pot().setup(prec);
     };
 
     t_tot.stop();
@@ -126,9 +128,10 @@ void FockOperator::clear() {
     if (isZora()) {
         this->sqrt_zora_pot().clear();
         this->mod_zora_pot().clear();
-        this->scaled_zora_pot().clear();
+        this->zora_pot_divby_2cc().clear();
         this->inv_zora_pot().clear();
         this->one_minus_zora_pot().clear();
+        this->grad_zora_pot().clear();
         this->zora().clear();
     };
 }
@@ -265,6 +268,44 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+// Take 1 in notes on Overleaf
+OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
+    // Get necessary operators
+    RankZeroOperator &V = this->potential();                   // V
+    ZoraOperator &kappa = this->zora();                        // kappa
+    RankZeroOperator &divby2cc = this->zora_pot_divby_2cc();   // Vz / 2c^2
+    RankZeroOperator &invKappa = this->inv_zora_pot();         // 1 / kappa
+    RankOneOperator<3> gradKappa = this->grad_zora_pot();      // gradient of kappa
+    
+    NablaOperator nabla(kappa.derivative);
+    nabla.setup(prec);
+
+    // Compute transformed orbitals scaled by diagonal Fock elements
+    OrbitalVector epsPhi = orbital::deep_copy(Phi);
+    for (int i = 0; i < epsPhi.size(); i++) {
+        if (not mpi::my_orb(epsPhi[i])) continue;
+        epsPhi[i].rescale(eps[i]);
+    };
+
+    // Compute OrbitalVectors
+    OrbitalVector termOne = (-0.5 * tensor::dot(gradKappa, nabla))(Phi);
+    OrbitalVector termTwo = V(Phi);
+    OrbitalVector termThree = (kappa * divby2cc)(epsPhi);
+
+    // Add up all the terms
+    OrbitalVector out = orbital::deep_copy(termOne);
+    for (int i = 0; i < out.size(); i++) {
+        if (not mpi::my_orb(out[i])) continue;
+        out[i].add(1.0, termTwo[i]);
+        out[i].add(1.0, termThree[i]);
+        out[i].add(1.0, Psi[i]);
+    };
+    
+    nabla.clear();
+    gradKappa.clear();
+    return invKappa(out);
+}
+
 // Take 2 in notes on Overleaf
 OrbitalVector FockOperator::buildHelmholtzArgumentTake2(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
     // Get necessary operators
@@ -301,12 +342,10 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake2(OrbitalVector &Phi, Orbi
 // Take 3 in notes on Overleaf
 OrbitalVector FockOperator::buildHelmholtzArgumentTake3(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps) {
     // Get necessary operators
-    RankZeroOperator &V = this->potential();                 // V
-    ZoraOperator &kappa = this->zora();                      // kappa
-    RankZeroOperator &zfacKappa = this->scaled_zora_pot();   // Vz / 2c^2
-    RankZeroOperator &divKappa = this->mod_zora_pot();       // div(sqrt(kappa)) / sqrt(kappa)
-    RankZeroOperator &sqKappa = this->sqrt_zora_pot();       // sqrt(kappa)
-    RankZeroOperator &invKappa = this->inv_zora_pot();       // 1 / kappa
+    RankZeroOperator &V = this->potential();                   // V
+    RankZeroOperator &divby2cc = this->zora_pot_divby_2cc();   // Vz / 2c^2
+    RankZeroOperator &divKappa = this->mod_zora_pot();         // div(sqrt(kappa)) / sqrt(kappa)
+    RankZeroOperator &invKappa = this->inv_zora_pot();         // 1 / kappa
 
     // Compute transformed orbitals scaled by diagonal Fock elements
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
@@ -318,7 +357,7 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake3(OrbitalVector &Phi, Orbi
     // Compute OrbitalVectors
     OrbitalVector termOne = (0.5 * divKappa)(Phi);
     OrbitalVector termTwo = (V * invKappa)(Phi);
-    OrbitalVector termThree = zfacKappa(epsPhi);
+    OrbitalVector termThree = divby2cc(epsPhi);
     OrbitalVector termFour = invKappa(Psi);
 
     // Add up all the terms

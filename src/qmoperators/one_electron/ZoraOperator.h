@@ -97,13 +97,13 @@ public:
         return O;
     }
 
-    RankZeroOperator zFacVz() {
+    RankZeroOperator Dividedby2cc() {
         double zfac = this->light_speed * this->light_speed * 2.0;
         auto map = [zfac](double val) -> double {return val / zfac; };
-        auto zfacVz = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*zfacVz, *(this->base_potential));
-        zfacVz->real().map(map);
-        RankZeroOperator O(zfacVz);
+        auto pot = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*pot, *(this->base_potential));
+        pot->real().map(map);
+        RankZeroOperator O(pot);
         return O;
     }
  
@@ -124,5 +124,12 @@ public:
         RankZeroOperator O(omk);
         return O;
     }
+    
+    RankOneOperator<3> gradKappa(){
+        NablaOperator nabla(this->derivative);
+        RankOneOperator<3> gradK = nabla(*this);
+        return gradK;
+    }
+
 };
 } // namespace mrchem

@@ -980,16 +980,18 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto sqrt_Z_p = std::make_shared<RankZeroOperator>(tmp);
 
         std::shared_ptr<RankZeroOperator> mod_Z_p = Z_p->divKappaOverSqKappa();
-        auto scaled_Z_p = std::make_shared<RankZeroOperator>(Z_p->zFacVz());
+        auto Z_p_divby_2cc = std::make_shared<RankZeroOperator>(Z_p->Dividedby2cc());
         auto inv_Z_p = std::make_shared<RankZeroOperator>(Z_p->invKappa());
         auto omk = std::make_shared<RankZeroOperator>(Z_p->oneMinusKappa());
+        auto grad_Z_p = std::make_shared<RankOneOperator<3>>(Z_p->gradKappa());
         
         F.getZoraOperator() = Z_p;
         F.getSqrtZora() = sqrt_Z_p;
         F.getModZora() = mod_Z_p;
-        F.getScaledZora() = scaled_Z_p;
+        F.getZoraDivby2cc() = Z_p_divby_2cc;
         F.getInvZora() = inv_Z_p;
         F.getOneMinusZoraPot() = omk;
+        F.getGradZoraPot() = grad_Z_p;
 
         F.zoraKineticAlgorithm = algo_kinetic;
         F.zoraTakeAlgorithm = algo_take;

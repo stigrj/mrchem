@@ -26,6 +26,7 @@
 #pragma once
 
 #include "tensor/RankZeroOperator.h"
+#include "tensor/RankOneOperator.h"
 #include "qmoperators/QMPotential.h"
 
 /** @class FockOperator
@@ -64,10 +65,11 @@ public:
     RankZeroOperator &perturbation() { return this->H_1; }
     RankZeroOperator &sqrt_zora_pot() { return this->sqrt_zora; }
     RankZeroOperator &mod_zora_pot() { return this->mod_zora; }
-    RankZeroOperator &scaled_zora_pot() { return this->scaled_zora; }
+    RankZeroOperator &zora_pot_divby_2cc() { return this->zora_divby_2cc; }
     RankZeroOperator &inv_zora_pot() { return this->inv_zora; }
     RankZeroOperator &one_minus_zora_pot() { return this->one_minus_zora; }
-
+    RankOneOperator<3> &grad_zora_pot() { return this->grad_zora; }
+    
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
@@ -78,9 +80,10 @@ public:
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
     std::shared_ptr<RankZeroOperator> &getSqrtZora() { return this->sqrt_vz; }
     std::shared_ptr<RankZeroOperator> &getModZora() { return this->mod_vz; }
-    std::shared_ptr<RankZeroOperator> &getScaledZora() { return this->scaled_vz; }
+    std::shared_ptr<RankZeroOperator> &getZoraDivby2cc() { return this->vz_divby_2cc; }
     std::shared_ptr<RankZeroOperator> &getInvZora() { return this->inv_vz; }
     std::shared_ptr<RankZeroOperator> &getOneMinusZoraPot() { return this->one_minus_vz; }
+    std::shared_ptr<RankOneOperator<3>> &getGradZoraPot() { return this->grad_vz; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -93,6 +96,7 @@ public:
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
+    OrbitalVector buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);  // ZORA Take 1
     OrbitalVector buildHelmholtzArgumentTake2(OrbitalVector &Phi, OrbitalVector &Psi, double prec);       // ZORA Take 2
     OrbitalVector buildHelmholtzArgumentTake3(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps);  // ZORA Take 3
     OrbitalVector buildHelmholtzArgumentTake4(OrbitalVector &Phi, OrbitalVector &Psi, double prec);       // ZORA Take 4
@@ -108,9 +112,10 @@ private:
     RankZeroOperator H_1;     ///< Perturbation operators
     RankZeroOperator sqrt_zora;
     RankZeroOperator mod_zora;
-    RankZeroOperator scaled_zora;
+    RankZeroOperator zora_divby_2cc;
     RankZeroOperator inv_zora;
     RankZeroOperator one_minus_zora;
+    RankOneOperator<3> grad_zora;
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<ZoraOperator> vz{nullptr};
@@ -122,9 +127,10 @@ private:
     std::shared_ptr<ElectricFieldOperator> ext{nullptr};     // Total external potential
     std::shared_ptr<RankZeroOperator> sqrt_vz{nullptr};      // square root of zora potential
     std::shared_ptr<RankZeroOperator> mod_vz{nullptr};       // divSqrtKappa / sqrtKappa
-    std::shared_ptr<RankZeroOperator> scaled_vz{nullptr};    // zora pot scaled by 1/2c^2
+    std::shared_ptr<RankZeroOperator> vz_divby_2cc{nullptr};    // zora pot scaled by 1/2c^2
     std::shared_ptr<RankZeroOperator> inv_vz{nullptr};       // inverse zora potential
     std::shared_ptr<RankZeroOperator> one_minus_vz{nullptr}; // one minus zora potential
+    std::shared_ptr<RankOneOperator<3>> grad_vz{nullptr};    // nabla(kappa)
 };
 
 } // namespace mrchem
