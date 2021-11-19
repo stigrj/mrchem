@@ -239,7 +239,13 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
                 }
             case 3:  // Using 1-kappa (to be used with Take 4)
                 {
-                T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket) - qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
+                ComplexMatrix T_nr = ComplexMatrix::Zero(bra.size(), ket.size());
+                ComplexMatrix T_zr = ComplexMatrix::Zero(bra.size(), ket.size());
+                
+                T_nr = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
+                T_zr = qmoperator::calc_kinetic_matrix(momentum(), one_minus_zora_pot(), bra, ket);
+                
+                T_mat = T_nr - T_zr;
                 break;
                 }
         }
