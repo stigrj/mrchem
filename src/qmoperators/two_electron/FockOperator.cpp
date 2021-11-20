@@ -275,10 +275,11 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
     ZoraOperator &kappa = this->zora();                        // kappa
     RankZeroOperator &divby2cc = this->zora_pot_divby_2cc();   // Vz / 2c^2
     RankZeroOperator &invKappa = this->inv_zora_pot();         // 1 / kappa
-    RankOneOperator<3> gradKappa = this->grad_zora_pot();      // gradient of kappa
-    
+    RankOneOperator<3> &gradKappa = this->grad_zora_pot();      // gradient of kappa
     NablaOperator nabla(kappa.derivative);
-    nabla.setup(prec);
+    RankZeroOperator gradKappaGrad = tensor::dot(gradKappa, nabla);
+    
+    gradKappaGrad.setup(prec);
 
     // Compute transformed orbitals scaled by diagonal Fock elements
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
@@ -288,7 +289,7 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
     };
 
     // Compute OrbitalVectors
-    OrbitalVector termOne = (-0.5 * tensor::dot(gradKappa, nabla))(Phi);
+    OrbitalVector termOne = (-0.5 * gradKappaGrad)(Phi);
     OrbitalVector termTwo = V(Phi);
     OrbitalVector termThree = (kappa * divby2cc)(epsPhi);
 
@@ -301,8 +302,7 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
         out[i].add(1.0, Psi[i]);
     };
     
-    nabla.clear();
-    gradKappa.clear();
+    gradKappaGrad.clear();
     return invKappa(out);
 }
 
