@@ -308,16 +308,6 @@ sections:
         default: -1.0
         docstring: |
           Adjust speed of light.
-      - name: kinetic_algorithm
-        type: int
-        default: 0
-        docstring: |
-          Algorithms for kinetic energy operator expectation value
-      - name: take_algorithm
-        type: int
-        default: 0
-        docstring: |
-          Algorithms for Take2 and Take3 in Overleaf notes.
   - name: DFT
     docstring: |
       Define the exchange-correlation functional in case of DFT.

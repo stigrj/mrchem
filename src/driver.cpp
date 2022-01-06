@@ -225,7 +225,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
-
     FockOperator F;
     const auto &json_fock = json_scf["fock_operator"];
     driver::build_fock_operator(json_fock, mol, F, 0);
@@ -966,35 +965,22 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
         double c = json_fock["zora_operator"]["light_speed"];
-        int algo_kinetic = json_fock["zora_operator"]["kinetic_algorithm"];
-        int algo_take = json_fock["zora_operator"]["take_algorithm"];
 
         if (c <= 0.0) c = PHYSCONST::alpha_inv;
         auto shared_memory = json_fock["zora_operator"]["shared_memory"];
         auto zora_diff = json_fock["zora_operator"]["derivative"];
         auto D_p = driver::get_derivative(zora_diff);
         auto &V_nuc = static_cast<QMPotential &>(F.getNuclearOperator()->getRaw(0, 0));
+        
         auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, D_p, shared_memory);
-
-        std::shared_ptr<QMPotential> tmp = Z_p->sqKappa();
-        auto sqrt_Z_p = std::make_shared<RankZeroOperator>(tmp);
-
-        std::shared_ptr<RankZeroOperator> mod_Z_p = Z_p->divKappaOverSqKappa();
-        auto Z_p_divby_2cc = std::make_shared<RankZeroOperator>(Z_p->Dividedby2cc());
-        auto inv_Z_p = std::make_shared<RankZeroOperator>(Z_p->invKappa());
-        auto omk = std::make_shared<RankZeroOperator>(Z_p->oneMinusKappa());
-        auto grad_Z_p = std::make_shared<RankOneOperator<3>>(Z_p->gradKappa());
+        auto kappa_inv = std::make_shared<RankZeroOperator>(Z_p->kappa_pot_inv());
+        auto base_over_2cc = std::make_shared<RankZeroOperator>(Z_p->base_pot_over_2cc());
+        auto kappa_grad = std::make_shared<RankOneOperator<3>>(Z_p->kappa_pot_grad());
         
         F.getZoraOperator() = Z_p;
-        F.getSqrtZora() = sqrt_Z_p;
-        F.getModZora() = mod_Z_p;
-        F.getZoraDivby2cc() = Z_p_divby_2cc;
-        F.getInvZora() = inv_Z_p;
-        F.getOneMinusZoraPot() = omk;
-        F.getGradZoraPot() = grad_Z_p;
-
-        F.zoraKineticAlgorithm = algo_kinetic;
-        F.zoraTakeAlgorithm = algo_take;
+        F.getZoraOver2cc() = base_over_2cc;
+        F.getZoraInv() = kappa_inv;
+        F.getZoraGrad() = kappa_grad;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////

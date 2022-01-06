@@ -326,18 +326,6 @@ User input reference
   
     **Default** ``-1.0``
   
-   :kinetic_algorithm: Algorithms for kinetic energy operator expectation value 
-  
-    **Type** ``int``
-  
-    **Default** ``0``
-  
-   :take_algorithm: Algorithms for Take2 and Take3 in Overleaf notes. 
-  
-    **Type** ``int``
-  
-    **Default** ``0``
-  
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
   :red:`Keywords`

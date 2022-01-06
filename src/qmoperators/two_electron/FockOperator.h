@@ -56,19 +56,14 @@ class ReactionOperator;
 class FockOperator final : public RankZeroOperator {
 public:
     bool isZora() const { return (this->vz != nullptr); }
-    int zoraKineticAlgorithm;
-    int zoraTakeAlgorithm;
     ZoraOperator &zora() { return *this->vz; }
     MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &kinetic() { return this->T; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
-    RankZeroOperator &sqrt_zora_pot() { return this->sqrt_zora; }
-    RankZeroOperator &mod_zora_pot() { return this->mod_zora; }
-    RankZeroOperator &zora_pot_divby_2cc() { return this->zora_divby_2cc; }
-    RankZeroOperator &inv_zora_pot() { return this->inv_zora; }
-    RankZeroOperator &one_minus_zora_pot() { return this->one_minus_zora; }
-    RankOneOperator<3> &grad_zora_pot() { return this->grad_zora; }
+    RankZeroOperator &zora_pot_over_2cc() { return this->zora_over_2cc; }
+    RankZeroOperator &zora_pot_inv() { return this->zora_inv; }
+    RankOneOperator<3> &zora_pot_grad() { return this->zora_grad; }
     
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -78,12 +73,9 @@ public:
     std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->vz; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
-    std::shared_ptr<RankZeroOperator> &getSqrtZora() { return this->sqrt_vz; }
-    std::shared_ptr<RankZeroOperator> &getModZora() { return this->mod_vz; }
-    std::shared_ptr<RankZeroOperator> &getZoraDivby2cc() { return this->vz_divby_2cc; }
-    std::shared_ptr<RankZeroOperator> &getInvZora() { return this->inv_vz; }
-    std::shared_ptr<RankZeroOperator> &getOneMinusZoraPot() { return this->one_minus_vz; }
-    std::shared_ptr<RankOneOperator<3>> &getGradZoraPot() { return this->grad_vz; }
+    std::shared_ptr<RankZeroOperator> &getZoraOver2cc() { return this->vz_over_2cc; }
+    std::shared_ptr<RankZeroOperator> &getZoraInv() { return this->vz_inv; }
+    std::shared_ptr<RankOneOperator<3>> &getZoraGrad() { return this->vz_grad; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -97,10 +89,7 @@ public:
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
     OrbitalVector buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);  // ZORA Take 1
-    OrbitalVector buildHelmholtzArgumentTake2(OrbitalVector &Phi, OrbitalVector &Psi, double prec);       // ZORA Take 2
-    OrbitalVector buildHelmholtzArgumentTake3(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps);  // ZORA Take 3
-    OrbitalVector buildHelmholtzArgumentTake4(OrbitalVector &Phi, OrbitalVector &Psi, double prec);       // ZORA Take 4
-    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);                    // NR
+    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);                                      // NR
 
     using RankZeroOperator::operator();
     using RankZeroOperator::dagger;
@@ -110,27 +99,21 @@ private:
     RankZeroOperator T;       ///< Total kinetic energy operator
     RankZeroOperator V;       ///< Total potential energy operator
     RankZeroOperator H_1;     ///< Perturbation operators
-    RankZeroOperator sqrt_zora;
-    RankZeroOperator mod_zora;
-    RankZeroOperator zora_divby_2cc;
-    RankZeroOperator inv_zora;
-    RankZeroOperator one_minus_zora;
-    RankOneOperator<3> grad_zora;
+    RankZeroOperator zora_over_2cc;
+    RankZeroOperator zora_inv;
+    RankOneOperator<3> zora_grad;
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
-    std::shared_ptr<ZoraOperator> vz{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
     std::shared_ptr<CoulombOperator> coul{nullptr};
     std::shared_ptr<ExchangeOperator> ex{nullptr};
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};           // Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr};     // Total external potential
-    std::shared_ptr<RankZeroOperator> sqrt_vz{nullptr};      // square root of zora potential
-    std::shared_ptr<RankZeroOperator> mod_vz{nullptr};       // divSqrtKappa / sqrtKappa
-    std::shared_ptr<RankZeroOperator> vz_divby_2cc{nullptr};    // zora pot scaled by 1/2c^2
-    std::shared_ptr<RankZeroOperator> inv_vz{nullptr};       // inverse zora potential
-    std::shared_ptr<RankZeroOperator> one_minus_vz{nullptr}; // one minus zora potential
-    std::shared_ptr<RankOneOperator<3>> grad_vz{nullptr};    // nabla(kappa)
+    std::shared_ptr<ZoraOperator> vz{nullptr};               // ZORA operator
+    std::shared_ptr<RankZeroOperator> vz_over_2cc{nullptr};  // zora pot scaled by 1/2c^2
+    std::shared_ptr<RankZeroOperator> vz_inv{nullptr};       // inverse zora potential
+    std::shared_ptr<RankOneOperator<3>> vz_grad{nullptr};    // nabla(kappa)
 };
 
 } // namespace mrchem

@@ -39,97 +39,60 @@ public:
     ZoraOperator(QMPotential &V, double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false) 
         : light_speed(c)
         , derivative(D) {
-        auto V_zora = std::make_shared<QMPotential>(1, mpi_share);
-        auto V_base = std::make_shared<QMPotential>(1, mpi_share);
-        qmfunction::deep_copy(*V_zora, V);
-        qmfunction::deep_copy(*V_base, V);
-        this->base_potential = V_base;
-
-        // Re-map the ZORA function on the same grid as the input potential
-        double zfac = 2.0 * c * c;
-        auto zmap = [zfac](double val) -> double { return zfac / (zfac - val); };
-        V_zora->real().map(zmap);
-        this->potential = V_zora;
-
-        // Invoke operator= to assign *this operator
-        RankZeroOperator &O = (*this);
-        O = V_zora;
-        O.name() = "V_zora";
-};
-
+            // Construct pointers
+            auto vz = std::make_shared<QMPotential>(1, mpi_share);
+            auto vz_inv = std::make_shared<QMPotential>(1, mpi_share);
+            auto base_2cc = std::make_shared<QMPotential>(1, mpi_share);
+            
+            double twocc = this->two_cc();
+            
+            // Compute potentials that depend on base
+            qmfunction::deep_copy(*vz, V);
+            qmfunction::deep_copy(*base_2cc, V);
+            
+            auto map_vz = [twocc](double val) -> double { return twocc / (twocc - val); };
+            auto map_base_over_2cc = [twocc](double val) -> double { val / twocc; };
+            
+            vz->real().map(map_vz);
+            base_2cc->real().map(map_base_over_2cc);
+            
+            // Compute inverse kappa potential
+            qmfunction::deep_copy(*vz_inv, *vz);
+            auto map_vz_inv = [twocc](double val) -> double { return 1.0 / val; };
+            vz_inv->real().map(map_vz_inv);
+            
+            // Assign potentials to members
+            this->kappa_inv = vz_inv;
+            this->base_over_2cc = base_2cc;
+            
+            // Invoke operator= to assign *this operator
+            RankZeroOperator &O = (*this);
+            O = vz;
+            O.name() = "V_zora";
+            
+            // Compute and assign gradient of kappa
+            NablaOperator nabla(this->derivative);
+            RankOneOperator<3> kappa_grad = nabla(*this);
+            this->kappa_grad = std::make_shared<RankOneOperator<3>>(kappa_grad);
+            
+            // Set operator names
+            this->kappa_inv->real().setName("ZORA_inverse");
+            this->base_over_2cc->real().setName("ZORA_base_over_2cc");
+    };
+    
 public:
-    std::shared_ptr<QMPotential> base_potential = std::make_shared<QMPotential>(1, false);
     double light_speed;
-    std::shared_ptr<QMPotential> potential = std::make_shared<QMPotential>(1, false);
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
-
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
+    std::shared_ptr<RankOneOperator<3>> kappa_grad;
+    std::shared_ptr<QMPotential> kappa_inv{nullptr};
+    std::shared_ptr<QMPotential> base_over_2cc{nullptr}; 
+    
 public:
-    std::shared_ptr<RankZeroOperator> divKappaOverSqKappa() {
-        RankZeroOperator A(this->invSqKappa());
-        RankZeroOperator B(this->divSqKappa());
-        RankZeroOperator prod = A * B;
-        auto out = std::make_shared<RankZeroOperator>(prod);
-        return out;
-        }
-
-    std::shared_ptr<QMPotential> sqKappa() {
-        auto srmap = [](double val) -> double {return std::sqrt(val); };
-        auto sq_V_zora = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*sq_V_zora, *(this->potential));
-        sq_V_zora->real().map(srmap);
-        return sq_V_zora;
-    }
-
-    std::shared_ptr<QMPotential> invSqKappa() {
-        auto srmap = [](double val) -> double {return 1.0 / std::sqrt(val); };
-        auto inv_sq_V_zora = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*inv_sq_V_zora, *(this->potential));
-        inv_sq_V_zora->real().map(srmap);
-        return inv_sq_V_zora;
-    }
-
-    RankZeroOperator invKappa() {
-        auto map = [](double val) -> double {return 1.0 / val; };
-        auto inv_V_zora = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*inv_V_zora, *(this->potential));
-        inv_V_zora->real().map(map);
-        RankZeroOperator O(inv_V_zora);
-        return O;
-    }
-
-    RankZeroOperator Dividedby2cc() {
-        double zfac = this->light_speed * this->light_speed * 2.0;
-        auto map = [zfac](double val) -> double {return val / zfac; };
-        auto pot = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*pot, *(this->base_potential));
-        pot->real().map(map);
-        RankZeroOperator O(pot);
-        return O;
-    }
+    double two_cc() { return 2.0 * this->light_speed * this->light_speed; }
+    RankZeroOperator kappa_pot_inv() { return RankZeroOperator(this->kappa_inv); }
+    RankZeroOperator base_pot_over_2cc() { return RankZeroOperator(this->base_over_2cc); }
+    RankOneOperator<3> kappa_pot_grad() { return *(this->kappa_grad); }
  
-    std::shared_ptr<QMPotential> divSqKappa() {
-        mrcpp::FunctionTreeVector<3> gradK = mrcpp::gradient(*(this->derivative), this->sqKappa()->real());
-        auto divK = std::make_shared<QMPotential>(1, false);
-        divK->alloc(NUMBER::Real);
-        mrcpp::divergence(divK->real(), *(this->derivative), gradK);
-        return divK;
-    }
-    
-    RankZeroOperator oneMinusKappa(){
-        double zfac = this->light_speed * this->light_speed * 2.0;
-        auto map = [zfac](double val) -> double {return val / (val - zfac);};
-        auto omk = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*omk, *(this->base_potential));
-        omk->real().map(map);
-        RankZeroOperator O(omk);
-        return O;
-    }
-    
-    RankOneOperator<3> gradKappa(){
-        NablaOperator nabla(this->derivative);
-        RankOneOperator<3> gradK = nabla(*this);
-        return gradK;
-    }
-
 };
+   
 } // namespace mrchem

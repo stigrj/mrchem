@@ -64,12 +64,9 @@ void FockOperator::build(double exx) {
         }
     }
 
-    if (this->sqrt_vz != nullptr) this->sqrt_zora += (*this->sqrt_vz);
-    if (this->mod_vz != nullptr) this->mod_zora += (*this->mod_vz);
-    if (this->vz_divby_2cc != nullptr) this->zora_divby_2cc += (*this->vz_divby_2cc);
-    if (this->inv_vz != nullptr) this->inv_zora += (*this->inv_vz);
-    if (this->one_minus_vz != nullptr) this->one_minus_zora += *(this->one_minus_vz);
-    if (this->grad_vz != nullptr) this->grad_zora = *(this->grad_vz);
+    if (this->vz_over_2cc != nullptr) this->zora_over_2cc = (*this->vz_over_2cc);
+    if (this->vz_inv != nullptr) this->zora_inv = (*this->vz_inv);
+    if (this->vz_grad != nullptr) this->zora_grad = *(this->vz_grad);
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -102,12 +99,9 @@ void FockOperator::setup(double prec) {
     
     if (isZora()) {
         this->zora().setup(prec);
-        this->sqrt_zora_pot().setup(prec);
-        this->mod_zora_pot().setup(prec);
-        this->zora_pot_divby_2cc().setup(prec);
-        this->inv_zora_pot().setup(prec);
-        this->one_minus_zora_pot().setup(prec);
-        this->grad_zora_pot().setup(prec);
+        this->zora_pot_over_2cc().setup(prec);
+        this->zora_pot_inv().setup(prec);
+        this->zora_pot_grad().setup(prec);
     };
 
     t_tot.stop();
@@ -126,13 +120,10 @@ void FockOperator::clear() {
     this->perturbation().clear();
     
     if (isZora()) {
-        this->sqrt_zora_pot().clear();
-        this->mod_zora_pot().clear();
-        this->zora_pot_divby_2cc().clear();
-        this->inv_zora_pot().clear();
-        this->one_minus_zora_pot().clear();
-        this->grad_zora_pot().clear();
         this->zora().clear();
+        this->zora_pot_over_2cc().clear();
+        this->zora_pot_inv().clear();
+        this->zora_pot_grad().clear();
     };
 }
 
@@ -211,47 +202,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
-        switch (this->zoraKineticAlgorithm) {
-            case 0:  // The "straightforward" way
-                {
-                T_mat = qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
-                break;
-                }
-            case 1:  // Trying to exploit symmetry in laplacian operator
-                {
-                RankZeroOperator sqrtK(this->sqrt_zora_pot());
-                T_mat = qmoperator::calc_kinetic_matrix_symmetrized(momentum(), sqrtK, bra, ket);
-                break;
-                }
-            case 2:  // Using transformed orbitals, Florian Bischoff
-                {
-                RankZeroOperator sqrtK = this->sqrt_zora_pot();
-                RankZeroOperator modK = this->mod_zora_pot();
-
-                OrbitalVector kKet = sqrtK(ket);
-                OrbitalVector kBra = sqrtK(bra);
-
-                ComplexMatrix T_1 = ComplexMatrix::Zero(kBra.size(), kKet.size());
-                ComplexMatrix T_2 = ComplexMatrix::Zero(kBra.size(), kKet.size());
-                
-                T_1 = qmoperator::calc_kinetic_matrix(momentum(), kBra, kKet);
-                T_2 = modK(kBra, kKet);
-
-                T_mat = T_1 + 0.5 * T_2;
-                break;
-                }
-            case 3:  // Using 1-kappa (to be used with Take 4)
-                {
-                ComplexMatrix T_nr = ComplexMatrix::Zero(bra.size(), ket.size());
-                ComplexMatrix T_zr = ComplexMatrix::Zero(bra.size(), ket.size());
-                
-                T_nr = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
-                T_zr = qmoperator::calc_kinetic_matrix(momentum(), one_minus_zora_pot(), bra, ket);
-                
-                T_mat = T_nr - T_zr;
-                break;
-                }
-        }
+        T_mat = qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
@@ -273,12 +224,11 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
     // Get necessary operators
     RankZeroOperator &V = this->potential();                   // V
     ZoraOperator &kappa = this->zora();                        // kappa
-    RankZeroOperator &divby2cc = this->zora_pot_divby_2cc();   // Vz / 2c^2
-    RankZeroOperator &invKappa = this->inv_zora_pot();         // 1 / kappa
-    RankOneOperator<3> &gradKappa = this->grad_zora_pot();      // gradient of kappa
+    RankZeroOperator &divby2cc = this->zora_pot_over_2cc();    // Vz / 2c^2
+    RankZeroOperator &invKappa = this->zora_pot_inv();         // 1 / kappa
+    RankOneOperator<3> &gradKappa = this->zora_pot_grad();     // gradient of kappa
     NablaOperator nabla(kappa.derivative);
     RankZeroOperator gradKappaGrad = tensor::dot(gradKappa, nabla);
-    
     gradKappaGrad.setup(prec);
 
     // Compute transformed orbitals scaled by diagonal Fock elements
@@ -306,103 +256,7 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
     return invKappa(out);
 }
 
-// Take 2 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgumentTake2(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
-    // Get necessary operators
-    RankZeroOperator O;
-    RankZeroOperator &V = this->potential();
-    ZoraOperator &kappa = this->zora();
-    auto &diff = kappa.derivative;
-    NablaOperator nabla(diff);
-    KineticOperator T(diff);
-    IdentityOperator I;
-    RankOneOperator<3> dKappa = nabla(kappa);
-
-    // Construct and set up
-    O += (kappa - I) * T;
-    O += -0.5 * tensor::dot(dKappa, nabla);
-    O += V;
-    O.setup(prec);
-
-    // Apply on orbitals
-    OrbitalVector termOne = O(Phi);
-
-    // Add Psi
-    OrbitalVector out = orbital::deep_copy(termOne);
-    for (int i = 0; i < out.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
-        out[i].add(1.0, Psi[i]);
-    };
-
-    // Clear operator
-    O.clear();
-    return out;
-}
-
-// Take 3 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgumentTake3(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps) {
-    // Get necessary operators
-    RankZeroOperator &V = this->potential();                   // V
-    RankZeroOperator &divby2cc = this->zora_pot_divby_2cc();   // Vz / 2c^2
-    RankZeroOperator &divKappa = this->mod_zora_pot();         // div(sqrt(kappa)) / sqrt(kappa)
-    RankZeroOperator &invKappa = this->inv_zora_pot();         // 1 / kappa
-
-    // Compute transformed orbitals scaled by diagonal Fock elements
-    OrbitalVector epsPhi = orbital::deep_copy(Phi);
-    for (int i = 0; i < epsPhi.size(); i++) {
-        if (not mpi::my_orb(epsPhi[i])) continue;
-        epsPhi[i].rescale(eps[i]);
-    };
-
-    // Compute OrbitalVectors
-    OrbitalVector termOne = (0.5 * divKappa)(Phi);
-    OrbitalVector termTwo = (V * invKappa)(Phi);
-    OrbitalVector termThree = divby2cc(epsPhi);
-    OrbitalVector termFour = invKappa(Psi);
-
-    // Add up all the terms
-    OrbitalVector out = orbital::deep_copy(termOne);
-    for (int i = 0; i < out.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
-        out[i].add(1.0, termTwo[i]);
-        out[i].add(1.0, termThree[i]);
-        out[i].add(1.0, termFour[i]);
-    };
-    return out;
-}
-
-// Take 4 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgumentTake4(OrbitalVector &Phi, OrbitalVector &Psi, double prec) {
-    // Get necessary operators
-    RankZeroOperator O;
-    RankZeroOperator &V = this->potential();
-    RankZeroOperator &omk = this->one_minus_zora_pot();
-    auto &diff = this->zora().derivative;
-    NablaOperator nabla(diff);
-    KineticOperator T(diff);
-    RankOneOperator<3> dOmk = nabla(omk);
-
-    // Construct and set up
-    O += -1.0 * omk * T;
-    O += 0.5 * tensor::dot(dOmk, nabla);
-    O += V;
-    O.setup(prec);
-
-    // Apply on orbitals
-    OrbitalVector termOne = O(Phi);
-
-    // Add Psi
-    OrbitalVector out = orbital::deep_copy(termOne);
-    for (int i = 0; i < out.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
-        out[i].add(1.0, Psi[i]);
-    };
-
-    // Clear operator
-    O.clear();
-    return out;
-}
-
+// Non-relativistic Helmholtz argument
 OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
     // Get necessary operators
     RankZeroOperator &V = this->potential();
