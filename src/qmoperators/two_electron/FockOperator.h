@@ -56,14 +56,11 @@ class ReactionOperator;
 class FockOperator final : public RankZeroOperator {
 public:
     bool isZora() const { return (this->vz != nullptr); }
-    ZoraOperator &zora() { return *this->vz; }
     MomentumOperator &momentum() { return *this->mom; }
+    ZoraOperator &zora() { return *this->vz; }
     RankZeroOperator &kinetic() { return this->T; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
-    RankZeroOperator &zora_pot_over_2cc() { return this->zora_over_2cc; }
-    RankZeroOperator &zora_pot_inv() { return this->zora_inv; }
-    RankOneOperator<3> &zora_pot_grad() { return this->zora_grad; }
     
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -73,15 +70,14 @@ public:
     std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->vz; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
-    std::shared_ptr<RankZeroOperator> &getZoraOver2cc() { return this->vz_over_2cc; }
-    std::shared_ptr<RankZeroOperator> &getZoraInv() { return this->vz_inv; }
-    std::shared_ptr<RankOneOperator<3>> &getZoraGrad() { return this->vz_grad; }
 
     void rotate(const ComplexMatrix &U);
 
     void build(double exx = 1.0);
     void setup(double prec);
     void clear();
+    
+    void setZoraBasePotential();
 
     SCFEnergy trace(OrbitalVector &Phi, const Nuclei &nucs);
 
@@ -99,9 +95,6 @@ private:
     RankZeroOperator T;       ///< Total kinetic energy operator
     RankZeroOperator V;       ///< Total potential energy operator
     RankZeroOperator H_1;     ///< Perturbation operators
-    RankZeroOperator zora_over_2cc;
-    RankZeroOperator zora_inv;
-    RankOneOperator<3> zora_grad;
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
@@ -111,9 +104,6 @@ private:
     std::shared_ptr<ReactionOperator> Ro{nullptr};           // Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr};     // Total external potential
     std::shared_ptr<ZoraOperator> vz{nullptr};               // ZORA operator
-    std::shared_ptr<RankZeroOperator> vz_over_2cc{nullptr};  // zora pot scaled by 1/2c^2
-    std::shared_ptr<RankZeroOperator> vz_inv{nullptr};       // inverse zora potential
-    std::shared_ptr<RankOneOperator<3>> vz_grad{nullptr};    // nabla(kappa)
 };
 
 } // namespace mrchem

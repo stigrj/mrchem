@@ -275,12 +275,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
-        
-        if (F.isZora()) {
-            double light_speed = F.zora().light_speed;
-            solver.setZora(F.isZora());
-            solver.setLightSpeed(light_speed);
-        }
+        solver.setZora(F.getZoraOperator() != nullptr);
         
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
@@ -391,7 +386,9 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockOperat
     auto &F_mat = mol.getFockMatrix();
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
     if (localize) orbital::localize(prec, Phi, F_mat);
+    
     F.setup(prec);
+    
     F_mat = F(Phi, Phi);
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     F.clear();
@@ -969,18 +966,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         if (c <= 0.0) c = PHYSCONST::alpha_inv;
         auto shared_memory = json_fock["zora_operator"]["shared_memory"];
         auto zora_diff = json_fock["zora_operator"]["derivative"];
-        auto D_p = driver::get_derivative(zora_diff);
-        auto &V_nuc = static_cast<QMPotential &>(F.getNuclearOperator()->getRaw(0, 0));
-        
-        auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, D_p, shared_memory);
-        auto kappa_inv = std::make_shared<RankZeroOperator>(Z_p->kappa_pot_inv());
-        auto base_over_2cc = std::make_shared<RankZeroOperator>(Z_p->base_pot_over_2cc());
-        auto kappa_grad = std::make_shared<RankOneOperator<3>>(Z_p->kappa_pot_grad());
-        
+        auto D_p = driver::get_derivative(zora_diff);        
+        auto Z_p = std::make_shared<ZoraOperator>(c, D_p, shared_memory);
         F.getZoraOperator() = Z_p;
-        F.getZoraOver2cc() = base_over_2cc;
-        F.getZoraInv() = kappa_inv;
-        F.getZoraGrad() = kappa_grad;
+        
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////

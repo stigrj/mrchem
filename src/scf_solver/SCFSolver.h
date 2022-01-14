@@ -56,7 +56,6 @@ public:
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
     void setZora(const bool &isZora) { this->isZora = isZora; }
-    void setLightSpeed(double &c) { this->light_speed = c; }
 
 protected:
     int history{0};                      ///< Maximum length of KAIN history
@@ -72,7 +71,6 @@ protected:
     std::vector<double> property; ///< Convergence property error
 
     bool isZora{false};
-    double light_speed;
 
     virtual void reset();
 

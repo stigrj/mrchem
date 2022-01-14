@@ -63,11 +63,7 @@ void FockOperator::build(double exx) {
             this->T += KineticOperator(momentum());
         }
     }
-
-    if (this->vz_over_2cc != nullptr) this->zora_over_2cc = (*this->vz_over_2cc);
-    if (this->vz_inv != nullptr) this->zora_inv = (*this->vz_inv);
-    if (this->vz_grad != nullptr) this->zora_grad = *(this->vz_grad);
-
+    
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
     if (this->coul != nullptr) this->V += (*this->coul);
@@ -98,10 +94,11 @@ void FockOperator::setup(double prec) {
     this->perturbation().setup(prec);
     
     if (isZora()) {
-        this->zora().setup(prec);
-        this->zora_pot_over_2cc().setup(prec);
-        this->zora_pot_inv().setup(prec);
-        this->zora_pot_grad().setup(prec);
+        setZoraBasePotential();
+        zora().kappaPotential().setup(prec);
+        zora().kappaPotentialInverse().setup(prec);
+        zora().kappaPotentialGradient().setup(prec);
+        zora().basePotentialOver2cc().setup(prec);
     };
 
     t_tot.stop();
@@ -120,10 +117,10 @@ void FockOperator::clear() {
     this->perturbation().clear();
     
     if (isZora()) {
-        this->zora().clear();
-        this->zora_pot_over_2cc().clear();
-        this->zora_pot_inv().clear();
-        this->zora_pot_grad().clear();
+        zora().kappaPotential().clear();
+        zora().kappaPotentialInverse().clear();
+        zora().kappaPotentialGradient().clear();
+        zora().basePotentialOver2cc().clear();
     };
 }
 
@@ -178,7 +175,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     // Kinetic part
     if (isZora()) {
-        E_kin = qmoperator::calc_kinetic_trace(momentum(), zora(), Phi).real();
+        RankZeroOperator kappa = zora().kappaPotential();
+        E_kin = qmoperator::calc_kinetic_trace(momentum(), kappa, Phi).real();
     } else {
         E_kin = qmoperator::calc_kinetic_trace(momentum(), Phi);
     }
@@ -202,7 +200,8 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
-        T_mat = qmoperator::calc_kinetic_matrix(momentum(), zora(), bra, ket);
+        RankZeroOperator kappa = zora().kappaPotential();
+        T_mat = qmoperator::calc_kinetic_matrix(momentum(), kappa, bra, ket);
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
@@ -222,12 +221,12 @@ ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
 // Take 1 in notes on Overleaf
 OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
     // Get necessary operators
-    RankZeroOperator &V = this->potential();                   // V
-    ZoraOperator &kappa = this->zora();                        // kappa
-    RankZeroOperator &divby2cc = this->zora_pot_over_2cc();    // Vz / 2c^2
-    RankZeroOperator &invKappa = this->zora_pot_inv();         // 1 / kappa
-    RankOneOperator<3> &gradKappa = this->zora_pot_grad();     // gradient of kappa
-    NablaOperator nabla(kappa.derivative);
+    RankZeroOperator &V = potential();                                  // V
+    RankZeroOperator kappa = zora().kappaPotential();                   // kappa
+    RankZeroOperator divby2cc = zora().basePotentialOver2cc();          // Vz / 2c^2
+    RankZeroOperator invKappa = zora().kappaPotentialInverse();         // 1 / kappa
+    RankOneOperator<3> gradKappa = zora().kappaPotentialGradient();     // gradient of kappa
+    NablaOperator nabla(zora().getDerivative());
     RankZeroOperator gradKappaGrad = tensor::dot(gradKappa, nabla);
     gradKappaGrad.setup(prec);
 
@@ -254,7 +253,7 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
     
     gradKappaGrad.clear();
     return invKappa(out);
-}
+} 
 
 // Non-relativistic Helmholtz argument
 OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
@@ -272,5 +271,16 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
     };
     return out;
 }
+
+void FockOperator::setZoraBasePotential() {
+    QMPotential &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
+    QMPotential &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
+    
+    auto vz = std::make_shared<QMPotential>(1, false);
+    qmfunction::add(*vz, 1.0, vnuc, 100.0, coul, -1.0);
+    
+    //this->zora_base = std::make_shared<RankZeroOperator>(vz);
+    zora().updatePotentials(std::make_shared<RankZeroOperator>(vz));
+    }
 
 } // namespace mrchem
