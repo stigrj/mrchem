@@ -31,6 +31,8 @@
 #include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
 
+#include "qmoperators/one_electron/ZoraOperator.h"
+
 /** @class SCF
  *
  * @brief Abstract base class for different types of SCF solvers
@@ -56,6 +58,7 @@ public:
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
     void setZora(const bool &isZora) { this->isZora = isZora; }
+    void setZoraBasePotential(std::string bp) { this->zora_base_potential = bp; }
 
 protected:
     int history{0};                      ///< Maximum length of KAIN history
@@ -71,6 +74,7 @@ protected:
     std::vector<double> property; ///< Convergence property error
 
     bool isZora{false};
+    std::string zora_base_potential;
 
     virtual void reset();
 

@@ -36,11 +36,11 @@ namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false) 
+    ZoraOperator(double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false)
         : light_speed(c)
         , derivative(D)
         , shared(mpi_share)
-        {};
+        {}
     
     double two_cc() { return 2.0 * this->light_speed * this->light_speed; }
     
@@ -84,13 +84,36 @@ public:
         this->kappa_grad = std::make_shared<RankOneOperator<3>>(k_grad);
         this->base_over_2cc = vz_over_2cc;
         }
+        
+    void setBasePotential(int key) {
+            // Set the base potential enum from input integer
+            switch (key) {
+                case 0:
+                    this->base_potential = NUCLEAR;
+                    this->base_potential_name = "V_n";
+                    break;
+                case 1:
+                    this->base_potential = COULOMB;
+                    this->base_potential_name = "J";
+                    break;
+                case 2:
+                    this->base_potential = NUCLEAR_COULOMB;
+                    this->base_potential_name = "V_n + J";
+                    break;
+            }
+        }
+        
+public:
+    enum BasePotential { NUCLEAR = 0, COULOMB, NUCLEAR_COULOMB };
+    BasePotential base_potential;
+    std::string base_potential_name;
     
 private:
     double light_speed;
     bool shared;
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     
 private:
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<QMPotential> kappa{nullptr};
     std::shared_ptr<QMPotential> kappa_inv{nullptr};
     std::shared_ptr<QMPotential> base_over_2cc{nullptr};

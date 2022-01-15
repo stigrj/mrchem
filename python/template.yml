@@ -308,6 +308,11 @@ sections:
         default: -1.0
         docstring: |
           Adjust speed of light.
+      - name: base_potential
+        type: int
+        default: 0
+        docstring: |
+          Determine how the ZORA potential is built up. 0: Vn, 1: J, 2: Vn+J
   - name: DFT
     docstring: |
       Define the exchange-correlation functional in case of DFT.

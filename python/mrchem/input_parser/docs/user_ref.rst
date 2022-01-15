@@ -326,6 +326,12 @@ User input reference
   
     **Default** ``-1.0``
   
+   :base_potential: Determine how the ZORA potential is built up. 0: Vn, 1: J, 2: Vn+J 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
   :red:`Keywords`

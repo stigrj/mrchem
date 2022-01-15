@@ -276,6 +276,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
         solver.setZora(F.getZoraOperator() != nullptr);
+        solver.setZoraBasePotential(F.zora().base_potential_name);
         
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
@@ -962,12 +963,16 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
         double c = json_fock["zora_operator"]["light_speed"];
-
         if (c <= 0.0) c = PHYSCONST::alpha_inv;
+        
         auto shared_memory = json_fock["zora_operator"]["shared_memory"];
         auto zora_diff = json_fock["zora_operator"]["derivative"];
         auto D_p = driver::get_derivative(zora_diff);        
         auto Z_p = std::make_shared<ZoraOperator>(c, D_p, shared_memory);
+        
+        int bp = json_fock["zora_operator"]["base_potential"];
+        Z_p->setBasePotential(bp);
+        
         F.getZoraOperator() = Z_p;
         
     }

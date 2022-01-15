@@ -277,9 +277,17 @@ void FockOperator::setZoraBasePotential() {
     QMPotential &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
     
     auto vz = std::make_shared<QMPotential>(1, false);
-    qmfunction::add(*vz, 1.0, vnuc, 100.0, coul, -1.0);
-    
-    //this->zora_base = std::make_shared<RankZeroOperator>(vz);
+    switch (zora().base_potential) {
+        case ZoraOperator::NUCLEAR:
+            qmfunction::add(*vz, 1.0, vnuc, 0.0, coul, -1.0);
+            break;
+        case ZoraOperator::COULOMB:
+            qmfunction::add(*vz, 0.0, vnuc, 1.0, coul, -1.0);
+            break;
+        case ZoraOperator::NUCLEAR_COULOMB:
+            qmfunction::add(*vz, 1.0, vnuc, 1.0, coul, -1.0);
+            break;
+        }
     zora().updatePotentials(std::make_shared<RankZeroOperator>(vz));
     }
 
