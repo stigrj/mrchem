@@ -99,6 +99,7 @@ public:
                 case 2:
                     this->base_potential = NUCLEAR_COULOMB_XC;
                     this->base_potential_name = "V_n + J + V_xc";
+                    break;
             }
         }
         

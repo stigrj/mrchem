@@ -278,6 +278,7 @@ void FockOperator::setZoraBasePotential() {
         case ZoraOperator::NUCLEAR_COULOMB_XC:
             qmfunction::add(*vz, 1.0, vnuc, 1.0, coul, -1.0);
             qmfunction::add(*vz, 1.0, *vz, 1.0, xc, -1.0);
+            break;
         }
     zora().updatePotentials(std::make_shared<RankZeroOperator>(vz));
     }
