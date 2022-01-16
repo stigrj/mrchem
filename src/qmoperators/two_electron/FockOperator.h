@@ -58,7 +58,6 @@ public:
     bool isZora() const { return (this->vz != nullptr); }
     MomentumOperator &momentum() { return *this->mom; }
     ZoraOperator &zora() { return *this->vz; }
-    RankZeroOperator &kinetic() { return this->T; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
     
@@ -87,12 +86,8 @@ public:
     OrbitalVector buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);  // ZORA Take 1
     OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);                                      // NR
 
-    using RankZeroOperator::operator();
-    using RankZeroOperator::dagger;
-
 private:
     double exact_exchange{1.0};
-    RankZeroOperator T;       ///< Total kinetic energy operator
     RankZeroOperator V;       ///< Total potential energy operator
     RankZeroOperator H_1;     ///< Perturbation operators
 

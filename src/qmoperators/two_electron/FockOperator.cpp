@@ -55,15 +55,6 @@ namespace mrchem {
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
 
-    this->T = RankZeroOperator();
-    if (this->mom != nullptr) {
-        if (isZora()) {
-            this->T += ZoraKineticOperator(momentum(), zora());
-        } else {
-            this->T += KineticOperator(momentum());
-        }
-    }
-    
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
     if (this->coul != nullptr) this->V += (*this->coul);
@@ -71,9 +62,6 @@ void FockOperator::build(double exx) {
     if (this->xc != nullptr) this->V += (*this->xc);
     if (this->ext != nullptr) this->V += (*this->ext);
     if (this->Ro != nullptr) this->V -= (*this->Ro);
-
-    RankZeroOperator &F = (*this);
-    F = this->kinetic() + this->potential();
 }
 
 /** @brief prepare operator for application
@@ -89,7 +77,7 @@ void FockOperator::setup(double prec) {
     mrcpp::print::header(2, "Building Fock operator");
     mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
     mrcpp::print::separator(2, '-');
-    this->kinetic().setup(prec);
+    this->momentum().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
     
@@ -112,7 +100,7 @@ void FockOperator::setup(double prec) {
  * to the state after construction. The operator can now be reused after another setup.
  */
 void FockOperator::clear() {
-    this->kinetic().clear();
+    this->momentum().clear();
     this->potential().clear();
     this->perturbation().clear();
     
