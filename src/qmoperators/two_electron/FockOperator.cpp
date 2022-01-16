@@ -263,18 +263,21 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
 void FockOperator::setZoraBasePotential() {
     QMPotential &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
     QMPotential &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
+    QMPotential &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
     
     auto vz = std::make_shared<QMPotential>(1, false);
     switch (zora().base_potential) {
         case ZoraOperator::NUCLEAR:
             qmfunction::add(*vz, 1.0, vnuc, 0.0, coul, -1.0);
             break;
-        case ZoraOperator::COULOMB:
-            qmfunction::add(*vz, 0.0, vnuc, 1.0, coul, -1.0);
-            break;
+            
         case ZoraOperator::NUCLEAR_COULOMB:
             qmfunction::add(*vz, 1.0, vnuc, 1.0, coul, -1.0);
             break;
+            
+        case ZoraOperator::NUCLEAR_COULOMB_XC:
+            qmfunction::add(*vz, 1.0, vnuc, 1.0, coul, -1.0);
+            qmfunction::add(*vz, 1.0, *vz, 1.0, xc, -1.0);
         }
     zora().updatePotentials(std::make_shared<RankZeroOperator>(vz));
     }

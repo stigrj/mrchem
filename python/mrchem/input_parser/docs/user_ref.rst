@@ -326,7 +326,7 @@ User input reference
   
     **Default** ``-1.0``
   
-   :base_potential: Determine how the ZORA potential is built up. 0: Vn, 1: J, 2: Vn+J 
+   :base_potential: Determine how the ZORA potential is built up. 0: Vn, 1: V_n+J, 2: Vn+J+V_xc 
   
     **Type** ``int``
   

@@ -93,18 +93,17 @@ public:
                     this->base_potential_name = "V_n";
                     break;
                 case 1:
-                    this->base_potential = COULOMB;
-                    this->base_potential_name = "J";
-                    break;
-                case 2:
                     this->base_potential = NUCLEAR_COULOMB;
                     this->base_potential_name = "V_n + J";
                     break;
+                case 2:
+                    this->base_potential = NUCLEAR_COULOMB_XC;
+                    this->base_potential_name = "V_n + J + V_xc";
             }
         }
         
 public:
-    enum BasePotential { NUCLEAR = 0, COULOMB, NUCLEAR_COULOMB };
+    enum BasePotential { NUCLEAR = 0, NUCLEAR_COULOMB, NUCLEAR_COULOMB_XC };
     BasePotential base_potential;
     std::string base_potential_name;
     

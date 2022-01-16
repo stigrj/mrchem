@@ -312,7 +312,7 @@ sections:
         type: int
         default: 0
         docstring: |
-          Determine how the ZORA potential is built up. 0: Vn, 1: J, 2: Vn+J
+          Determine how the ZORA potential is built up. 0: Vn, 1: V_n+J, 2: Vn+J+V_xc
   - name: DFT
     docstring: |
       Define the exchange-correlation functional in case of DFT.
