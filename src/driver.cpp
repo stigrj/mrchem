@@ -276,7 +276,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
         solver.setZora(F.getZoraOperator() != nullptr);
-        solver.setZoraBasePotential(F.zora().base_potential_name);
+        if (F.isZora()) solver.setZoraBasePotential(F.zora().base_potential_name);
         
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
