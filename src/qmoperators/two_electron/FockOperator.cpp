@@ -261,9 +261,11 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
 }
 
 void FockOperator::setZoraBasePotential() {
-    QMPotential &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
-    QMPotential &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
-    QMPotential &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
+    auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
+    auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
+    
+    getXCOperator()->setSpin(SPIN::Alpha);
+    auto &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
     
     auto vz = std::make_shared<QMPotential>(1, false);
     switch (zora().base_potential) {
@@ -283,6 +285,7 @@ void FockOperator::setZoraBasePotential() {
             break;
         }
     zora().updatePotentials(std::make_shared<RankZeroOperator>(vz));
+    getXCOperator()->clearSpin();
     }
 
 } // namespace mrchem

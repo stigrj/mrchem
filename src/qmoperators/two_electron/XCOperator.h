@@ -69,6 +69,12 @@ public:
 
     auto getEnergy() { return potential->getEnergy(); }
     auto &getDensity(DensityType spin, int pert_idx = 0) { return potential->getDensity(spin, pert_idx); }
+    
+    void setSpin(int spin) {
+        mrcpp::FunctionTree<3> &pot = this->potential->getPotential(spin);
+        this->potential->setReal(&pot);
+        }
+    void clearSpin() { this->potential->setReal(nullptr); }
 
 private:
     std::shared_ptr<XCPotential> potential{nullptr};

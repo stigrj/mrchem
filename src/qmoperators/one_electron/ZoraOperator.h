@@ -104,7 +104,11 @@ public:
         }
         
 public:
-    enum BasePotential { NUCLEAR = 0, NUCLEAR_COULOMB, NUCLEAR_COULOMB_XC };
+    enum BasePotential { 
+        NUCLEAR = 0, 
+        NUCLEAR_COULOMB, 
+        NUCLEAR_COULOMB_XC 
+        };
     BasePotential base_potential;
     std::string base_potential_name;
     

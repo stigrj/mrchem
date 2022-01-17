@@ -959,7 +959,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         F.getNuclearOperator() = V_p;
     }
     ///////////////////////////////////////////////////////////
-    //////////////////   Kinetic Zora Operator   //////////////
+    //////////////////////   Zora Operator   //////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
         double c = json_fock["zora_operator"]["light_speed"];
