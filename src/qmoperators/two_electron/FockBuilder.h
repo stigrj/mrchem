@@ -53,11 +53,11 @@ class XCOperator;
 class ElectricFieldOperator;
 class ReactionOperator;
 
-class FockOperator final : public RankZeroOperator {
+class FockBuilder final {
 public:
     bool isZora() const { return (this->vz != nullptr); }
-    MomentumOperator &momentum() { return *this->mom; }
     ZoraOperator &zora() { return *this->vz; }
+    MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
     
@@ -81,7 +81,6 @@ public:
     SCFEnergy trace(OrbitalVector &Phi, const Nuclei &nucs);
 
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
     OrbitalVector buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);  // ZORA Take 1
     OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);                                      // NR

@@ -36,7 +36,7 @@
 namespace mrchem {
 
 class Molecule;
-class FockOperator;
+class FockBuilder;
 
 class LinearResponseSolver final : public SCFSolver {
 public:
@@ -44,7 +44,7 @@ public:
             : dynamic(dyn) {}
     ~LinearResponseSolver() override = default;
 
-    nlohmann::json optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1);
+    nlohmann::json optimize(double omega, Molecule &mol, FockBuilder &F_0, FockBuilder &F_1);
     void setOrthPrec(double prec) { this->orth_prec = prec; }
     void setCheckpointFile(const std::string &file_x, const std::string &file_y) {
         this->chkFileX = file_x;

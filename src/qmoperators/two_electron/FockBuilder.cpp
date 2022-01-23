@@ -23,12 +23,13 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include "FockBuilder.h"
+
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
-#include "FockOperator.h"
 #include "ReactionOperator.h"
 #include "XCOperator.h"
 #include "chemistry/chemistry_utils.h"
@@ -52,7 +53,7 @@ namespace mrchem {
 /** @brief build the Fock operator once all contributions are in place
  *
  */
-void FockOperator::build(double exx) {
+void FockBuilder::build(double exx) {
     this->exact_exchange = exx;
 
     this->V = RankZeroOperator();
@@ -71,7 +72,7 @@ void FockOperator::build(double exx) {
  * This will call the setup function of all underlying operators, and in particular
  * it will compute the internal exchange if there is an ExchangeOperator.
  */
-void FockOperator::setup(double prec) {
+void FockBuilder::setup(double prec) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Building Fock operator");
@@ -99,7 +100,7 @@ void FockOperator::setup(double prec) {
  * This will call the clear function of all underlying operators, and bring them back
  * to the state after construction. The operator can now be reused after another setup.
  */
-void FockOperator::clear() {
+void FockBuilder::clear() {
     this->momentum().clear();
     this->potential().clear();
     this->perturbation().clear();
@@ -116,11 +117,11 @@ void FockOperator::clear() {
  *
  * @param U: unitary transformation matrix
  *
- * This function should be used in case the orbitals are rotated *after* the FockOperator
+ * This function should be used in case the orbitals are rotated *after* the FockBuilder
  * has been setup. In particular the ExchangeOperator needs to rotate the precomputed
  * internal exchange potentials.
  */
-void FockOperator::rotate(const ComplexMatrix &U) {
+void FockBuilder::rotate(const ComplexMatrix &U) {
     if (this->ex != nullptr) this->ex->rotate(U);
 }
 
@@ -133,7 +134,7 @@ void FockOperator::rotate(const ComplexMatrix &U) {
  * the corresponding Fock matrix. Tracing the kinetic energy operator is avoided
  * by tracing the Fock matrix and subtracting all other contributions.
  */
-SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
+SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing molecular energy");
@@ -181,7 +182,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el};
 }
 
-ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
@@ -202,12 +203,8 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     return T_mat + V_mat;
 }
 
-ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
-    NOT_IMPLEMENTED_ABORT;
-}
-
 // Take 1 in notes on Overleaf
-OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
+OrbitalVector FockBuilder::buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
     // Get necessary operators
     RankZeroOperator &V = potential();                                  // V
     RankZeroOperator kappa = zora().kappaPotential();                   // kappa
@@ -244,7 +241,7 @@ OrbitalVector FockOperator::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbi
 } 
 
 // Non-relativistic Helmholtz argument
-OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
+OrbitalVector FockBuilder::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
     // Get necessary operators
     RankZeroOperator &V = this->potential();
 
@@ -260,7 +257,7 @@ OrbitalVector FockOperator::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVe
     return out;
 }
 
-void FockOperator::setZoraBasePotential() {
+void FockBuilder::setZoraBasePotential() {
     auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
     auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
     

@@ -48,7 +48,7 @@
 namespace mrchem {
 
 class Molecule;
-class FockOperator;
+class FockBuilder;
 
 class GroundStateSolver : public SCFSolver {
 public:
@@ -59,7 +59,7 @@ public:
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
 
-    nlohmann::json optimize(Molecule &mol, FockOperator &F);
+    nlohmann::json optimize(Molecule &mol, FockBuilder &F);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization

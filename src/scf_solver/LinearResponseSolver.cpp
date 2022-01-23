@@ -33,7 +33,7 @@
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmoperators/two_electron/FockOperator.h"
+#include "qmoperators/two_electron/FockBuilder.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -60,7 +60,7 @@ namespace mrchem {
  *  5) Check for convergence
  *
  */
-json LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1) {
+json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_0, FockBuilder &F_1) {
     printParameters(omega, F_1.perturbation().name());
     Timer t_tot;
     json json_out;

@@ -66,7 +66,7 @@
 
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
-#include "qmoperators/two_electron/FockOperator.h"
+#include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
@@ -102,12 +102,12 @@ namespace driver {
 DerivativeOperator_p get_derivative(const std::string &name);
 template <int I> RankOneOperator<I> get_operator(const std::string &name, const json &json_oper);
 template <int I, int J> RankTwoOperator<I, J> get_operator(const std::string &name, const json &json_oper);
-void build_fock_operator(const json &input, Molecule &mol, FockOperator &F, int order);
+void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order);
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
 bool guess_orbitals(const json &input, Molecule &mol);
-bool guess_energy(const json &input, Molecule &mol, FockOperator &F);
+bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
 void calc_properties(const json &input, Molecule &mol);
 void plot_quantities(const json &input, Molecule &mol);
@@ -225,7 +225,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
-    FockOperator F;
+    FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
     driver::build_fock_operator(json_fock, mol, F, 0);
 
@@ -366,7 +366,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     return success;
 }
 
-bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockOperator &F) {
+bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilder &F) {
     auto prec = json_guess["prec"];
     auto method = json_guess["method"];
     auto localize = json_guess["localize"];
@@ -689,7 +689,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         orbital::diagonalize(unpert_prec, Phi, F_mat);
     }
 
-    FockOperator F_0;
+    FockBuilder F_0;
     driver::build_fock_operator(unpert_fock, mol, F_0, 0);
     F_0.setup(unpert_prec);
     if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
@@ -704,7 +704,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     auto dynamic = json_rsp["dynamic"];
     mol.initPerturbedOrbitals(dynamic);
 
-    FockOperator F_1;
+    FockBuilder F_1;
     const auto &json_fock_1 = json_rsp["fock_operator"];
     driver::build_fock_operator(json_fock_1, mol, F_1, 1);
 
@@ -933,7 +933,7 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
  * construct all operator which are present in this input. Option to set
  * perturbation order of the operators.
  */
-void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOperator &F, int order) {
+void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order) {
     auto &nuclei = mol.getNuclei();
     auto Phi_p = mol.getOrbitals_p();
     auto X_p = mol.getOrbitalsX_p();
