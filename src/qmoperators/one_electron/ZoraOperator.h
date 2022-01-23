@@ -38,8 +38,8 @@ class ZoraOperator final : public RankZeroOperator {
 public:
     ZoraOperator(double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false)
         : light_speed(c)
-        , derivative(D)
         , shared(mpi_share)
+        , derivative(D)
         {}
     
     double two_cc() { return 2.0 * this->light_speed * this->light_speed; }
