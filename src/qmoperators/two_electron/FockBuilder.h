@@ -82,8 +82,7 @@ public:
 
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
 
-    OrbitalVector buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);  // ZORA Take 1
-    OrbitalVector buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi);                                      // NR
+    OrbitalVector buildHelmholtzArgument(double prec, OrbitalVector Phi, ComplexMatrix F_mat, ComplexMatrix L_mat);
 
 private:
     double exact_exchange{1.0};
@@ -98,6 +97,9 @@ private:
     std::shared_ptr<ReactionOperator> Ro{nullptr};           // Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr};     // Total external potential
     std::shared_ptr<ZoraOperator> vz{nullptr};               // ZORA operator
+
+    OrbitalVector buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);
+    OrbitalVector buildHelmholtzArgumentNREL(OrbitalVector &Phi, OrbitalVector &Psi);
 };
 
 } // namespace mrchem

@@ -203,8 +203,29 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     return T_mat + V_mat;
 }
 
+OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi, ComplexMatrix F_mat, ComplexMatrix L_mat) {
+    Timer t_arg;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(2, "Computing Helmholtz argument");
+
+    OrbitalVector Psi = orbital::rotate(Phi, L_mat - F_mat, prec);
+    mrcpp::print::time(2, "Rotating orbitals", t_arg);
+
+    OrbitalVector out;
+    if (isZora()) {
+        out = buildHelmholtzArgumentZORA(Phi, Psi, F_mat.real().diagonal(), prec);
+    } else {
+        out = buildHelmholtzArgumentNREL(Phi, Psi);
+    }
+    Psi.clear();
+
+    mrcpp::print::footer(2, t_arg, 2);
+    if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+    return out;
+}
+
 // Take 1 in notes on Overleaf
-OrbitalVector FockBuilder::buildHelmholtzArgumentTake1(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
+OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
     // Get necessary operators
     RankZeroOperator &V = potential();                                  // V
     RankZeroOperator kappa = zora().kappaPotential();                   // kappa
@@ -241,7 +262,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentTake1(OrbitalVector &Phi, Orbit
 } 
 
 // Non-relativistic Helmholtz argument
-OrbitalVector FockBuilder::buildHelmholtzArgument(OrbitalVector &Phi, OrbitalVector &Psi) {
+OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, OrbitalVector &Psi) {
     // Get necessary operators
     RankZeroOperator &V = this->potential();
 
