@@ -36,92 +36,75 @@ namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool mpi_share = false)
-        : light_speed(c)
-        , shared(mpi_share)
-        , derivative(D)
-        {}
+    ZoraOperator(double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
+            : light_speed(c)
+            , derivative(D) {
+    }
     
-    double two_cc() { return 2.0 * this->light_speed * this->light_speed; }
-    
-    RankZeroOperator kappaPotential() { return RankZeroOperator(this->kappa); }
-    RankZeroOperator kappaPotentialInverse() { return RankZeroOperator(this->kappa_inv); }
-    RankZeroOperator basePotentialOver2cc() { return RankZeroOperator(this->base_over_2cc); }
-    RankOneOperator<3> kappaPotentialGradient() { return *(this->kappa_grad); }
+    RankZeroOperator kappaPotential() { return this->kappa; }
+    RankZeroOperator kappaPotentialInverse() { return this->kappa_inv; }
+    RankZeroOperator basePotentialOver2cc() { return this->base_over_2cc; }
+    RankOneOperator<3> kappaPotentialGradient() { return this->kappa_grad; }
     
     std::shared_ptr<mrcpp::DerivativeOperator<3>> getDerivative() { return this->derivative; }
+
     double getLightSpeed() { return this->light_speed; }
+    double getTwoCC() { return 2.0 * this->light_speed * this->light_speed; }
     
-    void updatePotentials(std::shared_ptr<RankZeroOperator> base) {
-        double twocc = this->two_cc();
-        auto &vz = static_cast<QMPotential &>(base->getRaw(0, 0));
+    void setupPotentials(QMPotential &vz, double prec) {
+        double twocc = getTwoCC();
         
         // kappa potential
-        auto k = std::make_shared<QMPotential>(1, this->shared);
-        qmfunction::deep_copy(*k, vz);
         auto map_k = [twocc](double val) -> double { return twocc / (twocc - val); };
-        k->real().map(map_k);
+        auto k = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*k, vz);
+        if (k->hasReal()) k->real().map(map_k);
+        this->kappa = RankZeroOperator(k);
+        this->kappa.setup(prec);
         
         // inverse kappa potential
-        auto k_inv = std::make_shared<QMPotential>(1, this->shared);
-        qmfunction::deep_copy(*k_inv, *k);
         auto map_kinv = [](double val) -> double { return 1.0 / val; };
-        k_inv->real().map(map_kinv);
+        auto k_inv = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*k_inv, *k);
+        if (k_inv->hasReal()) k_inv->real().map(map_kinv);
+        this->kappa_inv = RankZeroOperator(k_inv);
+        this->kappa_inv.setup(prec);
         
         // kappa gradient potential
         NablaOperator nabla(this->derivative);
-        RankOneOperator<3> k_grad = nabla(RankZeroOperator(k));
+        RankZeroOperator Kappa(this->kappa);
+        this->kappa_grad = nabla(Kappa);
+        this->kappa_grad.setup(prec);
         
         // base / 2cc potential
-        auto vz_over_2cc = std::make_shared<QMPotential>(1, this->shared);
-        qmfunction::deep_copy(*vz_over_2cc, vz);
         auto map_vz_over_2cc = [twocc](double val) -> double { return val / twocc; };
-        vz_over_2cc->real().map(map_vz_over_2cc);
-        
-        // Set class members
-        this->kappa = k;
-        this->kappa_inv = k_inv;
-        this->kappa_grad = std::make_shared<RankOneOperator<3>>(k_grad);
-        this->base_over_2cc = vz_over_2cc;
-        }
-        
-    void setBasePotential(int key) {
-            // Set the base potential enum from input integer
-            switch (key) {
-                case 0:
-                    this->base_potential = NUCLEAR;
-                    this->base_potential_name = "V_n";
-                    break;
-                case 1:
-                    this->base_potential = NUCLEAR_COULOMB;
-                    this->base_potential_name = "V_n + J";
-                    break;
-                case 2:
-                    this->base_potential = NUCLEAR_COULOMB_XC;
-                    this->base_potential_name = "V_n + J + V_xc";
-                    break;
-            }
-        }
-        
-public:
-    enum BasePotential { 
-        NUCLEAR = 0, 
-        NUCLEAR_COULOMB, 
-        NUCLEAR_COULOMB_XC 
-        };
-    BasePotential base_potential;
-    std::string base_potential_name;
-    
+        auto vz_over_2cc = std::make_shared<QMPotential>(1, false);
+        qmfunction::deep_copy(*vz_over_2cc, vz);
+        if (vz_over_2cc->hasReal()) vz_over_2cc->real().map(map_vz_over_2cc);
+        this->base_over_2cc = RankZeroOperator(vz_over_2cc);
+        this->base_over_2cc.setup(prec);
+    }
+
+    void clearPotentials() {
+        this->kappa.clear();
+        this->kappa_inv.clear();
+        this->kappa_grad.clear();
+        this->base_over_2cc.clear();
+        this->kappa = RankZeroOperator();
+        this->kappa_inv = RankZeroOperator();
+        this->kappa_grad = RankOneOperator<3>();
+        this->base_over_2cc = RankZeroOperator();
+    }
+
 private:
     double light_speed;
-    bool shared;
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
     
-private:
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
-    std::shared_ptr<QMPotential> kappa{nullptr};
-    std::shared_ptr<QMPotential> kappa_inv{nullptr};
-    std::shared_ptr<QMPotential> base_over_2cc{nullptr};
-    std::shared_ptr<RankOneOperator<3>> kappa_grad{nullptr};
+    RankZeroOperator kappa;
+    RankZeroOperator kappa_inv;
+    RankZeroOperator base_over_2cc;
+    RankOneOperator<3> kappa_grad;
+
 };
    
 } // namespace mrchem

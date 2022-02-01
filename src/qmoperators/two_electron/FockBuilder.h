@@ -75,17 +75,28 @@ public:
     void build(double exx = 1.0);
     void setup(double prec);
     void clear();
-    
-    void setZoraBasePotential();
+
+    void setZoraType(int key);
+    int getZoraType() const { return this->zora_type; }
+    std::string getZoraName() const { return this->zora_name; }
 
     SCFEnergy trace(OrbitalVector &Phi, const Nuclei &nucs);
-
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
 
     OrbitalVector buildHelmholtzArgument(double prec, OrbitalVector Phi, ComplexMatrix F_mat, ComplexMatrix L_mat);
 
 private:
+    enum ZoraType { 
+        NONE = 0, 
+        NUCLEAR, 
+        NUCLEAR_COULOMB, 
+        NUCLEAR_COULOMB_XC 
+    };
+
     double exact_exchange{1.0};
+    ZoraType zora_type;
+    std::string zora_name;
+
     RankZeroOperator V;       ///< Total potential energy operator
     RankZeroOperator H_1;     ///< Perturbation operators
 
@@ -98,6 +109,7 @@ private:
     std::shared_ptr<ElectricFieldOperator> ext{nullptr};     // Total external potential
     std::shared_ptr<ZoraOperator> vz{nullptr};               // ZORA operator
 
+    QMPotential collectZoraBasePotential();
     OrbitalVector buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);
     OrbitalVector buildHelmholtzArgumentNREL(OrbitalVector &Phi, OrbitalVector &Psi);
 };

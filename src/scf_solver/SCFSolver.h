@@ -57,8 +57,7 @@ public:
     void setHelmholtzPrec(double prec) { this->helmPrec = prec; }
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
-    void setZora(const bool &isZora) { this->isZora = isZora; }
-    void setZoraBasePotential(std::string bp) { this->zora_base_potential = bp; }
+    void setZoraName(const std::string &name) { this->zoraName = name; }
 
 protected:
     int history{0};                      ///< Maximum length of KAIN history
@@ -69,12 +68,11 @@ protected:
     double helmPrec{-1.0};               ///< Precision for construction of Helmholtz operators
     double orbPrec[3]{-1.0, -1.0, -1.0}; ///< Dynamic precision: [current_prec, start_prec, end_prec]
     std::string methodName;              ///< Name of electronic structure method to appear in output
+    std::string zoraName;         ///< Name of ZORA method
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error
 
-    bool isZora{false};
-    std::string zora_base_potential;
 
     virtual void reset();
 

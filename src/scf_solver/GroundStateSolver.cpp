@@ -183,7 +183,7 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     print_utils::text(0, "Helmholtz precision", o_helm.str());
     print_utils::text(0, "Energy threshold   ", o_thrs_p.str());
     print_utils::text(0, "Orbital threshold  ", o_thrs_o.str());
-    print_utils::text(0, "ZORA potential     ", (this->isZora) ? this->zora_base_potential : "Off");
+    print_utils::text(0, "ZORA potential     ", this->zoraName);
     mrcpp::print::separator(0, '~', 2);
 }
 

@@ -83,11 +83,8 @@ void FockBuilder::setup(double prec) {
     this->perturbation().setup(prec);
     
     if (isZora()) {
-        setZoraBasePotential();
-        zora().kappaPotential().setup(prec);
-        zora().kappaPotentialInverse().setup(prec);
-        zora().kappaPotentialGradient().setup(prec);
-        zora().basePotentialOver2cc().setup(prec);
+        auto vz = collectZoraBasePotential();
+        zora().setupPotentials(vz, prec);
     };
 
     t_tot.stop();
@@ -104,13 +101,7 @@ void FockBuilder::clear() {
     this->momentum().clear();
     this->potential().clear();
     this->perturbation().clear();
-    
-    if (isZora()) {
-        zora().kappaPotential().clear();
-        zora().kappaPotentialInverse().clear();
-        zora().kappaPotentialGradient().clear();
-        zora().basePotentialOver2cc().clear();
-    };
+    if (isZora()) zora().clearPotentials();
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -278,32 +269,64 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, Orbita
     return out;
 }
 
-void FockBuilder::setZoraBasePotential() {
-    auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
-    auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
-    
-    getXCOperator()->setSpin(SPIN::Alpha);
-    auto &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
-    
-    auto vz = std::make_shared<QMPotential>(1, false);
-    switch (zora().base_potential) {
-        case ZoraOperator::NUCLEAR:
-            vz->add(1.0, vnuc);
+void FockBuilder::setZoraType(int key) {
+    // Set the base potential enum from input integer
+    switch (key) {
+        case 0:
+            this->zora_type = NONE;
+            this->zora_name = "Off";
             break;
-            
-        case ZoraOperator::NUCLEAR_COULOMB:
-            vz->add(1.0, vnuc);
-            vz->add(1.0, coul);
+        case 1:
+            this->zora_type = NUCLEAR;
+            this->zora_name = "V_n";
             break;
-            
-        case ZoraOperator::NUCLEAR_COULOMB_XC:
-            vz->add(1.0, vnuc);
-            vz->add(1.0, coul);    
-            vz->add(1.0, xc);
+        case 2:
+            this->zora_type = NUCLEAR_COULOMB;
+            this->zora_name = "V_n + J";
             break;
-        }
-    zora().updatePotentials(std::make_shared<RankZeroOperator>(vz));
-    getXCOperator()->clearSpin();
+        case 3:
+            this->zora_type = NUCLEAR_COULOMB_XC;
+            this->zora_name = "V_n + J + V_xc";
+            break;
     }
+}
+
+QMPotential FockBuilder::collectZoraBasePotential() {
+    bool has_nuc = (getZoraType() == NUCLEAR or getZoraType() == NUCLEAR_COULOMB or getZoraType() == NUCLEAR_COULOMB_XC);
+    bool has_coul = (getZoraType() == NUCLEAR_COULOMB) or (getZoraType() == NUCLEAR_COULOMB_XC);
+    bool has_xc = (getZoraType() == NUCLEAR_COULOMB_XC);
+
+    QMPotential vz(1, false);
+    if (has_nuc) {
+        if (getNuclearOperator() != nullptr) {
+            auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
+            if (not vnuc.hasReal()) MSG_ERROR("ZORA: Adding empty nuclear potential");
+            vz.add(1.0, vnuc);
+        } else {
+            MSG_ERROR("ZORA: Nuclear requested but not available");
+        }
+    }
+    if (has_coul) {
+        if (getCoulombOperator() != nullptr) {
+            auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
+            if (not coul.hasReal()) MSG_INFO("ZORA: Adding empty Coulomb potential");
+            vz.add(1.0, coul);
+        } else {
+            MSG_ERROR("ZORA: Coulomb requested but not available");
+        }
+    }
+    if (has_xc) {
+        if (this->getXCOperator() != nullptr) {
+            getXCOperator()->setSpin(SPIN::Alpha);
+            auto &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
+            if (not xc.hasReal()) MSG_ERROR("ZORA: Adding empty XC potential");
+            vz.add(1.0, xc);
+            getXCOperator()->clearSpin();
+        } else {
+            MSG_ERROR("ZORA: XC requested but not available");
+        }
+    }
+    return vz;
+}
 
 } // namespace mrchem
