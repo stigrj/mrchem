@@ -49,6 +49,7 @@ Orbital QMIdentity::dagger(Orbital inp) {
 }
 
 QMOperatorVector QMIdentity::apply(QMOperator_p &O) {
+    // this == identity: always skip it and pass O through
     QMOperatorVector out;
     out.push_back(O);
     return out;

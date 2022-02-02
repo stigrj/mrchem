@@ -83,25 +83,14 @@ QMOperatorVector QMSpin::apply(QMOperator_p &O) {
 
     QMIdentity *I = dynamic_cast<QMIdentity *>(&(*O));
     if (I) {
+        // O == identity: skip it
         out.push_back(std::make_shared<QMSpin>(*this));
-    }
-    QMPotential *V = dynamic_cast<QMPotential *>(&(*O));
-    if (V) {
-        out.push_back(O);
-        out.push_back(std::make_shared<QMSpin>(*this));
-    }
-    QMDerivative *D = dynamic_cast<QMDerivative *>(&(*O));
-    if (D) {
-        out.push_back(O);
-        out.push_back(std::make_shared<QMSpin>(*this));
-    }
-    QMSpin *S = dynamic_cast<QMSpin *>(&(*O));
-    if (S) {
+    } else {
+        // fallback: treat as individual operators
         out.push_back(O);
         out.push_back(std::make_shared<QMSpin>(*this));
     }
 
-    if (out.size() == 0) MSG_ERROR("Empty operator after composition");
     return out;
 }
 

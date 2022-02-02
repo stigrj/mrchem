@@ -99,37 +99,28 @@ Orbital QMPotential::dagger(Orbital inp) {
 }
 
 QMOperatorVector QMPotential::apply(QMOperator_p &O) {
-    QMOperatorVector out;
-
     QMIdentity *I = dynamic_cast<QMIdentity *>(&(*O));
-    if (I) {
-        auto V = std::make_shared<QMPotential>(*this);
-        qmfunction::deep_copy(*V, *this);
-        out.push_back(V);
-    }
     QMPotential *V_inp = dynamic_cast<QMPotential *>(&(*O));
-    if (V_inp) {
+
+    QMOperatorVector out;
+    if (I) {
+        // O == identity: skip it
+        auto V_out = std::make_shared<QMPotential>(*this);
+        qmfunction::deep_copy(*V_out, *this);
+        out.push_back(V_out);
+    } else if (V_inp) {
+        // O == potential: merge into single potential
         auto V_out = std::make_shared<QMPotential>(*this);
         calcRealPart(*V_out, *V_inp, false);
         calcImagPart(*V_out, *V_inp, false);
         out.push_back(V_out);
-    }
-    QMDerivative *D = dynamic_cast<QMDerivative *>(&(*O));
-    if (D) {
-        auto V = std::make_shared<QMPotential>(*this);
-        qmfunction::deep_copy(*V, *this);
+    } else {
+        // fallback: treat as individual operators
+        auto V_out = std::make_shared<QMPotential>(*this);
+        qmfunction::deep_copy(*V_out, *this);
         out.push_back(O);
-        out.push_back(V);
+        out.push_back(V_out);
     }
-    QMSpin *S = dynamic_cast<QMSpin *>(&(*O));
-    if (S) {
-        auto V = std::make_shared<QMPotential>(*this);
-        qmfunction::deep_copy(*V, *this);
-        out.push_back(O);
-        out.push_back(V);
-    }
-
-    if (out.size() == 0) MSG_ERROR("Empty operator after composition");
     return out;
 }
 

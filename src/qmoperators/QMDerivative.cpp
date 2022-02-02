@@ -95,14 +95,15 @@ Orbital QMDerivative::dagger(Orbital inp) {
 }
 
 QMOperatorVector QMDerivative::apply(QMOperator_p &O) {
-    QMOperatorVector out;
-
     QMIdentity *I = dynamic_cast<QMIdentity *>(&(*O));
-    if (I) {
-        out.push_back(std::make_shared<QMDerivative>(*this));
-    }
     QMPotential *V_inp = dynamic_cast<QMPotential *>(&(*O));
-    if (V_inp) {
+
+    QMOperatorVector out;
+    if (I) {
+        // O == identity: skip it
+        out.push_back(std::make_shared<QMDerivative>(*this));
+    } else if (V_inp) {
+        // O == potential: compute its derivative
         auto &D = *this->derivative;
         auto d = this->apply_dir;
         auto V_out = std::make_shared<QMPotential>(*V_inp);
@@ -129,19 +130,11 @@ QMOperatorVector QMDerivative::apply(QMOperator_p &O) {
             }
         }
         out.push_back(V_out);
-    }
-    QMDerivative *D = dynamic_cast<QMDerivative *>(&(*O));
-    if (D) {
+    } else {
+        // fallback: treat as individual operators
         out.push_back(O);
         out.push_back(std::make_shared<QMDerivative>(*this));
     }
-    QMSpin *S = dynamic_cast<QMSpin *>(&(*O));
-    if (S) {
-        out.push_back(O);
-        out.push_back(std::make_shared<QMDerivative>(*this));
-    }
-
-    if (out.size() == 0) MSG_ERROR("Empty operator after composition");
     return out;
 }
 
