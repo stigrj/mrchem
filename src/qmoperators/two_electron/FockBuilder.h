@@ -55,8 +55,8 @@ class ReactionOperator;
 
 class FockBuilder final {
 public:
-    bool isZora() const { return (this->vz != nullptr); }
-    ZoraOperator &zora() { return *this->vz; }
+    bool isZora() const { return (this->zora_type != NONE); }
+    // ZoraOperator &zora() { return *this->vz; }
     MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
@@ -66,7 +66,6 @@ public:
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
-    std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->vz; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
 
@@ -75,6 +74,9 @@ public:
     void build(double exx = 1.0);
     void setup(double prec);
     void clear();
+
+    void setLightSpeed(double c) { this->light_speed = c; }
+    double getLightSpeed() const { return this->light_speed; }
 
     void setZoraType(int key);
     int getZoraType() const { return this->zora_type; }
@@ -93,9 +95,11 @@ private:
         NUCLEAR_COULOMB_XC 
     };
 
+    double light_speed{-1.0};
     double exact_exchange{1.0};
-    ZoraType zora_type;
+    ZoraType zora_type{NONE};
     std::string zora_name;
+    RankZeroOperator zora_base;
 
     RankZeroOperator V;       ///< Total potential energy operator
     RankZeroOperator H_1;     ///< Perturbation operators
@@ -107,9 +111,10 @@ private:
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};           // Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr};     // Total external potential
-    std::shared_ptr<ZoraOperator> vz{nullptr};               // ZORA operator
+    std::shared_ptr<ZoraOperator> kappa{nullptr};
+    std::shared_ptr<ZoraOperator> kappa_inv{nullptr};
 
-    QMPotential collectZoraBasePotential();
+    std::shared_ptr<QMPotential> collectZoraBasePotential();
     OrbitalVector buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);
     OrbitalVector buildHelmholtzArgumentNREL(OrbitalVector &Phi, OrbitalVector &Psi);
 };

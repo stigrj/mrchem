@@ -41,7 +41,7 @@
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/NablaOperator.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
-#include "qmoperators/one_electron/ZoraKineticOperator.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/qmoperator_utils.h"
 #include "utils/math_utils.h"
 
@@ -83,8 +83,14 @@ void FockBuilder::setup(double prec) {
     this->perturbation().setup(prec);
     
     if (isZora()) {
+        auto c = getLightSpeed();
         auto vz = collectZoraBasePotential();
-        zora().setupPotentials(vz, prec);
+        this->kappa = std::make_shared<ZoraOperator>(*vz, c, prec, false);
+        this->kappa_inv = std::make_shared<ZoraOperator>(*vz, c, prec, true);
+        this->zora_base = RankZeroOperator(vz);
+        this->kappa->setup(prec);
+        this->kappa_inv->setup(prec);
+        this->zora_base.setup(prec);
     };
 
     t_tot.stop();
@@ -101,7 +107,11 @@ void FockBuilder::clear() {
     this->momentum().clear();
     this->potential().clear();
     this->perturbation().clear();
-    if (isZora()) zora().clearPotentials();
+    if (isZora()) {
+        this->kappa->clear();
+        this->kappa_inv->clear();
+        this->zora_base.clear();
+    }
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -155,8 +165,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     // Kinetic part
     if (isZora()) {
-        RankZeroOperator kappa = zora().kappaPotential();
-        E_kin = qmoperator::calc_kinetic_trace(momentum(), kappa, Phi).real();
+        E_kin = qmoperator::calc_kinetic_trace(momentum(), *this->kappa, Phi).real();
     } else {
         E_kin = qmoperator::calc_kinetic_trace(momentum(), Phi);
     }
@@ -180,8 +189,7 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
-        RankZeroOperator kappa = zora().kappaPotential();
-        T_mat = qmoperator::calc_kinetic_matrix(momentum(), kappa, bra, ket);
+        T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->kappa, bra, ket);
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
@@ -218,13 +226,16 @@ OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi
 // Take 1 in notes on Overleaf
 OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
     // Get necessary operators
+    double c = getLightSpeed();
+    ComplexDouble two_cc{1.0/(2.0 * c * c), 0.0};
+    MomentumOperator &p = momentum();
     RankZeroOperator &V = potential();                                  // V
-    RankZeroOperator kappa = zora().kappaPotential();                   // kappa
-    RankZeroOperator divby2cc = zora().basePotentialOver2cc();          // Vz / 2c^2
-    RankZeroOperator invKappa = zora().kappaPotentialInverse();         // 1 / kappa
-    RankOneOperator<3> gradKappa = zora().kappaPotentialGradient();     // gradient of kappa
-    NablaOperator nabla(zora().getDerivative());
-    RankZeroOperator gradKappaGrad = tensor::dot(gradKappa, nabla);
+    RankZeroOperator &kappa = *this->kappa;
+    RankZeroOperator &kappa_m1 = *this->kappa_inv;
+    RankZeroOperator &V_zora = this->zora_base;
+
+    RankOneOperator<3> gradKappa = p(kappa);
+    RankZeroOperator gradKappaGrad = tensor::dot(gradKappa, p);
     gradKappaGrad.setup(prec);
 
     // Compute transformed orbitals scaled by diagonal Fock elements
@@ -235,9 +246,9 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     };
 
     // Compute OrbitalVectors
-    OrbitalVector termOne = (-0.5 * gradKappaGrad)(Phi);
+    OrbitalVector termOne = (0.5 * gradKappaGrad)(Phi);
     OrbitalVector termTwo = V(Phi);
-    OrbitalVector termThree = (kappa * divby2cc)(epsPhi);
+    OrbitalVector termThree = (two_cc * kappa * V_zora)(epsPhi);
 
     // Add up all the terms
     OrbitalVector out = orbital::deep_copy(termOne);
@@ -247,9 +258,9 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         out[i].add(1.0, termThree[i]);
         out[i].add(1.0, Psi[i]);
     };
-    
+
     gradKappaGrad.clear();
-    return invKappa(out);
+    return kappa_m1(out);
 } 
 
 // Non-relativistic Helmholtz argument
@@ -291,17 +302,17 @@ void FockBuilder::setZoraType(int key) {
     }
 }
 
-QMPotential FockBuilder::collectZoraBasePotential() {
+std::shared_ptr<QMPotential> FockBuilder::collectZoraBasePotential() {
     bool has_nuc = (getZoraType() == NUCLEAR or getZoraType() == NUCLEAR_COULOMB or getZoraType() == NUCLEAR_COULOMB_XC);
     bool has_coul = (getZoraType() == NUCLEAR_COULOMB) or (getZoraType() == NUCLEAR_COULOMB_XC);
     bool has_xc = (getZoraType() == NUCLEAR_COULOMB_XC);
 
-    QMPotential vz(1, false);
+    auto vz = std::make_shared<QMPotential>(1, false);
     if (has_nuc) {
         if (getNuclearOperator() != nullptr) {
             auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
             if (not vnuc.hasReal()) MSG_ERROR("ZORA: Adding empty nuclear potential");
-            vz.add(1.0, vnuc);
+            vz->add(1.0, vnuc);
         } else {
             MSG_ERROR("ZORA: Nuclear requested but not available");
         }
@@ -310,7 +321,7 @@ QMPotential FockBuilder::collectZoraBasePotential() {
         if (getCoulombOperator() != nullptr) {
             auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
             if (not coul.hasReal()) MSG_INFO("ZORA: Adding empty Coulomb potential");
-            vz.add(1.0, coul);
+            vz->add(1.0, coul);
         } else {
             MSG_ERROR("ZORA: Coulomb requested but not available");
         }
@@ -320,7 +331,7 @@ QMPotential FockBuilder::collectZoraBasePotential() {
             getXCOperator()->setSpin(SPIN::Alpha);
             auto &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
             if (not xc.hasReal()) MSG_ERROR("ZORA: Adding empty XC potential");
-            vz.add(1.0, xc);
+            vz->add(1.0, xc);
             getXCOperator()->clearSpin();
         } else {
             MSG_ERROR("ZORA: XC requested but not available");

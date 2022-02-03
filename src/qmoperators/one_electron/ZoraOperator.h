@@ -25,86 +25,35 @@
 
 #pragma once
 
-#include "MRCPP/MWOperators"
-
 #include "tensor/RankZeroOperator.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
-#include "qmoperators/one_electron/NablaOperator.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 
 class ZoraOperator final : public RankZeroOperator {
 public:
-    ZoraOperator(double c, std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
-            : light_speed(c)
-            , derivative(D) {
-    }
-    
-    RankZeroOperator kappaPotential() { return this->kappa; }
-    RankZeroOperator kappaPotentialInverse() { return this->kappa_inv; }
-    RankZeroOperator basePotentialOver2cc() { return this->base_over_2cc; }
-    RankOneOperator<3> kappaPotentialGradient() { return this->kappa_grad; }
-    
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> getDerivative() { return this->derivative; }
+    ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inverse = false) {
+        double two_cc = 2.0 * c * c;
 
-    double getLightSpeed() { return this->light_speed; }
-    double getTwoCC() { return 2.0 * this->light_speed * this->light_speed; }
-    
-    void setupPotentials(QMPotential &vz, double prec) {
-        double twocc = getTwoCC();
-        
-        // kappa potential
-        auto map_k = [twocc](double val) -> double { return twocc / (twocc - val); };
-        auto k = std::make_shared<QMPotential>(1, false);
+        auto k = std::make_shared<QMPotential>(1);
         qmfunction::deep_copy(*k, vz);
-        if (k->hasReal()) k->real().map(map_k);
-        this->kappa = RankZeroOperator(k);
-        this->kappa.setup(prec);
-        
-        // inverse kappa potential
-        auto map_kinv = [](double val) -> double { return 1.0 / val; };
-        auto k_inv = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*k_inv, *k);
-        if (k_inv->hasReal()) k_inv->real().map(map_kinv);
-        this->kappa_inv = RankZeroOperator(k_inv);
-        this->kappa_inv.setup(prec);
-        
-        // kappa gradient potential
-        NablaOperator nabla(this->derivative);
-        RankZeroOperator Kappa(this->kappa);
-        this->kappa_grad = nabla(Kappa);
-        this->kappa_grad.setup(prec);
-        
-        // base / 2cc potential
-        auto map_vz_over_2cc = [twocc](double val) -> double { return val / twocc; };
-        auto vz_over_2cc = std::make_shared<QMPotential>(1, false);
-        qmfunction::deep_copy(*vz_over_2cc, vz);
-        if (vz_over_2cc->hasReal()) vz_over_2cc->real().map(map_vz_over_2cc);
-        this->base_over_2cc = RankZeroOperator(vz_over_2cc);
-        this->base_over_2cc.setup(prec);
+
+        if (k->hasImag()) MSG_ERROR("Inverse of complex function");
+        if (k->hasReal()) {
+            mrcpp::refine_grid(k->real(), 1);
+            if (inverse) {
+                k->real().map([two_cc](double val) { return (two_cc - val) / two_cc; });
+            } else {
+                k->real().map([two_cc](double val) { return two_cc / (two_cc - val); });
+            }
+            k->real().crop(proj_prec);
+        }
+
+        RankZeroOperator &kappa = (*this);
+        kappa = k;
+        kappa.name() = "kappa";
     }
-
-    void clearPotentials() {
-        this->kappa.clear();
-        this->kappa_inv.clear();
-        this->kappa_grad.clear();
-        this->base_over_2cc.clear();
-        this->kappa = RankZeroOperator();
-        this->kappa_inv = RankZeroOperator();
-        this->kappa_grad = RankOneOperator<3>();
-        this->base_over_2cc = RankZeroOperator();
-    }
-
-private:
-    double light_speed;
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
-    
-    RankZeroOperator kappa;
-    RankZeroOperator kappa_inv;
-    RankZeroOperator base_over_2cc;
-    RankOneOperator<3> kappa_grad;
-
 };
    
 } // namespace mrchem

@@ -961,17 +961,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     //////////////////////   Zora Operator   //////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
-        double c = json_fock["zora_operator"]["light_speed"];
-        if (c <= 0.0) c = PHYSCONST::alpha_inv;
-        
-        auto shared_memory = json_fock["zora_operator"]["shared_memory"];
-        auto zora_diff = json_fock["zora_operator"]["derivative"];
         auto bp = json_fock["zora_operator"]["base_potential"];
-        auto D_p = driver::get_derivative(zora_diff);        
-        auto Z_p = std::make_shared<ZoraOperator>(c, D_p);
-        F.getZoraOperator() = Z_p;
+        auto c = json_fock["zora_operator"]["light_speed"];
+        if (c <= 0.0) c = PHYSCONST::alpha_inv;
         F.setZoraType(bp);
-        
+        F.setLightSpeed(c);
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////
