@@ -227,28 +227,34 @@ OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi
 OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
     // Get necessary operators
     double c = getLightSpeed();
-    ComplexDouble two_cc{1.0/(2.0 * c * c), 0.0};
+    double two_cc = 2.0 * c * c;
     MomentumOperator &p = momentum();
-    RankZeroOperator &V = potential();                                  // V
+    RankZeroOperator &V = potential();
     RankZeroOperator &kappa = *this->kappa;
     RankZeroOperator &kappa_m1 = *this->kappa_inv;
     RankZeroOperator &V_zora = this->zora_base;
 
-    RankOneOperator<3> gradKappa = p(kappa);
-    RankZeroOperator gradKappaGrad = tensor::dot(gradKappa, p);
-    gradKappaGrad.setup(prec);
+    RankZeroOperator operOne = 0.5 * tensor::dot(p(kappa), p);
+    RankZeroOperator operThree = kappa * V_zora;
+    operOne.setup(prec);
+    operThree.setup(prec);
 
     // Compute transformed orbitals scaled by diagonal Fock elements
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
     for (int i = 0; i < epsPhi.size(); i++) {
         if (not mpi::my_orb(epsPhi[i])) continue;
-        epsPhi[i].rescale(eps[i]);
-    };
+        epsPhi[i].rescale(eps[i]/two_cc);
+    }
 
     // Compute OrbitalVectors
-    OrbitalVector termOne = (0.5 * gradKappaGrad)(Phi);
+    OrbitalVector termOne = operOne(Phi);
     OrbitalVector termTwo = V(Phi);
-    OrbitalVector termThree = (two_cc * kappa * V_zora)(epsPhi);
+    OrbitalVector termThree = operThree(epsPhi);
+
+    auto normsOne = orbital::get_norms(termOne);
+    auto normsTwo = orbital::get_norms(termTwo);
+    auto normsThree = orbital::get_norms(termThree);
+    auto normsPsi = orbital::get_norms(Psi);
 
     // Add up all the terms
     OrbitalVector out = orbital::deep_copy(termOne);
@@ -257,9 +263,10 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         out[i].add(1.0, termTwo[i]);
         out[i].add(1.0, termThree[i]);
         out[i].add(1.0, Psi[i]);
-    };
+    }
 
-    gradKappaGrad.clear();
+    operThree.clear();
+    operOne.clear();
     return kappa_m1(out);
 } 
 

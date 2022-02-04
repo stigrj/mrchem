@@ -52,7 +52,11 @@ public:
 
         RankZeroOperator &kappa = (*this);
         kappa = k;
-        kappa.name() = "kappa";
+        if (inverse) {
+            kappa.name() = "kappa_m1";
+        } else {
+            kappa.name() = "kappa";
+        }
     }
 };
    
