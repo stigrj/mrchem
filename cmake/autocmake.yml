@@ -22,6 +22,7 @@ modules:
   - source:
     - 'custom/mpi.cmake'
     - 'custom/omp.cmake'
+    - 'custom/static_library.cmake'
     - 'custom/sad_basis.cmake'
     - 'custom/main.cmake'
     - 'custom/feature_summary.cmake'
