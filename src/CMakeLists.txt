@@ -13,6 +13,8 @@ target_compile_definitions(mrchem
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MRCHEM_HAS_MPI>
   )
 
+set_target_properties(mrchem PROPERTIES EXPORT_PROPERTIES "MRCHEM_HAS_OMP;MRCHEM_HAS_MPI")
+
 target_include_directories(mrchem
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
@@ -79,13 +81,48 @@ endif()
 install(
   TARGETS
     mrchem
-  RUNTIME
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT bin
-  LIBRARY
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    COMPONENT lib
-  PUBLIC_HEADER
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-    COMPONENT dev
+  EXPORT
+    "MRChemTargets"
+  RUNTIME DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION
+    ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
   )
+
+# <<<  Export Config  >>>
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  ${PROJECT_BINARY_DIR}/${CMAKECONFIG_INSTALL_DIR}/MRChemConfigVersion.cmake
+  VERSION ${MRCHEM_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+configure_package_config_file(
+  ${PROJECT_SOURCE_DIR}/cmake/MRChemConfig.cmake.in
+  ${PROJECT_BINARY_DIR}/${CMAKECONFIG_INSTALL_DIR}/MRChemConfig.cmake
+  INSTALL_DESTINATION
+    ${CMAKECONFIG_INSTALL_DIR}
+  )
+
+install(
+  FILES
+    ${PROJECT_BINARY_DIR}/${CMAKECONFIG_INSTALL_DIR}/MRChemConfig.cmake
+    ${PROJECT_BINARY_DIR}/${CMAKECONFIG_INSTALL_DIR}/MRChemConfigVersion.cmake
+  DESTINATION
+    ${CMAKECONFIG_INSTALL_DIR}
+  )
+
+install(
+  EXPORT
+    "MRChemTargets"
+  NAMESPACE
+    "MRChem::"
+  DESTINATION
+    ${CMAKECONFIG_INSTALL_DIR}
+    )
+
+# Alias useful for use with FetchContent
+add_library(MRChem::mrchem ALIAS mrchem)
+

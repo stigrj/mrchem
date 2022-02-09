@@ -55,9 +55,14 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
 set(_build_type ${CMAKE_BUILD_TYPE})
 # Order IS important here!
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
-include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
+
+# Hardcode to share, rather than use CMAKE_INSTALL_DATAROOTDIR as the latter
+# might resolve to a place not recognized by CMake
+set(CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}")
+
 # reset CMAKE_BUILD_TYPE to whatever it was for MRChem
 set(CMAKE_BUILD_TYPE ${_build_type})
 
