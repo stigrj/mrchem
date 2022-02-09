@@ -1,6 +1,5 @@
 # <<< Build MRChem library >>>
 add_library(mrchem
-  STATIC
     driver.cpp
     parallel.cpp
     mrenv.cpp
@@ -62,9 +61,11 @@ target_link_libraries(mrchem
 
 set_target_properties(mrchem
   PROPERTIES
-    POSITION_INDEPENDENT_CODE 1
+    VERSION ${MRCHEM_VERSION_MAJOR}
+    SOVERSION ${MRCHEM_VERSION_MAJOR}
     MACOSX_RPATH ON
     OUTPUT_NAME "mrchem"
+    EXPORT_NAME "mrchem"
     PUBLIC_HEADER "${_public_headers}"
   )
 
@@ -78,9 +79,6 @@ endif()
 install(
   TARGETS
     mrchem
-  ARCHIVE
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    COMPONENT lib
   RUNTIME
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT bin
@@ -88,7 +86,7 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     COMPONENT lib
   PUBLIC_HEADER
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/MRChem
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
     COMPONENT dev
   )
 
