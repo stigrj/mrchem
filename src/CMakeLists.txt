@@ -1,6 +1,6 @@
 # <<< Build MRChem library >>>
 add_library(mrchem
-  OBJECT
+  STATIC
     driver.cpp
     parallel.cpp
     mrenv.cpp
@@ -30,6 +30,15 @@ list(APPEND _public_headers
   ${PROJECT_BINARY_DIR}/version.h
   )
 
+# RPATH fixing
+file(RELATIVE_PATH _rel ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_PREFIX})
+if(APPLE)
+  set(_rpath "@loader_path/${_rel}")
+else()
+  set(_rpath "\$ORIGIN/${_rel}")
+endif()
+file(TO_NATIVE_PATH "${_rpath}/${CMAKE_INSTALL_LIBDIR}" MRChem_RPATH)
+
 add_subdirectory(analyticfunctions)
 add_subdirectory(chemistry)
 add_subdirectory(environment)
@@ -54,12 +63,30 @@ target_link_libraries(mrchem
 set_target_properties(mrchem
   PROPERTIES
     POSITION_INDEPENDENT_CODE 1
+    MACOSX_RPATH ON
+    OUTPUT_NAME "mrchem"
     PUBLIC_HEADER "${_public_headers}"
   )
+
+if(APPLE)
+  set_target_properties(mrchem
+    PROPERTIES
+      LINK_FLAGS "-undefined dynamic_lookup"
+    )
+endif()
 
 install(
   TARGETS
     mrchem
+  ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    COMPONENT lib
+  RUNTIME
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT bin
+  LIBRARY
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    COMPONENT lib
   PUBLIC_HEADER
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/MRChem
     COMPONENT dev
@@ -72,15 +99,6 @@ target_link_libraries(mrchem.x
   PRIVATE
     mrchem
   )
-
-# RPATH fixing
-file(RELATIVE_PATH _rel ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_PREFIX})
-if(APPLE)
-  set(_rpath "@loader_path/${_rel}")
-else()
-  set(_rpath "\$ORIGIN/${_rel}")
-endif()
-file(TO_NATIVE_PATH "${_rpath}/${CMAKE_INSTALL_LIBDIR}" MRChem_RPATH)
 
 set_target_properties(mrchem.x
   PROPERTIES
