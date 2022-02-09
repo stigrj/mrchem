@@ -61,6 +61,5 @@ include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
 # reset CMAKE_BUILD_TYPE to whatever it was for MRChem
 set(CMAKE_BUILD_TYPE ${_build_type})
 
+add_subdirectory(api)
 add_subdirectory(src)
-add_subdirectory(python)
-add_subdirectory(pilot)

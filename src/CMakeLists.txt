@@ -89,30 +89,3 @@ install(
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
     COMPONENT dev
   )
-
-# <<< Build MRChem executables >>>
-add_executable(mrchem.x mrchem.cpp)
-
-target_link_libraries(mrchem.x
-  PRIVATE
-    mrchem
-  )
-
-set_target_properties(mrchem.x
-  PROPERTIES
-    MACOSX_RPATH ON
-    SKIP_BUILD_RPATH OFF
-    BUILD_WITH_INSTALL_RPATH OFF
-    INSTALL_RPATH "${MRChem_RPATH}"
-    INSTALL_RPATH_USE_LINK_PATH ON
-  )
-
-install(
-  TARGETS
-    mrchem.x
-  RUNTIME
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT bin
-  )
-
-add_subdirectory(initial_guess)
