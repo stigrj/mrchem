@@ -32,7 +32,7 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-ReactionPotential::ReactionPotential(SCRF_p &scrf_p, OrbitalVector_p Phi_p)
+ReactionPotential::ReactionPotential(SCRF_p scrf_p, OrbitalVector_p Phi_p)
         : QMPotential(1, false)
         , helper(std::move(scrf_p))
         , Phi(Phi_p) {}
