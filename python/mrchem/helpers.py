@@ -195,10 +195,39 @@ def write_scf_solver(user_dict, wf_dict):
     if start_prec < 0.0:
         start_prec = final_prec
 
+    # TODO: Improve label determination. Make it easier to extent for future env additions
+    # TODO: Move determination to its own function to clean up this one
+    # TODO: Control precision of x,y,z strengths in label
+    # Determine the appropriate `Environment` printout in SCF 
+    # The relevant algorithms are implicit solvation and finite external fields
+    env = user_dict['Environment']
+    ext = user_dict['ExternalFields']
+
+    # Keep track of active environments
+    has_solvent = env['run_environment']
+    has_external_fields = len(ext['electric_field']) > 0
+
+    # If no external fields, then the list will be empty
+    # Need to catch the exception and store placeholders
+    try:
+        x, y, z = ext['electric_field']
+    except ValueError:
+        x, y, z = None, None, None  # Useless placeholders
+
+    # Labels to aggregate
+    label_sol = 'PCM'
+    label_ext = f'Electric field ({x}, {y}, {z})'
+
+    # Aggregate labels
+    labels = [label_sol, label_ext]
+    envs = [has_solvent, has_external_fields]
+    label_env = ' ; '.join([label for label, has_env in zip(labels, envs) if has_env])
+
     scf_dict = user_dict["SCF"]
     solver_dict = {
         "method": wf_dict["method_name"],
         "relativity": wf_dict["relativity_name"],
+        "environment": label_env,
         "kain": scf_dict["kain"],
         "max_iter": scf_dict["max_iter"],
         "rotation": scf_dict["rotation"],
@@ -211,6 +240,7 @@ def write_scf_solver(user_dict, wf_dict):
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
     }
+
     return solver_dict
 
 
@@ -446,5 +476,3 @@ def parse_wf_method(user_dict):
         "dft_funcs": dft_funcs
     }
     return wf_dict
-
-
