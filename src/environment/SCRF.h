@@ -60,6 +60,7 @@ public:
     QMFunction &getCurrentDifferenceGamma() { return this->dgamma_n; }
 
     void updateMOResidual(double const err_t) { this->mo_residual = err_t; }
+    void printParameters();
 
     friend class ReactionPotential;
 

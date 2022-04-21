@@ -58,6 +58,7 @@ public:
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
     void setRelativityName(const std::string &name) { this->relativityName = name; }
+    void setEnvironmentName(const std::string &name) { this->environmentName = name; }
 
 protected:
     int history{0};                      ///< Maximum length of KAIN history
@@ -69,6 +70,7 @@ protected:
     double orbPrec[3]{-1.0, -1.0, -1.0}; ///< Dynamic precision: [current_prec, start_prec, end_prec]
     std::string methodName;              ///< Name of electronic structure method to appear in output
     std::string relativityName{"None"};  ///< Name of ZORA method
+    std::string environmentName{"None"}; ///< Aggregated name for external environment
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error

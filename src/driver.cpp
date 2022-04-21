@@ -258,6 +258,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto kain = json_scf["scf_solver"]["kain"];
         auto method = json_scf["scf_solver"]["method"];
         auto relativity = json_scf["scf_solver"]["relativity"];
+        auto environment = json_scf["scf_solver"]["environment"];
         auto max_iter = json_scf["scf_solver"]["max_iter"];
         auto rotation = json_scf["scf_solver"]["rotation"];
         auto localize = json_scf["scf_solver"]["localize"];
@@ -275,6 +276,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setLocalize(localize);
         solver.setMethodName(method);
         solver.setRelativityName(relativity);
+        solver.setEnvironmentName(environment);
         solver.setCheckpoint(checkpoint);
         solver.setCheckpointFile(file_chk);
         solver.setMaxIterations(max_iter);
@@ -1036,6 +1038,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, convergence_criterion, algorithm, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
+
+        V_R->getHelper()->printParameters();
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////
