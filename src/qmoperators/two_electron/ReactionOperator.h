@@ -42,8 +42,8 @@ class SCRF;
 
 class ReactionOperator final : public RankZeroOperator {
 public:
-    ReactionOperator(std::unique_ptr<SCRF> &scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p) {
-        potential = std::make_shared<ReactionPotential>(scrf_p, Phi_p);
+    ReactionOperator(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p) {
+        potential = std::make_shared<ReactionPotential>(std::move(scrf_p), Phi_p);
         // Invoke operator= to assign *this operator
         RankZeroOperator &V = (*this);
         V = potential;

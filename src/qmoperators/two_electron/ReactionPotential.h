@@ -44,7 +44,7 @@ public:
     /** @brief Initializes the ReactionPotential class.
      *  @param scrf_p A SCRF instance which contains the parameters needed to compute the ReactionPotential.
      *  @param Phi_p A pointer to a vector which contains the orbitals optimized in the SCF procedure. */
-    ReactionPotential(std::unique_ptr<SCRF> &scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p);
+    ReactionPotential(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p);
     ~ReactionPotential() override { free(NUMBER::Total); }
 
     SCRF *getHelper() { return this->helper.get(); }
