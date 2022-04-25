@@ -296,16 +296,12 @@ void SCRF::printParameters() {
     mrcpp::print::header(0, "Self-Consistent Reaction Field");
     print_utils::scalar(0, "Dielectric constant (inside) ", epsilon.getEpsIn(), "", 5, true, buffer);
     print_utils::scalar(0, "Dielectric constant (outside)", epsilon.getEpsOut(), "", 5, true, buffer);
-    print_utils::scalar(0, "Max number of micro-ierations", max_iter, "", 1, false, buffer);
+    print_utils::scalar(0, "Max number of micro-iterations", max_iter, "", 0, false, buffer);
     print_utils::text(0, "Accelerate with KAIN", (accelerate_Vr) ? "true" : "false", true, buffer);
     print_utils::text(0, "Algorithm", algorithm, true, buffer);
     print_utils::text(0, "Density type", density_type, true, buffer);
     print_utils::text(0, "Convergence criterion", convergence_criterion, true, buffer);
-    mrcpp::print::separator(0, '=');
-
-    // A couple of new lines to have a pleasing spacing to next section
-    println(0, "");
-    println(0, "");
+    mrcpp::print::separator(0, '=', 2);
 }
 
 } // namespace mrchem
