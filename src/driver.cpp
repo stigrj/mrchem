@@ -1039,6 +1039,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
 
+        mol.printCavity();
         V_R->getHelper()->printParameters();
     }
     ///////////////////////////////////////////////////////////

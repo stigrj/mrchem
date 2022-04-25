@@ -50,6 +50,7 @@ public:
     auto getGradVector() const { return this->gradvector; }
     std::vector<mrcpp::Coord<3>> getCoordinates() const { return centers; } //!< Returns #centers.
     std::vector<double> getRadii() const { return radii; }                  //!< Returns #radii.
+    double getWidth() { return width; }                                     //!< Returns #width.
     friend class Permittivity;
 
 protected:

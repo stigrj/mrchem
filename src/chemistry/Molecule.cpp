@@ -208,6 +208,54 @@ void Molecule::printGeometry() const {
     mrcpp::print::separator(0, '=', 2);
 }
 
+/** @brief Pretty output of solvation cavity spheres */
+void Molecule::printCavity() {
+    // Collect relevant quantities
+    Cavity &cavity = getCavity();
+    std::vector<mrcpp::Coord<3>> coords = cavity.getCoordinates();
+    std::vector<double> radii = cavity.getRadii();
+
+    // Set widths
+    auto w0 = Printer::getWidth() - 1;
+    auto w1 = 5;
+    auto w2 = 12;
+    auto w3 = 2 * w0 / 9;
+    auto w4 = w0 - w1 - w2 - 3 * w3;
+
+    // Build table column headers
+    std::stringstream o_head;
+    o_head << std::setw(w1) << "N";
+    o_head << std::setw(w2) << "Radius";
+    o_head << std::string(w4 - 1, ' ') << ':';
+    o_head << std::setw(w3) << "x";
+    o_head << std::setw(w3) << "y";
+    o_head << std::setw(w3) << "z";
+
+    // Print
+    mrcpp::print::header(0, "Solvation Cavity");
+    print_utils::scalar(0, "Cavity width", cavity.getWidth(), "", 6);
+    mrcpp::print::separator(0, '-');
+    println(0, o_head.str());
+    mrcpp::print::separator(0, '-');
+    for (int i = 0; i < coords.size(); i++) {
+        mrcpp::Coord<3> coord = coords[i];
+        double r = radii[i];
+        double x = coord[0];
+        double y = coord[1];
+        double z = coord[2];
+
+        std::stringstream o_coord;
+        o_coord << std::setw(w1) << i;
+        o_coord << std::setw(w2) << std::setprecision(6) << std::fixed << r;
+        o_coord << std::string(w4 - 1, ' ') << ':';
+        o_coord << std::setw(w3) << std::setprecision(6) << std::fixed << x;
+        o_coord << std::setw(w3) << std::setprecision(6) << std::fixed << y;
+        o_coord << std::setw(w3) << std::setprecision(6) << std::fixed << z;
+        println(0, o_coord.str());
+    }
+    mrcpp::print::separator(0, '=', 2);
+}
+
 void Molecule::printEnergies(const std::string &txt) const {
     energy.print(txt);
     epsilon.print(txt);
