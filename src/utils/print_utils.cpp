@@ -167,6 +167,9 @@ void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
         // If right-align, determine how much to shift the vals
         int shift = (ralign) ? Printer::getWidth() - w - val.size() - 3 : 0;
 
+        // Avoid runtime errors due to negative shifts caused by very long names
+        if (shift < 0) shift = 0;
+
         std::printf("%-*s%-s%-s%-s\n", w, key.c_str(), " : ", std::string(shift, ' ').c_str(), val.c_str());
     }
 }
