@@ -36,6 +36,8 @@
 #include "scf_solver/KAIN.h"
 #include "utils/print_utils.h"
 
+#include <nlohmann/json.hpp>
+
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -292,15 +294,18 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
 }
 
 void SCRF::printParameters() {
-    int buffer = 3; // Extra space for long names
+    nlohmann::json data = {
+        {"Dielectric constant (inside)", epsilon.getEpsIn()},
+        {"Dielectric constant (outside)", epsilon.getEpsOut()},
+        {"Max. number of micro-iterations", max_iter},
+        {"Accelerate with KAIN", (accelerate_Vr) ? "true" : "false"},
+        {"Algorithm", algorithm},
+        {"Density type", density_type},
+        {"Convergence criterion", convergence_criterion},
+    };
+
     mrcpp::print::header(0, "Self-Consistent Reaction Field");
-    print_utils::scalar(0, "Dielectric constant (inside) ", epsilon.getEpsIn(), "", 5, true, buffer);
-    print_utils::scalar(0, "Dielectric constant (outside)", epsilon.getEpsOut(), "", 5, true, buffer);
-    print_utils::scalar(0, "Max number of micro-iterations", max_iter, "", 0, false, buffer);
-    print_utils::text(0, "Accelerate with KAIN", (accelerate_Vr) ? "true" : "false", true, buffer);
-    print_utils::text(0, "Algorithm", algorithm, true, buffer);
-    print_utils::text(0, "Density type", density_type, true, buffer);
-    print_utils::text(0, "Convergence criterion", convergence_criterion, true, buffer);
+    print_utils::json(0, data, true);
     mrcpp::print::separator(0, '=', 2);
 }
 
