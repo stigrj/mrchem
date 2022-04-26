@@ -295,9 +295,9 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
 
 void SCRF::printParameters() {
     nlohmann::json data = {
-        {"Dielectric constant (inside)", epsilon.getEpsIn()},
-        {"Dielectric constant (outside)", epsilon.getEpsOut()},
-        {"Max. number of micro-iterations", max_iter},
+        {"Dielectric const. (inside)", epsilon.getEpsIn()},
+        {"Dielectric const. (outside)", epsilon.getEpsOut()},
+        {"Max. iterations", max_iter},
         {"Accelerate with KAIN", (accelerate_Vr) ? "true" : "false"},
         {"Algorithm", algorithm},
         {"Density type", density_type},
