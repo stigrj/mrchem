@@ -1038,9 +1038,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, convergence_criterion, algorithm, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
-
-        mol.printCavity();
-        V_R->getHelper()->printParameters();
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////
