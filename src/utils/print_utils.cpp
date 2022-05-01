@@ -127,7 +127,7 @@ void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
         int w0 = Printer::getWidth() - 2; // Defines the printable width
         int w1 = w0 * 2 / 9;              // Space dedicated to the json key
         int w2 = w0 - 3 * w1;
-        int w3 = w2 - (val.size() + 1);
+        // int w3 = w2 - (val.size() + 1);
 
         // Some paddings for book keeping
         int frontEndPadding = 2; // Empty space at beginning and end
@@ -135,51 +135,6 @@ void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
 
         // Use standard spacing if longest name fits
         if (w2 > lshift) lshift = w2 - frontEndPadding;
-
-        // Calculate the shift needed for right-aligning
-        int rshift = (ralign) ? Printer::getWidth() - lshift - val.size() - frontEndPadding - colonPadding : 0;
-
-        // Check that rshift is not negative (caused by very long names)
-        if (rshift < 0) rshift = 0;
-
-        // Print line
-        std::printf(" %-*s%-s%-s%-s \n", lshift, key.c_str(), " : ", std::string(rshift, ' ').c_str(), val.c_str());
-    }
-}
-
-void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
-    // Determine longest name
-    // This will be used for the spacing left of :
-    // if the name is too long to be aligned with
-    // the other sections
-    int lshift = 0;
-    for (const auto &item : j.items()) {
-        if (item.key().size() > lshift) lshift = item.key().size();
-    }
-
-    // Loop over json items
-    for (const auto &item : j.items()) {
-        // Extract key and value from json
-        std::string key = item.key();
-        std::stringstream o_val;
-        o_val << item.value();
-        std::string val = o_val.str();
-
-        // Remove quotes from val
-        val.erase(std::remove(val.begin(), val.end(), '\"'), val.end());
-
-        // Standard shift to align all colons
-        int w0 = Printer::getWidth() - 2; // Defines the printable width
-        int w1 = w0 * 2 / 9;              // Space dedicated to the json key
-        int w2 = w0 - 3 * w1;
-        int w3 = w2 - (val.size() + 1);
-
-        // Some paddings for book keeping
-        int frontEndPadding = 2; // Empty space at beginning and end
-        int colonPadding = 3;    // Two empty spaces around a single colon
-
-        // Use standard spacing if longest name fits
-        if (w3 > lshift) lshift = w3 + frontEndPadding;
 
         // Calculate the shift needed for right-aligning
         int rshift = (ralign) ? Printer::getWidth() - lshift - val.size() - frontEndPadding - colonPadding : 0;
