@@ -141,6 +141,7 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
         auto xyz = coord["xyz"];
         nuclei.push_back(atom, xyz);
     }
+    mol.printGeometry();
 
     if (json_mol.contains("cavity")) {
         auto json_cavity = json_mol["cavity"];
@@ -153,8 +154,8 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
         auto width = json_cavity["width"];
 
         mol.initCavity(coords, radii, width);
+        mol.printCavity();
     }
-    mol.printGeometry();
 }
 
 void driver::init_properties(const json &json_prop, Molecule &mol) {
