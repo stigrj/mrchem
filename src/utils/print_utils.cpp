@@ -72,7 +72,8 @@ std::string print_utils::dbl_to_str(double d, int p, bool sci) {
     }
     return o_dbl.str();
 }
-/** @brief Prints text centered according to current print width */ / void print_utils::centeredText(int level, const std::string &txt) {
+/** @brief Prints text centered according to current print width */
+void print_utils::centeredText(int level, const std::string &txt) {
     int pwidth = Printer::getWidth();
     int txt_width = txt.size();
     int pre_spaces = (pwidth - txt_width) / 2;
