@@ -58,9 +58,9 @@ PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
 
 /** @brief Pretty print physical constants */
 void PhysicalConstants::Print() {
-    mrcpp::print::header(0, "Physical Constants");
+    mrcpp::print::separator(0, '~');
     print_utils::json(0, constants_, true);
-    mrcpp::print::separator(0, '=', 2);
+    mrcpp::print::separator(0, '~', 2);
 }
 
 } // namespace mrchem
