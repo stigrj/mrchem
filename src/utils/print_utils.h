@@ -33,6 +33,7 @@
 namespace mrchem {
 namespace print_utils {
 
+void centeredText(int level, const std::string &txt);
 void headline(int level, const std::string &txt);
 void text(int level, const std::string &txt, const std::string &val);
 void json(int level, const nlohmann::json &j, bool ralign = false);

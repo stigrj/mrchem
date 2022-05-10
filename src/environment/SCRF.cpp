@@ -295,8 +295,8 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
 
 void SCRF::printParameters() {
     nlohmann::json data = {
-        {"Dielectric const. (inside)", epsilon.getEpsIn()},
-        {"Dielectric const. (outside)", epsilon.getEpsOut()},
+        {"Dielec. const. (in)", epsilon.getEpsIn()},
+        {"Dielec. const. (out)", epsilon.getEpsOut()},
         {"Max. iterations", max_iter},
         {"Accelerate with KAIN", (accelerate_Vr) ? "true" : "false"},
         {"Algorithm", algorithm},
@@ -304,9 +304,11 @@ void SCRF::printParameters() {
         {"Convergence criterion", convergence_criterion},
     };
 
-    mrcpp::print::header(0, "Self-Consistent Reaction Field");
-    print_utils::json(0, data, true);
-    mrcpp::print::separator(0, '=', 2);
+    mrcpp::print::separator(0, '~');
+    print_utils::centeredText(0, "Self-Consistent Reaction Field");
+    mrcpp::print::separator(0, '~');
+    print_utils::json(0, data, false);
+    mrcpp::print::separator(0, '~', 2);
 }
 
 } // namespace mrchem
