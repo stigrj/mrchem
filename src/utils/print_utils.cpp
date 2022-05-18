@@ -109,7 +109,7 @@ void print_utils::text(int level, const std::string &txt, const std::string &val
     shift = (ralign) ? w0 - w2 - val.size() - 1 : 0;
 
     std::stringstream o;
-    o << " " << txt << std::string(w3, ' ') << ": "  << std::string(shift, ' ') << val;
+    o << " " << txt << std::string(w3, ' ') << ": " << std::string(shift, ' ') << val;
     println(level, o.str());
 }
 
