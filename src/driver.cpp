@@ -154,7 +154,7 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
         auto width = json_cavity["width"];
 
         mol.initCavity(coords, radii, width);
-        mol.printCavity();
+        // mol.printCavity();
     }
 }
 
@@ -223,7 +223,7 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
  * This function expects the "scf_calculation" subsection of the input.
  */
 json driver::scf::run(const json &json_scf, Molecule &mol) {
-    print_utils::headline(0, "Computing Ground State Wavefunction");
+    // print_utils::headline(0, "Computing Ground State Wavefunction");
     json json_out = {{"success", true}};
 
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
@@ -241,6 +241,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
+    print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
     if (scf::guess_orbitals(json_guess, mol)) {
         scf::guess_energy(json_guess, mol, F);
@@ -256,6 +257,8 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
 
     // Run GroundStateSolver if present in input JSON
     if (json_scf.contains("scf_solver")) {
+        print_utils::headline(0, "Computing Ground State Wavefunction");
+
         auto kain = json_scf["scf_solver"]["kain"];
         auto method = json_scf["scf_solver"]["method"];
         auto relativity = json_scf["scf_solver"]["relativity"];
@@ -1039,6 +1042,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, convergence_criterion, algorithm, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
+
+        // dielectric_func.printParameters();
+        // V_R->getHelper()->printParameters();
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////
