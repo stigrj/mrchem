@@ -59,6 +59,8 @@ public:
     QMFunction &getPreviousGamma() { return this->gamma_nm1; }
     QMFunction &getCurrentDifferenceGamma() { return this->dgamma_n; }
 
+    Permittivity &getPermittivity() { return this->epsilon; }
+
     void updateMOResidual(double const err_t) { this->mo_residual = err_t; }
     void printParameters();
 
