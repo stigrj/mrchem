@@ -26,7 +26,9 @@
 #pragma once
 
 #include "Cavity.h"
+#include "utils/print_utils.h"
 #include <MRCPP/MWFunctions>
+#include <MRCPP/Printer>
 
 namespace mrchem {
 /** @class Permittivity
@@ -82,6 +84,15 @@ public:
 
     /** @brief Returns the value of #epsilon_out. */
     auto getEpsOut() const { return this->epsilon_out; }
+
+    /** @brief Returns the cavity */
+    Cavity getCavity() const { return this->cavity; }
+
+    /** @brief Returns the formulation */
+    std::string getFormulation() const { return this->formulation; }
+
+    /** @brief Print parameters */
+    void printParameters();
 
 private:
     bool inverse = false;    //!< State of #evalf
