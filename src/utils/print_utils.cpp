@@ -98,14 +98,18 @@ void print_utils::headline(int level, const std::string &txt) {
     mrcpp::print::separator(level, ' ');
 }
 
-void print_utils::text(int level, const std::string &txt, const std::string &val) {
+void print_utils::text(int level, const std::string &txt, const std::string &val, bool ralign) {
     int w0 = Printer::getWidth() - 2;
     int w1 = w0 * 2 / 9;
     int w2 = w0 - 3 * w1;
     int w3 = w2 - (txt.size() + 1);
 
+    // Right-aligning
+    int shift;
+    shift = (ralign) ? w0 - w2 - val.size() - 1 : 0;
+
     std::stringstream o;
-    o << " " << txt << std::string(w3, ' ') << ": " << val;
+    o << " " << txt << std::string(w3, ' ') << ": "  << std::string(shift, ' ') << val;
     println(level, o.str());
 }
 
