@@ -220,7 +220,12 @@ void GroundStateSolver::reset() {
  */
 json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     printParameters("Optimize ground state orbitals");
-    if (F.getReactionOperator() != nullptr) F.getReactionOperator()->getHelper()->printParameters();
+
+    // Print solvation cavity and SCRF parameters
+    if (F.getReactionOperator() != nullptr) {
+        F.getReactionOperator()->getHelper()->printParameters();
+        F.getReactionOperator()->getHelper()->getPermittivity().printParameters();
+    }
 
     Timer t_tot;
     json json_out;
