@@ -295,7 +295,7 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
 
 void SCRF::printParameters() {
     nlohmann::json data = {{"Max iterations", max_iter},
-                           {"Accelerate with KAIN", (accelerate_Vr) ? "true" : "false"},
+                           {"Accelerate with KAIN", (accelerate_Vr) ? "True" : "False"},
                            {"Algorithm", algorithm},
                            {"Density type", density_type},
                            {"Convergence criterion", convergence_criterion}};
