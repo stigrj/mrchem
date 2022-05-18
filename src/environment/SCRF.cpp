@@ -294,15 +294,11 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
 }
 
 void SCRF::printParameters() {
-    nlohmann::json data = {
-        {"Dielec. const. (in)", epsilon.getEpsIn()},
-        {"Dielec. const. (out)", epsilon.getEpsOut()},
-        {"Max. iterations", max_iter},
-        {"Accelerate with KAIN", (accelerate_Vr) ? "true" : "false"},
-        {"Algorithm", algorithm},
-        {"Density type", density_type},
-        {"Convergence criterion", convergence_criterion},
-    };
+    nlohmann::json data = {{"Max iterations", max_iter},
+                           {"Accelerate with KAIN", (accelerate_Vr) ? "true" : "false"},
+                           {"Algorithm", algorithm},
+                           {"Density type", density_type},
+                           {"Convergence criterion", convergence_criterion}};
 
     mrcpp::print::separator(0, '~');
     print_utils::centeredText(0, "Self-Consistent Reaction Field");
