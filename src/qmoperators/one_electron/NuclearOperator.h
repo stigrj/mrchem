@@ -34,6 +34,7 @@ class NuclearFunction;
 class NuclearOperator final : public RankZeroOperator {
 public:
     NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false);
+    NuclearOperator(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share = false);
 
 private:
     void setupLocalPotential(NuclearFunction &f_loc, const Nuclei &nucs, double smooth_prec) const;
