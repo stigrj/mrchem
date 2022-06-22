@@ -23,6 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
@@ -31,6 +32,7 @@
 #include "analyticfunctions/NuclearFunction.h"
 #include "chemistry/chemistry_utils.h"
 #include "parallel.h"
+#include "qmfunctions/Density.h"
 #include "qmfunctions/QMFunction.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
@@ -40,6 +42,34 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
+
+NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share) {
+    Timer t_tot;
+    mrcpp::print::header(2, "Projecting nuclear density");
+    println(0, "Nuclear exponent: " << exponent);
+
+    mrcpp::PoissonOperator P(*MRA, proj_prec);
+
+    Timer t_rho;
+    auto rho_nuc = chemistry::compute_nuclear_density(proj_prec, nucs, exponent);
+    rho_nuc.rescale(-1.0);
+    t_rho.stop();
+
+    Timer t_pot;
+    auto V_nuc = std::make_shared<QMPotential>(1, mpi_share);
+    V_nuc->alloc(NUMBER::Real);
+    mrcpp::apply(apply_prec, V_nuc->real(), P, rho_nuc.real());
+    t_pot.stop();
+
+    t_tot.stop();
+    print_utils::qmfunction(2, "Apply Poisson", *V_nuc, t_pot);
+    mrcpp::print::footer(2, t_tot, 2);
+
+    // Invoke operator= to assign *this operator
+    RankZeroOperator &O = (*this);
+    O = V_nuc;
+    O.name() = "V_nuc";
+}
 
 /*! @brief NuclearOperator represents the function: sum_i Z_i/|r - R_i|
  *  @param nucs: Collection of nuclei that defines the potential
