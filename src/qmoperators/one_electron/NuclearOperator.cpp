@@ -52,13 +52,16 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double ex
     }
 }
 
+/** Compute finite nucleus potential by projecting analytic expression for the potential.
+*   Works only for single nucleus for now!
+*/
 void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share) {
     Timer t_tot;
-    mrcpp::print::header(2, "Projecting nuclear density");
+    mrcpp::print::header(2, "Projecting nuclear potential");
     println(0, "Nuclear exponent: " << exponent);
-    double sqrt_exp = std::exp(exponent);
+    double sqrt_exp = std::sqrt(exponent);
 
-    auto &nuc = nucs[0];
+    auto &nuc = nucs[0]; // NB: only first nucleus!
     auto f_smooth = [sqrt_exp, &nuc] (const mrcpp::Coord<3> &r) -> double {
         const auto Z_I = nuc.getCharge();
         const auto &R_I = nuc.getCoord();
@@ -77,6 +80,9 @@ void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec,
     O.name() = "V_nuc";
 }
 
+/** Compute finite nucleus potential by projecting Gaussian charge distribution and then apply Poisson.
+*   Should work for any number of nuclei, but all get the same exponent.
+*/
 void NuclearOperator::applyFiniteNucleus(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share) {
     Timer t_tot;
     mrcpp::print::header(2, "Projecting nuclear density");

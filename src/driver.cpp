@@ -995,7 +995,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto proj_prec = json_fock["nuclear_operator"]["proj_prec"].get<double>();
         auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"].get<double>();
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"].get<bool>();
-        bool proj_charge = false;
+        bool proj_charge = true;
         auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, proj_charge);
         // auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
         F.getNuclearOperator() = V_p;
