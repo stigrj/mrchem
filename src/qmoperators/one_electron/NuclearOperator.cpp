@@ -37,13 +37,47 @@
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
 #include "utils/print_utils.h"
+#include "utils/math_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
-NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share) {
+NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share, bool proj_charge) {
+    if (proj_charge) {
+        projectFiniteNucleus(nucs, proj_prec, exponent, mpi_share);
+    } else {
+        applyFiniteNucleus(nucs, proj_prec, proj_prec, exponent, mpi_share);
+    }
+}
+
+void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share) {
+    Timer t_tot;
+    mrcpp::print::header(2, "Projecting nuclear density");
+    println(0, "Nuclear exponent: " << exponent);
+    double sqrt_exp = std::exp(exponent);
+
+    auto &nuc = nucs[0];
+    auto f_smooth = [sqrt_exp, &nuc] (const mrcpp::Coord<3> &r) -> double {
+        const auto Z_I = nuc.getCharge();
+        const auto &R_I = nuc.getCoord();
+        double R = math_utils::calc_distance(r, R_I);
+        return -(Z_I / R) * std::erf(sqrt_exp * R);
+    };
+
+    Timer t_pot;
+    auto V_nuc = std::make_shared<QMPotential>(1, mpi_share);
+    qmfunction::project(*V_nuc, f_smooth, NUMBER::Real, proj_prec);
+    t_pot.stop();
+
+    // Invoke operator= to assign *this operator
+    RankZeroOperator &O = (*this);
+    O = V_nuc;
+    O.name() = "V_nuc";
+}
+
+void NuclearOperator::applyFiniteNucleus(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share) {
     Timer t_tot;
     mrcpp::print::header(2, "Projecting nuclear density");
     println(0, "Nuclear exponent: " << exponent);
