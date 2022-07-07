@@ -1593,18 +1593,22 @@ int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
     return nElectrons;
 }
 
-/** @brief Returns the total number of nodes in the vector */
-int orbital::get_n_nodes(const OrbitalVector &Phi) {
-    int nNodes = 0;
-    for (const auto &phi_i : Phi) nNodes += phi_i.getNNodes(NUMBER::Total);
-    return nNodes;
+/** @brief Returns the total number of nodes in the vector, toggle to get average. */
+int orbital::get_n_nodes(const OrbitalVector &Phi, bool avg) {
+    long long totNodes = 0;
+    for (const auto &phi_i : Phi) totNodes += phi_i.getNNodes(NUMBER::Total);
+    if (avg) totNodes /= Phi.size();
+    if (totNodes > INT_MAX) MSG_WARN("Integer overflow: " << totNodes);
+    return static_cast<int>(totNodes);
 }
 
-/** @brief Returns the size of the coefficients of all nodes in the vector in kBytes */
-int orbital::get_size_nodes(const OrbitalVector &Phi) {
-    int tot_size = 0;
-    for (const auto &phi_i : Phi) tot_size += phi_i.getSizeNodes(NUMBER::Total);
-    return tot_size;
+/** @brief Returns the size of the coefficients of all nodes in the vector in kBytes, toggle to get average.*/
+int orbital::get_size_nodes(const OrbitalVector &Phi, bool avg) {
+    long long totSize = 0;
+    for (const auto &phi_i : Phi) totSize += phi_i.getSizeNodes(NUMBER::Total);
+    if (avg) totSize /= Phi.size();
+    if (totSize > INT_MAX) MSG_WARN("Integer overflow: " << totSize);
+    return static_cast<int>(totSize);
 }
 
 /** @brief Returns a vector containing the orbital spins */
