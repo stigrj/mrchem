@@ -120,7 +120,7 @@ void KAIN::setupLinearSystem() {
     }
 
     sortLinearSystem(A_matrices, b_vectors);
-    mrcpp::print::time(2, "Setup linear system", t_tot);
+    mrcpp::print::time(this->pl + 2, "Setup linear system", t_tot);
 }
 
 /** @brief Compute the next step for orbitals and orbital updates
@@ -213,7 +213,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
         // F is unchanged, dF is overwritten
         *dF = fockStep;
     }
-    mrcpp::print::time(2, "Expand solution", t_tot);
+    mrcpp::print::time(this->pl + 2, "Expand solution", t_tot);
 }
 
 } // namespace mrchem

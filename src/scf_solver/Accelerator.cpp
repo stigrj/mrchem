@@ -107,7 +107,7 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
         F = U.adjoint() * F * U;
         dF = U.adjoint() * dF * U;
     }
-    mrcpp::print::time(2, "Rotating iterative subspace", t_tot);
+    mrcpp::print::time(this->pl + 2, "Rotating iterative subspace", t_tot);
 }
 
 /** @brief Update iterative history with the latest orbitals and updates
@@ -137,7 +137,7 @@ void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatr
     if (historyIsFull and this->dFock.size() > 0) this->dFock.pop_front();
 
     if (not verifyOverlap(Phi)) {
-        println(2, " Clearing accelerator");
+        println(this->pl + 2, " Clearing accelerator");
         this->clear();
     }
 
@@ -146,7 +146,7 @@ void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatr
     if (F != nullptr) this->fock.push_back(*F);
     if (dF != nullptr) this->dFock.push_back(*dF);
 
-    mrcpp::print::time(2, "Push back orbitals", t_tot);
+    mrcpp::print::time(this->pl + 2, "Push back orbitals", t_tot);
 }
 
 /** @brief Verify that the orbital overlap between the two last iterations is positive.
@@ -170,7 +170,7 @@ bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
                 auto sqNorm = phi_i.squaredNorm();
                 auto overlap = orbital::dot(phi_i, last_i);
                 if (std::abs(overlap) < 0.5 * sqNorm) {
-                    mrcpp::print::value(2, "Overlap not verified ", std::abs(overlap));
+                    mrcpp::print::value(this->pl + 2, "Overlap not verified ", std::abs(overlap));
                     out(i) = 1;
                 }
             }
@@ -201,8 +201,8 @@ void Accelerator::accelerate(double prec, OrbitalVector &Phi, OrbitalVector &dPh
     if (this->maxHistory < 1) return;
 
     Timer t_tot;
-    auto plevel = Printer::getPrintLevel();
-    mrcpp::print::header(2, "Iterative subspace accelerator");
+    auto plevel = Printer::getPrintLevel(); // global print level
+    mrcpp::print::header(this->pl + 2, "Iterative subspace accelerator");
 
     // Deep copy into history
     this->push_back(Phi, dPhi, F, dF);
@@ -216,8 +216,8 @@ void Accelerator::accelerate(double prec, OrbitalVector &Phi, OrbitalVector &dPh
         clearLinearSystem();
     }
     printSizeNodes();
-    mrcpp::print::footer(2, t_tot, 2);
-    if (plevel == 1) mrcpp::print::time(1, "Iterative subspace accelerator", t_tot);
+    mrcpp::print::footer(this->pl + 2, t_tot, 2);
+    if (plevel == 1) mrcpp::print::time(this->pl + 1, "Iterative subspace accelerator", t_tot);
 }
 
 /** @brief Solve the linear system of equations
@@ -232,7 +232,7 @@ void Accelerator::solveLinearSystem() {
         auto tmpC = this->A[n].colPivHouseholderQr().solve(this->b[n]).eval();
         this->c.push_back(tmpC);
     }
-    mrcpp::print::time(2, "Solve linear system", t_tot);
+    mrcpp::print::time(this->pl + 2, "Solve linear system", t_tot);
 }
 
 /** @brief Copy orbitals at the given point in history into the given set.
@@ -249,7 +249,7 @@ void Accelerator::copyOrbitals(OrbitalVector &Phi, int nHistory) {
     if (nHistory >= totHistory or nHistory < 0) MSG_ABORT("Requested orbitals unavailable");
     int n = totHistory - 1 - nHistory;
     Phi = orbital::deep_copy(this->orbitals[n]);
-    mrcpp::print::time(2, "Copy orbitals", t_tot);
+    mrcpp::print::time(this->pl + 2, "Copy orbitals", t_tot);
 }
 
 /** @brief Copy orbital updates at the given point in history into the given set.
@@ -265,7 +265,7 @@ void Accelerator::copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
     if (nHistory >= totHistory or nHistory < 0) MSG_ABORT("Requested orbitals unavailable");
     int n = totHistory - 1 - nHistory;
     dPhi = orbital::deep_copy(this->dOrbitals[n]);
-    mrcpp::print::time(2, "Copy orbital updates", t_tot);
+    mrcpp::print::time(this->pl + 2, "Copy orbital updates", t_tot);
 }
 
 /** @brief Replaces the orbital set from a given point in history.
@@ -355,9 +355,9 @@ void Accelerator::printSizeNodes() const {
         dn += orbital::get_n_nodes(orbs_i);
         dm += orbital::get_size_nodes(orbs_i);
     }
-    mrcpp::print::separator(2, '-');
-    mrcpp::print::tree(2, "Orbital sizes", n, m, 0.0);
-    mrcpp::print::tree(2, "Update sizes", dn, dm, 0.0);
+    mrcpp::print::separator(this->pl + 2, '-');
+    mrcpp::print::tree(this->pl + 2, "Orbital sizes", n, m, 0.0);
+    mrcpp::print::tree(this->pl + 2, "Update sizes", dn, dm, 0.0);
 }
 
 } // namespace mrchem

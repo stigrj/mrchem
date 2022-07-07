@@ -58,6 +58,7 @@ public:
     virtual ~Accelerator() { this->clear(); }
     void clear();
 
+    void setLocalPrintLevel(int p) { this->pl = p; }
     void setMaxHistory(int max) { this->maxHistory = max; }
     void setMinHistory(int min) { this->minHistory = min; }
 
@@ -79,6 +80,7 @@ public:
     void printSizeNodes() const;
 
 protected:
+    int pl{0};        ///< Local print level, relative to global Printer
     int minHistory;   ///< Accelerator is activated when history reaches this size
     int maxHistory;   ///< Oldest iteration is discarded when history exceeds this size
     bool sepOrbitals; ///< Use separate subspace for each orbital
