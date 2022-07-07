@@ -114,6 +114,7 @@ void print_utils::text(int level, const std::string &txt, const std::string &val
 }
 
 void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
+    if (level > mrcpp::Printer::getPrintLevel()) return;
     // Determine longest name
     // This will be used for the spacing left of :
     // if the name is too long to be aligned with
