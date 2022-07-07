@@ -112,7 +112,6 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     t_lap.start();
     OrbitalVector Psi;
     initial_guess::core::project_ao(Psi, prec, nucs, zeta);
-    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Psi);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
     p.setup(prec);
