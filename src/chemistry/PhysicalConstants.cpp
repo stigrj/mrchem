@@ -59,7 +59,7 @@ PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
 /** @brief Pretty print physical constants */
 void PhysicalConstants::Print() {
     mrcpp::print::separator(0, '~');
-    print_utils::centeredText(0, "Physical Constants");
+    print_utils::centered_text(0, "Physical Constants");
     mrcpp::print::separator(0, '~');
     print_utils::json(0, constants_, true);
     mrcpp::print::separator(0, '~', 2);
