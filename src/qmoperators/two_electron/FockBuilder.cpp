@@ -75,15 +75,22 @@ void FockBuilder::build(double exx) {
 void FockBuilder::setup(double prec) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
-    mrcpp::print::header(2, "Building Fock operator");
-    mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
-    mrcpp::print::separator(2, '-');
+    if (plevel == 2) {
+        mrcpp::print::header(2, "Building Fock operator");
+        mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
+        mrcpp::print::separator(2, '-');
+    }
     if (this->mom != nullptr) this->momentum().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
 
     if (isZora()) {
+        Timer t_zora;
         auto c = getLightSpeed();
+        mrcpp::print::header(3, "Building ZORA operators");
+        mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
+        mrcpp::print::value(3, "Light speed", c, "(au)", 5);
+        mrcpp::print::separator(3, '-');
         auto vz = collectZoraBasePotential();
         this->kappa = std::make_shared<ZoraOperator>(*vz, c, prec, false);
         this->kappa_inv = std::make_shared<ZoraOperator>(*vz, c, prec, true);
@@ -91,10 +98,11 @@ void FockBuilder::setup(double prec) {
         this->kappa->setup(prec);
         this->kappa_inv->setup(prec);
         this->zora_base.setup(prec);
+        mrcpp::print::footer(3, t_zora, 2);
     };
 
     t_tot.stop();
-    mrcpp::print::footer(2, t_tot, 2);
+    if (plevel == 2) mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_tot);
 }
 
@@ -203,12 +211,13 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 }
 
 OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi, ComplexMatrix F_mat, ComplexMatrix L_mat) {
-    Timer t_arg;
+    Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Helmholtz argument");
 
+    Timer t_rot;
     OrbitalVector Psi = orbital::rotate(Phi, L_mat - F_mat, prec);
-    mrcpp::print::time(2, "Rotating orbitals", t_arg);
+    mrcpp::print::time(2, "Rotating orbitals", t_rot);
 
     OrbitalVector out;
     if (isZora()) {
@@ -218,8 +227,8 @@ OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi
     }
     Psi.clear();
 
-    mrcpp::print::footer(2, t_arg, 2);
-    if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+    mrcpp::print::footer(2, t_tot, 2);
+    if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_tot);
     return out;
 }
 
@@ -239,17 +248,24 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     operOne.setup(prec);
     operThree.setup(prec);
 
+    // Compute OrbitalVectors
+    Timer t_1;
+    OrbitalVector termOne = operOne(Phi);
+    mrcpp::print::time(2, "Computing gradient term", t_1);
+
+    Timer t_2;
+    OrbitalVector termTwo = V(Phi);
+    mrcpp::print::time(2, "Computing potential term", t_2);
+
     // Compute transformed orbitals scaled by diagonal Fock elements
+    Timer t_3;
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
     for (int i = 0; i < epsPhi.size(); i++) {
         if (not mpi::my_orb(epsPhi[i])) continue;
         epsPhi[i].rescale(eps[i] / two_cc);
     }
-
-    // Compute OrbitalVectors
-    OrbitalVector termOne = operOne(Phi);
-    OrbitalVector termTwo = V(Phi);
     OrbitalVector termThree = operThree(epsPhi);
+    mrcpp::print::time(2, "Computing rescaled potential term", t_3);
 
     auto normsOne = orbital::get_norms(termOne);
     auto normsTwo = orbital::get_norms(termTwo);
@@ -257,17 +273,23 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     auto normsPsi = orbital::get_norms(Psi);
 
     // Add up all the terms
-    OrbitalVector out = orbital::deep_copy(termOne);
-    for (int i = 0; i < out.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
-        out[i].add(1.0, termTwo[i]);
-        out[i].add(1.0, termThree[i]);
-        out[i].add(1.0, Psi[i]);
+    Timer t_add;
+    OrbitalVector arg = orbital::deep_copy(termOne);
+    for (int i = 0; i < arg.size(); i++) {
+        if (not mpi::my_orb(arg[i])) continue;
+        arg[i].add(1.0, termTwo[i]);
+        arg[i].add(1.0, termThree[i]);
+        arg[i].add(1.0, Psi[i]);
     }
+    mrcpp::print::time(2, "Adding contributions", t_add);
 
     operThree.clear();
     operOne.clear();
-    return kappa_m1(out);
+
+    Timer t_kappa;
+    auto out = kappa_m1(arg);
+    mrcpp::print::time(2, "Applying kappa inverse", t_kappa);
+    return out;
 }
 
 // Non-relativistic Helmholtz argument
@@ -276,14 +298,18 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, Orbita
     RankZeroOperator &V = this->potential();
 
     // Compute OrbitalVectors
+    Timer t_pot;
     OrbitalVector termOne = V(Phi);
+    mrcpp::print::time(2, "Computing potential term", t_pot);
 
     // Add up all the terms
+    Timer t_add;
     OrbitalVector out = orbital::deep_copy(termOne);
     for (int i = 0; i < out.size(); i++) {
         if (not mpi::my_orb(out[i])) continue;
         out[i].add(1.0, Psi[i]);
     };
+    mrcpp::print::time(2, "Adding contributions", t_add);
     return out;
 }
 
@@ -294,6 +320,7 @@ void FockBuilder::setZoraType(bool has_nuc, bool has_coul, bool has_xc) {
 }
 
 std::shared_ptr<QMPotential> FockBuilder::collectZoraBasePotential() {
+    Timer timer;
     auto vz = std::make_shared<QMPotential>(1, false);
     if (zora_has_nuc) {
         if (getNuclearOperator() != nullptr) {
@@ -324,6 +351,7 @@ std::shared_ptr<QMPotential> FockBuilder::collectZoraBasePotential() {
             MSG_ERROR("ZORA: XC requested but not available");
         }
     }
+    print_utils::qmfunction(2, "ZORA operator (base)", *vz, timer);
     return vz;
 }
 

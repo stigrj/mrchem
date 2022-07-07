@@ -74,6 +74,9 @@ public:
         auto E_kJ = E_au * PhysicalConstants::get("hartree2kjmol");
         auto E_kcal = E_au * PhysicalConstants::get("hartree2kcalmol");
 
+        bool has_ext = (std::abs(E_eext) > mrcpp::MachineZero) || (std::abs(E_next) > mrcpp::MachineZero);
+        bool has_react = (std::abs(Er_el) > mrcpp::MachineZero) || (std::abs(Er_nuc) > mrcpp::MachineZero);
+
         auto pprec = 2 * mrcpp::Printer::getPrecision();
         mrcpp::print::header(0, "Molecular Energy (" + id + ")");
         print_utils::scalar(0, "Kinetic energy   ", E_kin,  "(au)", pprec, false);
@@ -81,13 +84,19 @@ public:
         print_utils::scalar(0, "Coulomb energy   ", E_ee,   "(au)", pprec, false);
         print_utils::scalar(0, "Exchange energy  ", E_x,    "(au)", pprec, false);
         print_utils::scalar(0, "X-C energy       ", E_xc,   "(au)", pprec, false);
-        print_utils::scalar(0, "Ext. field (el)  ", E_eext, "(au)", pprec, false);
-        mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "N-N energy       ", E_nn,   "(au)", pprec, false);
-        print_utils::scalar(0, "Ext. field (nuc) ", E_next, "(au)", pprec, false);
-        print_utils::scalar(0, "Tot. Reac. Energy", Er_tot,  "(au)", pprec, false);
-        print_utils::scalar(0, "El. Reac. Energy ", Er_el,  "(au)", pprec, false);
-        print_utils::scalar(0, "Nuc. Reac. Energy", Er_nuc,  "(au)", pprec, false);
+        if (has_ext) {
+            mrcpp::print::separator(0, '-');
+            print_utils::scalar(0, "External field (el)  ", E_eext, "(au)", pprec, false);
+            print_utils::scalar(0, "External field (nuc) ", E_next, "(au)", pprec, false);
+            print_utils::scalar(0, "External field (tot) ", E_eext + E_next, "(au)", pprec, false);
+        }
+        if (has_react) {
+            mrcpp::print::separator(0, '-');
+            print_utils::scalar(0, "Reaction energy (el)  ", Er_el,  "(au)", pprec, false);
+            print_utils::scalar(0, "Reaction energy (nuc) ", Er_nuc,  "(au)", pprec, false);
+            print_utils::scalar(0, "Reaction energy (tot) ", Er_tot,  "(au)", pprec, false);
+        }
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);
         print_utils::scalar(0, "Nuclear energy   ", E_nuc,  "(au)", pprec, false);

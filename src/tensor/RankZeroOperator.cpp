@@ -292,7 +292,7 @@ OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
         out.push_back(out_i);
         std::stringstream o_name;
         o_name << O.name() << "|" << i << ">";
-        print_utils::qmfunction(3, o_name.str(), out_i, t1);
+        print_utils::qmfunction(4, o_name.str(), out_i, t1);
     }
     return out;
 }
@@ -312,7 +312,7 @@ OrbitalVector RankZeroOperator::dagger(OrbitalVector &inp) {
         out.push_back(out_i);
         std::stringstream o_name;
         o_name << O.name() << "^dagger|" << i << ">";
-        print_utils::qmfunction(3, o_name.str(), out_i, t1);
+        print_utils::qmfunction(4, o_name.str(), out_i, t1);
     }
     return out;
 }

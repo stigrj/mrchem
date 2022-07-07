@@ -57,7 +57,7 @@ void CoulombPotentialD2::setupGlobalDensity(double prec) {
 
     Timer timer;
     density::compute(prec, rho, Phi, X, Y, DensityType::Total);
-    print_utils::qmfunction(2, "Coulomb density", rho, timer);
+    print_utils::qmfunction(3, "Compute global density", rho, timer);
 }
 
 void CoulombPotentialD2::setupLocalDensity(double prec) {
@@ -73,7 +73,7 @@ void CoulombPotentialD2::setupLocalDensity(double prec) {
 
     Timer timer;
     density::compute_local(prec, rho, Phi, X, Y, DensityType::Total);
-    print_utils::qmfunction(2, "Coulomb density", rho, timer);
+    print_utils::qmfunction(3, "Compute local density", rho, timer);
 }
 
 } // namespace mrchem

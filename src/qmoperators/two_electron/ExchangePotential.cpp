@@ -117,10 +117,23 @@ double ExchangePotential::getSpinFactor(Orbital phi_i, Orbital phi_j) const {
  * and optionally compute the internal constributions.
  */
 void ExchangePotential::setup(double prec) {
+    Timer timer;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(3, "Building Exchange operator");
+    mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
+    mrcpp::print::separator(3, '-');
     if (mpi::world_size > 1 and mpi::bank_size < 1) MSG_ABORT("MPI bank required!");
     setApplyPrec(prec);
     setupBank();
     if (this->pre_compute) setupInternal(prec);
+
+    if (plevel == 2) {
+        auto t = timer.elapsed();
+        auto avgNodes = orbital::get_n_nodes(this->exchange, true);
+        auto avgSize = orbital::get_size_nodes(this->exchange, true);
+        mrcpp::print::tree(2, "Exchange operator (avg.)", avgNodes, avgSize, t);
+    }
+    mrcpp::print::footer(3, timer, 2);
 }
 
 /** @brief Clears the Exchange Operator
@@ -215,7 +228,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     }
     timer_jji.stop();
 
-    println(4,
+    println(5,
             " time " << (int)((float)timer_tot.elapsed() * 1000) << " ms "
                      << " mult1:" << (int)((float)timer_ij.elapsed() * 1000) << " Pot:" << (int)((float)timer_p.elapsed() * 1000) << " mult2:" << (int)((float)timer_kij.elapsed() * 1000) << " "
                      << (int)((float)timer_jji.elapsed() * 1000) << " Nnodes: " << N_i << " " << N_j << " " << N_ij << " " << N_p << " " << N_kij << " " << N_jji << " norms " << norm_ij << " "

@@ -115,11 +115,11 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     initial_guess::core::project_ao(Psi, prec, nucs, zeta);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
-    mrcpp::print::header(2, "Building Fock operator");
+    if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
     t_lap.start();
     p.setup(prec);
     V.setup(prec);
-    mrcpp::print::footer(2, t_lap, 2);
+    if (plevel == 2) mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
 
     // Compute Fock matrix
@@ -138,7 +138,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     p.clear();
     V.clear();
 
-    mrcpp::print::footer(2, t_lap, 2);
+    mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
     return true;
 }
@@ -194,12 +194,11 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     OrbitalVector Psi;
     initial_guess::gto::project_ao(Psi, prec, nucs);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO AOs", t_lap);
-
-    mrcpp::print::header(2, "Building Fock operator");
+    if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
     t_lap.start();
     p.setup(prec);
     V.setup(prec);
-    mrcpp::print::footer(2, t_lap, 2);
+    if (plevel == 2) mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
 
     // Compute Fock matrix
@@ -218,7 +217,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     p.clear();
     V.clear();
 
-    mrcpp::print::footer(2, t_lap, 2);
+    mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
     return true;
 }
@@ -257,11 +256,10 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     rho_loc.alloc(NUMBER::Real);
     rho_loc.real().setZero();
 
-    auto tot_nuc = 0.0;
-    auto tot_rho = 0.0;
-
     Timer t_loc;
-    for (int k = 0; k < nucs.size(); k++) {
+    auto N_nucs = nucs.size();
+    DoubleVector charges = DoubleVector::Zero(2 * N_nucs);
+    for (int k = 0; k < N_nucs; k++) {
         if (mpi::orb_rank != k % mpi::orb_size) continue;
 
         const std::string &sym = nucs[k].getElement().getSymbol();
@@ -273,24 +271,28 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         rho_loc.add(1.0, rho_k);
         rho_loc.crop(crop_prec);
 
-        auto nuc_charge = nucs[k].getCharge();
-        auto rho_charge = rho_k.integrate().real();
-        tot_nuc += nuc_charge;
-        tot_rho += rho_charge;
-
-        std::stringstream o_row;
-        o_row << std::setw(w1) << k;
-        o_row << std::setw(w2) << sym;
-        o_row << std::setw(w4) << " ";
-        o_row << std::setw(w3) << print_utils::dbl_to_str(nuc_charge, 2 * pprec, false);
-        o_row << std::setw(w3) << print_utils::dbl_to_str(rho_charge, 2 * pprec, false);
-        println(2, o_row.str());
+        charges[k] = nucs[k].getCharge();
+        charges[N_nucs + k] = rho_k.integrate().real();
     }
     t_loc.stop();
 
     Timer t_com;
+    mpi::allreduce_vector(charges, mpi::comm_orb);
     density::allreduce_density(prec, rho_tot, rho_loc);
     t_com.stop();
+
+    for (int k = 0; k < N_nucs; k++) {
+        std::stringstream o_row;
+        o_row << std::setw(w1) << k;
+        o_row << std::setw(w2) << nucs[k].getElement().getSymbol();
+        o_row << std::setw(w4) << " ";
+        o_row << std::setw(w3) << print_utils::dbl_to_str(charges[k], 2 * pprec, false);
+        o_row << std::setw(w3) << print_utils::dbl_to_str(charges[N_nucs + k], 2 * pprec, false);
+        println(2, o_row.str());
+    }
+
+    auto tot_nuc = charges.segment(0, N_nucs).sum();
+    auto tot_rho = charges.segment(N_nucs, N_nucs).sum();
 
     std::stringstream o_row;
     o_row << " Total charge";

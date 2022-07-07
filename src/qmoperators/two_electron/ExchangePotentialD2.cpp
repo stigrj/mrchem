@@ -76,7 +76,7 @@ void ExchangePotentialD2::setupBank() {
         if (mpi::my_orb(Y[i])) YBank.put_orb(i, Y[i]);
     }
     mpi::barrier(mpi::comm_orb);
-    mrcpp::print::time(4, "Setting up exchange bank", timer);
+    mrcpp::print::time(3, "Setting up exchange bank", timer);
 }
 
 /** @brief Clears the Exchange Operator
@@ -144,7 +144,7 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
     Orbital out_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
     qmfunction::linear_combination(out_p, coefs, func_vec, prec);
-    print_utils::qmfunction(3, "Applied exchange", out_p, timer);
+    print_utils::qmfunction(4, "Applied exchange", out_p, timer);
     return out_p;
 }
 
@@ -203,7 +203,7 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
     Orbital ex_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
     qmfunction::linear_combination(ex_p, coefs, func_vec, prec);
-    print_utils::qmfunction(3, "Applied exchange", ex_p, timer);
+    print_utils::qmfunction(4, "Applied exchange", ex_p, timer);
     return ex_p;
 }
 

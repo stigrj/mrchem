@@ -82,10 +82,10 @@ double SCFSolver::adjustPrecision(double error) {
     this->orbPrec[0] = std::max(this->orbPrec[0], this->orbPrec[2]);
 
     mrcpp::print::separator(2, '=');
-    mrcpp::print::value(1, "Current precision", this->orbPrec[0], "", 5);
+    mrcpp::print::value(1, "Current precision", this->orbPrec[0], "(rel)", 5);
     mrcpp::print::separator(1, '-');
-    mrcpp::print::value(2, "Orbital threshold", this->orbThrs, "", 5);
-    mrcpp::print::value(2, "Property threshold", this->propThrs, "", 5);
+    mrcpp::print::value(2, "Orbital threshold", this->orbThrs, "(abs)", 5);
+    mrcpp::print::value(2, "Property threshold", this->propThrs, "(abs)", 5);
     mrcpp::print::separator(2, '=', 2);
     return this->orbPrec[0];
 }

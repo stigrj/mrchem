@@ -47,6 +47,7 @@ public:
         // Invoke operator= to assign *this operator
         RankZeroOperator &V = (*this);
         V = potential;
+        V.name() = "V_r";
     }
 
     ComplexDouble trace(OrbitalVector &Phi) { return RankZeroOperator::trace(Phi); }

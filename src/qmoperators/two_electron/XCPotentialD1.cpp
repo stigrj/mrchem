@@ -58,7 +58,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Total);
             }
-            print_utils::qmfunction(2, "XC rho", rho, timer);
+            print_utils::qmfunction(3, "Compute rho", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
     } else {
@@ -70,7 +70,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Alpha);
             }
-            print_utils::qmfunction(2, "XC rho (alpha)", rho, timer);
+            print_utils::qmfunction(3, "Compute rho (alpha)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
         { // Unperturbed beta density
@@ -81,7 +81,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Beta);
             }
-            print_utils::qmfunction(2, "XC rho (beta)", rho, timer);
+            print_utils::qmfunction(3, "Compute rho (beta)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
     }

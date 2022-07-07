@@ -53,7 +53,7 @@ void CoulombPotentialD1::setupGlobalDensity(double prec) {
 
     Timer timer;
     density::compute(prec, rho, Phi, DensityType::Total);
-    print_utils::qmfunction(2, "Coulomb density", rho, timer);
+    print_utils::qmfunction(3, "Compute global density", rho, timer);
 }
 
 /** @brief compute local electron density (only own MPI orbitals)
@@ -71,7 +71,7 @@ void CoulombPotentialD1::setupLocalDensity(double prec) {
 
     Timer timer;
     density::compute_local(prec, rho, Phi, DensityType::Total);
-    print_utils::qmfunction(2, "Coulomb density", rho, timer);
+    print_utils::qmfunction(3, "Compute local density", rho, timer);
 }
 
 } // namespace mrchem

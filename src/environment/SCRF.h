@@ -51,6 +51,8 @@ public:
     ~SCRF();
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
 
+    double setConvergenceThreshold(double prec);
+
     QMFunction &getCurrentReactionPotential() { return this->Vr_n; }
     QMFunction &getPreviousReactionPotential() { return this->Vr_nm1; }
     QMFunction &getCurrentDifferenceReactionPotential() { return this->dVr_n; }
@@ -62,7 +64,6 @@ public:
     Permittivity &getPermittivity() { return this->epsilon; }
 
     void updateMOResidual(double const err_t) { this->mo_residual = err_t; }
-    void printParameters();
 
     friend class ReactionPotential;
 
@@ -78,6 +79,7 @@ private:
     int max_iter;
     int history;
     double apply_prec;
+    double conv_thrs;
     double mo_residual;
 
     Permittivity epsilon;
@@ -117,5 +119,8 @@ private:
     void resetQMFunction(QMFunction &function);
     void updateCurrentReactionPotential(QMFunction &Vr_np1);
     void updateCurrentGamma(QMFunction &gamma_np1);
+
+    void printParameters() const;
+    void printConvergenceRow(int i, double norm, double update, double time) const;
 };
 } // namespace mrchem

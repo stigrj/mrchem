@@ -74,6 +74,11 @@ CoulombPotential::CoulombPotential(PoissonOperator_p P, OrbitalVector_p Phi, boo
 void CoulombPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
+    Timer timer;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(3, "Building Coulomb operator");
+    mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
+    mrcpp::print::separator(3, '-');
     if (hasDensity()) {
         setupGlobalPotential(prec);
     } else if (mpi::numerically_exact) {
@@ -86,6 +91,8 @@ void CoulombPotential::setup(double prec) {
         QMFunction V = setupLocalPotential(0.1 * prec);
         allreducePotential(0.1 * prec, V);
     }
+    if (plevel == 2) print_utils::qmfunction(2, "Coulomb operator", *this, timer);
+    mrcpp::print::footer(3, timer, 2);
 }
 
 /** @brief clear operator after application
@@ -124,7 +131,7 @@ void CoulombPotential::setupGlobalPotential(double prec) {
     V.alloc(NUMBER::Real);
     if (need_to_apply) mrcpp::apply(abs_prec, V.real(), P, rho.real());
     mpi::share_function(V, 0, 22445, mpi::comm_share);
-    print_utils::qmfunction(2, "Coulomb potential", V, timer);
+    print_utils::qmfunction(3, "Compute global potential", V, timer);
 }
 
 /** @brief compute Coulomb potential
@@ -148,7 +155,7 @@ QMFunction CoulombPotential::setupLocalPotential(double prec) {
     QMFunction V(false);
     V.alloc(NUMBER::Real);
     mrcpp::apply(abs_prec, V.real(), P, rho.real());
-    print_utils::qmfunction(2, "Coulomb potential", V, timer);
+    print_utils::qmfunction(3, "Compute local potential", V, timer);
 
     return V;
 }
@@ -183,7 +190,7 @@ void CoulombPotential::allreducePotential(double prec, QMFunction &V_loc) {
         mrcpp::copy_grid(V_tot.real(), V_loc.real());
         mrcpp::copy_func(V_tot.real(), V_loc.real());
     }
-    print_utils::qmfunction(2, "Allreduce Coulomb", V_tot, t_com);
+    print_utils::qmfunction(3, "Allreduce potential", V_tot, t_com);
 }
 
 } // namespace mrchem

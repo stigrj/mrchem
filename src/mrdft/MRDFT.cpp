@@ -60,12 +60,22 @@ namespace mrdft {
  * out_vec[2] = v_xc_b (XC beta potential)
  */
 mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) {
-    mrcpp::Timer timer;
+    mrcpp::Timer t_tot, t_pre;
     grid().unify(inp);
     functional().preprocess(inp);
     mrcpp::FunctionTreeVector<3> xcInpVec = functional().setupXCInput();
     mrcpp::FunctionTreeVector<3> ctrInpVec = functional().setupCtrInput();
 
+    int inpNodes = 0;
+    int inpSize = 0;
+    for (auto i = 0; i < xcInpVec.size(); i++) {
+        auto &f_i = mrcpp::get_func(xcInpVec, i);
+        inpNodes += f_i.getNNodes();
+        inpSize += f_i.getSizeNodes();
+    }
+    mrcpp::print::tree(3, "Preprocess input", inpNodes, inpSize, t_pre.elapsed());
+
+    mrcpp::Timer t_eval;
     int nCoefs = mrcpp::get_func(inp, 0).getEndFuncNode(0).getNCoefs();
     int nOutCtr = functional().getCtrOutputLength();
     int nFcs = functional().getXCOutputLength();
@@ -135,22 +145,34 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     */
 
     // Reconstruct contracted output functions
-    int totNodes = 0;
-    int totSize = 0;
+    int ctrNodes = 0;
+    int ctrSize = 0;
     for (auto i = 0; i < ctrOutVec.size(); i++) {
         auto &f_i = mrcpp::get_func(ctrOutVec, i);
         f_i.mwTransform(mrcpp::BottomUp);
         f_i.calcSquareNorm();
         // TODO? insert a crop
-        totNodes += f_i.getNNodes();
-        totSize += f_i.getSizeNodes();
+        ctrNodes += f_i.getNNodes();
+        ctrSize += f_i.getSizeNodes();
     }
+    mrcpp::print::tree(3, "Evaluate functional", ctrNodes, ctrSize, t_eval.elapsed());
 
+    mrcpp::Timer t_post;
     auto potOutVec = functional().postprocess(ctrOutVec);
     mrcpp::clear(ctrOutVec, true);
     functional().clear();
-    auto t = timer.elapsed();
-    mrcpp::print::tree(2, "XC evaluate", totNodes, totSize, t);
+
+    int outNodes = 0;
+    int outSize = 0;
+    for (auto i = 0; i < potOutVec.size(); i++) {
+        auto &f_i = mrcpp::get_func(potOutVec, i);
+        f_i.mwTransform(mrcpp::BottomUp);
+        f_i.calcSquareNorm();
+        // TODO? insert a crop
+        outNodes += f_i.getNNodes();
+        outSize += f_i.getSizeNodes();
+    }
+    mrcpp::print::tree(3, "Postprocess potential", outNodes, outSize, t_post.elapsed());
 
     return potOutVec;
 }

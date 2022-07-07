@@ -196,7 +196,7 @@ void mpi::initialize() {
 void mpi::finalize() {
 #ifdef MRCHEM_HAS_MPI
     if (mpi::bank_size > 0 and mpi::grand_master()) {
-        println(3, " max data in bank " << dataBank.get_maxtotalsize() << " MB ");
+        println(4, " max data in bank " << dataBank.get_maxtotalsize() << " MB ");
         dataBank.close();
     }
     MPI_Barrier(MPI_COMM_WORLD); // to ensure everybody got here

@@ -23,6 +23,9 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+
 #include "ReactionPotential.h"
 
 #include "qmfunctions/qmfunction_utils.h"
@@ -43,8 +46,19 @@ void ReactionPotential::setup(double prec) {
         this->first_iteration = false;
         return;
     }
+    auto thrs = this->helper->setConvergenceThreshold(prec);
+    mrcpp::Timer timer;
+    auto plevel = mrcpp::Printer::getPrintLevel();
+    mrcpp::print::separator(3, '=');
+    print_utils::centered_text(3, "Building Reaction operator");
+    this->helper->printParameters();
+    mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
+    mrcpp::print::value(3, "Threshold", thrs, "(abs)", 5);
+    mrcpp::print::separator(3, '-');
     auto potential = this->helper->setup(prec, this->Phi);
     qmfunction::deep_copy(*this, potential);
+    if (plevel == 2) print_utils::qmfunction(2, "Reaction operator", *this, timer);
+    mrcpp::print::footer(3, timer, 2);
 }
 
 void ReactionPotential::clear() {

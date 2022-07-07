@@ -100,8 +100,10 @@ Available print levels are:
 - ``print_level=0`` prints mainly properties
 - ``print_level=1`` adds timings for individual steps
 - ``print_level=2`` adds memory and timing information on ``OrbitalVector`` level
-- ``print_level=3`` adds memory and timing information on ``Orbital`` level
-- ``print_level>10`` adds a *lot* more output from deep within MRCPP
+- ``print_level=3`` adds details for individual terms of the Fock operator
+- ``print_level=4`` adds memory and timing information on ``Orbital`` level
+- ``print_level>=5`` adds debug information at MRChem level
+- ``print_level>=10`` adds debug information at MRCPP level
 
 
 MPI
@@ -572,7 +574,7 @@ affect the convergence rate.
 
 For response calculations, the important convergence threshold is that of the
 orbitals, and by default this is set one order of magnitude higher than the
-overall ``world_prec``. 
+overall ``world_prec``.
 
 .. note::
 

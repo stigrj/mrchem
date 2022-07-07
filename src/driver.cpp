@@ -1038,13 +1038,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto formulation = json_fock["reaction_operator"]["formulation"];
         auto density_type = json_fock["reaction_operator"]["density_type"];
         Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r, formulation);
+        dielectric_func.printParameters();
 
         auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, convergence_criterion, algorithm, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
-
-        // dielectric_func.printParameters();
-        // V_R->getHelper()->printParameters();
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////

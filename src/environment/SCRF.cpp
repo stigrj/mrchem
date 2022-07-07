@@ -27,6 +27,7 @@
 
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "chemistry/PhysicalConstants.h"
 #include "chemistry/chemistry_utils.h"
@@ -65,6 +66,7 @@ SCRF::SCRF(Permittivity e,
         , max_iter(max_iter)
         , history(kain_hist)
         , apply_prec(orb_prec)
+        , conv_thrs(1.0)
         , mo_residual(-1.0)
         , epsilon(e)
         , rho_nuc(false)
@@ -90,6 +92,14 @@ void SCRF::clear() {
     this->rho_tot.free(NUMBER::Real);
 }
 
+double SCRF::setConvergenceThreshold(double prec) {
+    // converge_thrs should be in the interval [prec, 1.0]
+    this->conv_thrs = prec;
+    bool dynamic = (this->convergence_criterion == "dynamic");
+    if (dynamic and this->mo_residual > 10 * prec) this->conv_thrs = std::min(1.0, this->mo_residual);
+    return this->conv_thrs;
+}
+
 void SCRF::setDCavity() {
     mrcpp::FunctionTree<3> *dx_cavity = new mrcpp::FunctionTree<3>(*MRA);
     mrcpp::FunctionTree<3> *dy_cavity = new mrcpp::FunctionTree<3>(*MRA);
@@ -101,6 +111,7 @@ void SCRF::setDCavity() {
 }
 
 void SCRF::computeDensities(OrbitalVector &Phi) {
+    Timer timer;
     resetQMFunction(this->rho_tot);
     Density rho_el(false);
     density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
@@ -112,6 +123,7 @@ void SCRF::computeDensities(OrbitalVector &Phi) {
     } else {
         qmfunction::add(this->rho_tot, 1.0, rho_el, 1.0, this->rho_nuc, -1.0); // probably change this into a vector
     }
+    print_utils::qmfunction(3, "Vacuum density", this->rho_tot, timer);
 }
 
 void SCRF::computeGamma(QMFunction &potential, QMFunction &out_gamma) {
@@ -162,18 +174,18 @@ void SCRF::accelerateConvergence(QMFunction &dfunc, QMFunction &func, KAIN &kain
 }
 
 void SCRF::nestedSCRF(QMFunction V_vac) {
-    print_utils::headline(2, "Calculating Reaction Potential");
-
     KAIN kain(this->history);
+    kain.setLocalPrintLevel(10);
 
-    // converge_thrs should be in the interval [apply_prec, 1.0]
-    double converge_thrs = this->apply_prec;
-    if (this->convergence_criterion == "dynamic" and this->mo_residual > 10 * this->apply_prec) converge_thrs = std::min(1.0, this->mo_residual);
+    mrcpp::print::separator(3, '-');
 
-    double update = 10.0;
-    for (int iter = 1; update >= converge_thrs && iter <= max_iter; iter++) {
+    double update = 10.0, norm = 1.0;
+    int iter = 1;
+    while (update >= this->conv_thrs && iter <= max_iter) {
+        Timer t_iter;
         // solve the poisson equation
         QMFunction Vr_np1 = solvePoissonEquation(this->gamma_n);
+        norm = Vr_np1.norm();
 
         // use a convergence accelerator
         resetQMFunction(this->dVr_n);
@@ -204,11 +216,10 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
         }
 
         updateCurrentGamma(gamma_np1);
-
-        print_utils::text(2, "Update          ", print_utils::dbl_to_str(update, 5, true));
-        print_utils::text(2, "Microiteration  ", std::to_string(iter));
+        printConvergenceRow(iter, norm, update, t_iter.elapsed());
+        iter++;
     }
-    println(2, " Converged Reaction Potential!");
+    mrcpp::print::separator(3, '-');
     this->dVr_n.real().clear();
     this->dVr_n.real().setZero();
     this->dgamma_n.real().clear();
@@ -216,15 +227,42 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
     kain.clear();
 }
 
+void SCRF::printConvergenceRow(int i, double norm, double update, double time) const {
+    auto pprec = Printer::getPrecision();
+    auto w0 = Printer::getWidth() - 1;
+    auto w1 = 9;
+    auto w2 = 2 * w0 / 9;
+    auto w3 = w0 - w1 - 2 * w2;
+
+    std::string time_unit = " sec";
+    if (time < 0.01) {
+        time = time * 1000.0;
+        time_unit = "  ms";
+    } else if (time > 60.0) {
+        time = time / 60.0;
+        time_unit = " min";
+    }
+
+    std::stringstream o_txt;
+    o_txt << " Iter " << std::setw(w1 - 6) << i;
+    o_txt << " : " << std::setw(w3 - 3) << std::setprecision(2 * pprec) << std::scientific << norm;
+    o_txt << std::setw(w2) << std::setprecision(pprec) << std::scientific << update;
+    o_txt << std::setw(w2 - 4) << std::setprecision(2) << std::fixed << time << time_unit;
+    println(3, o_txt.str());
+}
+
 QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
     this->apply_prec = prec;
     computeDensities(*Phi);
+    Timer t_vac;
     QMFunction V_vac;
     V_vac.alloc(NUMBER::Real);
     mrcpp::apply(this->apply_prec, V_vac.real(), *poisson, this->rho_tot.real());
+    print_utils::qmfunction(3, "Vacuum potential", V_vac, t_vac);
 
     // set up the zero-th iteration potential and gamma, so the first iteration gamma and potentials can be made
 
+    Timer t_gamma;
     if ((not this->Vr_n.hasReal()) or (not this->gamma_n.hasReal())) {
         QMFunction gamma_0;
         QMFunction V_tot;
@@ -251,8 +289,11 @@ QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
         qmfunction::deep_copy(this->gamma_n, temp_gamma_n);
         temp_gamma_n.free(NUMBER::Real);
     }
+    print_utils::qmfunction(3, "Initial gamma", this->gamma_n, t_gamma);
 
+    Timer t_scrf;
     if (this->algorithm == "scrf") nestedSCRF(V_vac);
+    print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
     return this->Vr_n;
 }
 
@@ -293,18 +334,34 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
     gamma_np1.free(NUMBER::Real);
 }
 
-void SCRF::printParameters() {
-    nlohmann::json data = {{"Max iterations", max_iter},
-                           {"Accelerate with KAIN", (accelerate_Vr) ? "True" : "False"},
-                           {"Algorithm", algorithm},
-                           {"Density type", density_type},
-                           {"Convergence criterion", convergence_criterion}};
+void SCRF::printParameters() const {
+    bool dynamic = (this->convergence_criterion == "dynamic");
 
-    mrcpp::print::separator(0, '~');
-    print_utils::centeredText(0, "Self-Consistent Reaction Field");
-    mrcpp::print::separator(0, '~');
-    print_utils::json(0, data, false);
-    mrcpp::print::separator(0, '~', 2);
+    std::stringstream o_iter;
+    if (this->max_iter > 0) {
+        o_iter << this->max_iter;
+    } else {
+        o_iter << "Off";
+    }
+
+    std::stringstream o_kain;
+    if (this->history > 0) {
+        o_kain << this->history;
+    } else {
+        o_kain << "Off";
+    }
+
+    nlohmann::json data = {
+        {"Method                ", "SCRF"},
+        {"Max iterations        ", max_iter},
+        {"KAIN solver           ", o_kain.str()},
+        {"Density type          ", density_type},
+        {"Dynamic threshold     ", (dynamic) ? "On" : "Off"},
+    };
+
+    mrcpp::print::separator(3, '~');
+    print_utils::json(3, data, false);
+    mrcpp::print::separator(3, '~');
 }
 
 } // namespace mrchem

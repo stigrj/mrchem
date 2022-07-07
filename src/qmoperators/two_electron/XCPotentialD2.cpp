@@ -80,7 +80,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Total);
             }
-            print_utils::qmfunction(2, "XC rho_0", rho, timer);
+            print_utils::qmfunction(3, "Compute rho_0", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
         { // Perturbed total density
@@ -91,7 +91,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Total);
             }
-            print_utils::qmfunction(2, "XC rho_1", rho, timer);
+            print_utils::qmfunction(3, "Compute rho_1", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
     } else {
@@ -103,7 +103,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Alpha);
             }
-            print_utils::qmfunction(2, "XC rho_0 (alpha)", rho, timer);
+            print_utils::qmfunction(3, "Compute rho_0 (alpha)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
         { // Unperturbed beta density
@@ -114,7 +114,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Beta);
             }
-            print_utils::qmfunction(2, "XC rho_0 (beta)", rho, timer);
+            print_utils::qmfunction(3, "Compute rho_0 (beta)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
         { // Perturbed alpha density
@@ -125,7 +125,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Alpha);
             }
-            print_utils::qmfunction(2, "XC rho_1 (alpha)", rho, timer);
+            print_utils::qmfunction(3, "Compute rho_1 (alpha)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
         { // Perturbed beta density
@@ -136,7 +136,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Beta);
             }
-            print_utils::qmfunction(2, "XC rho_1 (beta)", rho, timer);
+            print_utils::qmfunction(3, "Compute rho_1 (beta)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
     }

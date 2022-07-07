@@ -23,9 +23,10 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+
 #include "XCPotential.h"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
 #include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
@@ -56,6 +57,11 @@ namespace mrchem {
 void XCPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
+    Timer timer;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(3, "Building XC operator");
+    mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
+    mrcpp::print::separator(3, '-');
     if (this->mrdft == nullptr) MSG_ERROR("XCFunctional not initialized");
     if (this->potentials.size() != 0) MSG_ERROR("Potential not properly cleared");
 
@@ -84,6 +90,19 @@ void XCPotential::setup(double prec) {
     }
 
     mrcpp::clear(xc_out, true);
+
+    if (plevel == 2) {
+        int totNodes = 0;
+        int totSize = 0;
+        for (auto i = 0; i < this->potentials.size(); i++) {
+            auto &f_i = mrcpp::get_func(this->potentials, i);
+            totNodes += f_i.getNNodes();
+            totSize += f_i.getSizeNodes();
+        }
+        auto t = timer.elapsed();
+        mrcpp::print::tree(2, "XC operator", totNodes, totSize, t);
+    }
+    mrcpp::print::footer(3, timer, 2);
 }
 
 /** @brief Clears all data in the XCPotential object */

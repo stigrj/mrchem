@@ -168,8 +168,6 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     o_prec_1 << std::setprecision(5) << std::scientific << this->orbPrec[2];
 
     mrcpp::print::separator(0, '~');
-    print_utils::centeredText(0, "Self-Consistent Field");
-    mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation        ", calculation);
     print_utils::text(0, "Method             ", this->methodName);
     print_utils::text(0, "Relativity         ", this->relativityName);
@@ -220,12 +218,6 @@ void GroundStateSolver::reset() {
  */
 json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     printParameters("Optimize ground state orbitals");
-
-    // Print solvation cavity and SCRF parameters
-    if (F.getReactionOperator() != nullptr) {
-        F.getReactionOperator()->getHelper()->printParameters();
-        F.getReactionOperator()->getHelper()->getPermittivity().printParameters();
-    }
 
     Timer t_tot;
     json json_out;
