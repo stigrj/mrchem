@@ -42,10 +42,6 @@ ReactionPotential::ReactionPotential(SCRF_p scrf_p, OrbitalVector_p Phi_p)
 
 void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);
-    if (this->first_iteration) {
-        this->first_iteration = false;
-        return;
-    }
     auto thrs = this->helper->setConvergenceThreshold(prec);
     mrcpp::Timer timer;
     auto plevel = mrcpp::Printer::getPrintLevel();

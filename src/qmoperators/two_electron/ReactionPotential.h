@@ -64,18 +64,12 @@ public:
     QMFunction &getPreviousGamma() { return this->helper->getPreviousGamma(); }
     QMFunction &getCurrentDifferenceGamma() { return this->helper->getCurrentDifferenceGamma(); }
 
-    /** @brief changes the #first_iteration variable to false. This is done in tests where we want the ReactionPotential
-     * to be calculated at the zero-th iteration in the SCF cycle instead of not doing it, as is the deafult.*/
-    void setTesting() { this->first_iteration = false; }
-
     friend class ReactionOperator;
 
 protected:
     void clear();
 
 private:
-    bool first_iteration = true;                //!< when this variable is true the reaction potential is not calculated. This is done
-                                                //!< only in the zero-th iteration of the SCF procedure, after that it is set to false.
     std::unique_ptr<SCRF> helper;               //!< A SCRF instance used to compute the ReactionPotential.
     std::shared_ptr<mrchem::OrbitalVector> Phi; //!< holds the Orbitals needed to compute the electronic density for the SCRF procedure.
 

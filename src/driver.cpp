@@ -393,12 +393,14 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto prec = json_guess["prec"];
     auto method = json_guess["method"];
     auto relativity = json_guess["relativity"];
+    auto environment = json_guess["environment"];
     auto localize = json_guess["localize"];
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation  ", "Compute initial energy");
     print_utils::text(0, "Method       ", method);
     print_utils::text(0, "Relativity   ", relativity);
+    print_utils::text(0, "Environment  ", environment);
     print_utils::text(0, "Precision    ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Localization ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);

@@ -167,6 +167,7 @@ def write_scf_guess(user_dict, wf_dict):
         "type": guess_type,
         "method": wf_dict["method_name"],
         "relativity": wf_dict["relativity_name"],
+        "environment": wf_dict["environment_name"],
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
         "restricted": user_dict["WaveFunction"]["restricted"],
@@ -195,39 +196,11 @@ def write_scf_solver(user_dict, wf_dict):
     if start_prec < 0.0:
         start_prec = final_prec
 
-    # TODO: Improve label determination. Make it easier to extent for future env additions
-    # TODO: Move determination to its own function to clean up this one
-    # TODO: Control precision of x,y,z strengths in label
-    # Determine the appropriate `Environment` printout in SCF 
-    # The relevant algorithms are implicit solvation and finite external fields
-    env = user_dict['Environment']
-    ext = user_dict['ExternalFields']
-
-    # Keep track of active environments
-    has_solvent = env['run_environment']
-    has_external_fields = len(ext['electric_field']) > 0
-
-    # If no external fields, then the list will be empty
-    # Need to catch the exception and store placeholders
-    try:
-        x, y, z = ext['electric_field']
-    except ValueError:
-        x, y, z = None, None, None  # Useless placeholders
-
-    # Labels to aggregate
-    label_sol = 'PCM'
-    label_ext = f'Electric field ({x}, {y}, {z})'
-
-    # Aggregate labels
-    labels = [label_sol, label_ext]
-    envs = [has_solvent, has_external_fields]
-    label_env = ' ; '.join([label for label, has_env in zip(labels, envs) if has_env])
-
     scf_dict = user_dict["SCF"]
     solver_dict = {
         "method": wf_dict["method_name"],
         "relativity": wf_dict["relativity_name"],
-        "environment": label_env,
+        "environment": wf_dict["environment_name"],
         "kain": scf_dict["kain"],
         "max_iter": scf_dict["max_iter"],
         "rotation": scf_dict["rotation"],
@@ -468,9 +441,39 @@ def parse_wf_method(user_dict):
         if user_dict["ZORA"]["include_xc"] and not restricted:
             raise RuntimeError("ZORA (V_xc) not available for unrestricted wavefunctions")
 
+    # TODO: Improve label determination. Make it easier to extent for future env additions
+    # TODO: Move determination to its own function to clean up this one
+    # TODO: Control precision of x,y,z strengths in label
+    # Determine the appropriate `Environment` printout in SCF
+    # The relevant algorithms are implicit solvation and finite external fields
+    env = user_dict['Environment']
+    ext = user_dict['ExternalFields']
+
+    # Keep track of active environments
+    has_solvent = env['run_environment']
+    has_external_fields = len(ext['electric_field']) > 0
+
+    environment_name = "None"
+    if has_solvent or has_external_fields:
+        # If no external fields, then the list will be empty
+        # Need to catch the exception and store placeholders
+        try:
+            x, y, z = ext['electric_field']
+        except ValueError:
+            x, y, z = None, None, None  # Useless placeholders
+
+        # Labels to aggregate
+        label_sol = 'PCM'
+        label_ext = f'Electric field ({x}, {y}, {z})'
+
+        # Aggregate labels
+        labels = [label_sol, label_ext]
+        envs = [has_solvent, has_external_fields]
+        environment_name = ' ; '.join([label for label, has_env in zip(labels, envs)])
 
     wf_dict = {
         "relativity_name": relativity_name,
+        "environment_name": environment_name,
         "method_name": method_name,
         "method_type": method_type,
         "dft_funcs": dft_funcs

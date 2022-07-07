@@ -91,7 +91,6 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto scrf_p = std::make_unique<SCRF>(dielectric_func, molecule, P_p, D_p, prec, kain, 100, true, "dynamic", "scrf", "total");
 
     auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
-    Reo->setTesting();
     Reo->setup(prec);
     double total_energy = Reo->getTotalEnergy();
     Reo->clear();
