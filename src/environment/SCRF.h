@@ -44,9 +44,8 @@ public:
          double orb_prec,
          int kain_hist,
          int max_iter,
-         bool accelerate_Vr,
-         std::string convergence_criterion,
-         std::string algorithm,
+         bool acc_pot,
+         bool dyn_thrs,
          std::string density_type);
     ~SCRF();
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
@@ -72,8 +71,7 @@ protected:
 
 private:
     bool accelerate_Vr;
-    std::string convergence_criterion;
-    std::string algorithm;
+    bool dynamic_thrs;
     std::string density_type;
 
     int max_iter;

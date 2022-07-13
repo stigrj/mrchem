@@ -63,12 +63,12 @@ class MoleculeValidator:
         or unphysical input value are detected:
 
         Atomic coordinates
-        - Correct XYZ format checked with regexes (both atomic symbols 
-          and numbers are valid atom identifiers, and can be used 
+        - Correct XYZ format checked with regexes (both atomic symbols
+          and numbers are valid atom identifiers, and can be used
           interchancably in the same input)
         - Nuclear singularities
-        - Atomic symbols checked against periodic table 
-        
+        - Atomic symbols checked against periodic table
+
         Cavity spheres
         - Correct format checked with regexes
         - Negative radii not allowed
@@ -100,9 +100,11 @@ class MoleculeValidator:
         self.coords_raw = self.user_mol['coords']
 
         # Cavity related data
-        self.cavity_dict = user_dict['Environment']['Cavity']
+        self.cavity_dict = user_dict['PCM']['Cavity']
         self.spheres_raw = self.cavity_dict['spheres']
-        self.cavity_width = self.cavity_dict['cavity_width']
+        self.cavity_alpha = self.cavity_dict['alpha']
+        self.cavity_beta = self.cavity_dict['beta']
+        self.cavity_sigma = self.cavity_dict['sigma']
         self.has_sphere_input = len(self.spheres_raw.strip().splitlines()) > 0
 
         # Validate atomic coordinates
@@ -110,7 +112,7 @@ class MoleculeValidator:
         self.n_atoms = len(self.atomic_coords)
 
         # Translate center of mass if requested
-        # We must test for translation before validating the cavity, 
+        # We must test for translation before validating the cavity,
         # in case the nuclear coordinates are to be used for the
         # sphere centers
         if self.do_translate:
@@ -128,7 +130,7 @@ class MoleculeValidator:
             self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
             self.cavity_coords = self.ang2bohr_array(self.cavity_coords)
             self.cavity_radii = self.ang2bohr_vector(self.cavity_radii)
-            self.cavity_width *= self.pc['angstrom2bohrs']
+            self.cavity_sigma *= self.pc['angstrom2bohrs']
 
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
@@ -278,7 +280,7 @@ class MoleculeValidator:
         if error_pairs:
             msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY('\n\n'.join(error_pairs))
             raise RuntimeError(msg)
-                
+
     def check_for_invalid_electronic_configuration(self):
         """Check that the number of electrons and spin multiplicity are compatible.
         Also check for restricted open-shell calculation."""
@@ -303,13 +305,13 @@ class MoleculeValidator:
                 ))
 
         # Check for invalid spin multiplicity
-        elif parity(n_electrons) == parity(self.mult): 
+        elif parity(n_electrons) == parity(self.mult):
             raise RuntimeError(self.ERROR_INCOMPATIBLE_MULTIPLICITY(
                 f"The specified multiplicity ({parity(self.mult)}) is not compatible with the number of electrons ({parity(n_electrons)})"
                 ))
 
         # Check for restricted open-shell
-        elif restricted and n_unpaired > 0: 
+        elif restricted and n_unpaired > 0:
             raise RuntimeError(self.ERROR_RESTRICTED_OPEN_SHELL)
 
     def translate_com_to_origin(self):

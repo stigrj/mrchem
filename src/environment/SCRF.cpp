@@ -55,13 +55,11 @@ SCRF::SCRF(Permittivity e,
            double orb_prec,
            int kain_hist,
            int max_iter,
-           bool accelerate_Vr,
-           std::string convergence_criterion,
-           std::string algorithm,
+           bool acc_pot,
+           bool dyn_thrs,
            std::string density_type)
-        : accelerate_Vr(accelerate_Vr)
-        , convergence_criterion(convergence_criterion)
-        , algorithm(algorithm)
+        : accelerate_Vr(acc_pot)
+        , dynamic_thrs(dyn_thrs)
         , density_type(density_type)
         , max_iter(max_iter)
         , history(kain_hist)
@@ -95,8 +93,7 @@ void SCRF::clear() {
 double SCRF::setConvergenceThreshold(double prec) {
     // converge_thrs should be in the interval [prec, 1.0]
     this->conv_thrs = prec;
-    bool dynamic = (this->convergence_criterion == "dynamic");
-    if (dynamic and this->mo_residual > 10 * prec) this->conv_thrs = std::min(1.0, this->mo_residual);
+    if (this->dynamic_thrs and this->mo_residual > 10 * prec) this->conv_thrs = std::min(1.0, this->mo_residual);
     return this->conv_thrs;
 }
 
@@ -292,7 +289,7 @@ QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
     print_utils::qmfunction(3, "Initial gamma", this->gamma_n, t_gamma);
 
     Timer t_scrf;
-    if (this->algorithm == "scrf") nestedSCRF(V_vac);
+    nestedSCRF(V_vac);
     print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
     return this->Vr_n;
 }
@@ -335,8 +332,6 @@ void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
 }
 
 void SCRF::printParameters() const {
-    bool dynamic = (this->convergence_criterion == "dynamic");
-
     std::stringstream o_iter;
     if (this->max_iter > 0) {
         o_iter << this->max_iter;
@@ -356,7 +351,7 @@ void SCRF::printParameters() const {
         {"Max iterations        ", max_iter},
         {"KAIN solver           ", o_kain.str()},
         {"Density type          ", density_type},
-        {"Dynamic threshold     ", (dynamic) ? "On" : "Off"},
+        {"Dynamic threshold     ", (dynamic_thrs) ? "On" : "Off"},
     };
 
     mrcpp::print::separator(3, '~');

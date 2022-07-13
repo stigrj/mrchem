@@ -59,18 +59,20 @@ public:
     void setMethodName(const std::string &name) { this->methodName = name; }
     void setRelativityName(const std::string &name) { this->relativityName = name; }
     void setEnvironmentName(const std::string &name) { this->environmentName = name; }
+    void setExternalFieldName(const std::string &name) { this->externalFieldName = name; }
 
 protected:
-    int history{0};                      ///< Maximum length of KAIN history
-    int maxIter{-1};                     ///< Maximum number of iterations
-    bool checkpoint{false};              ///< Dump orbitals to file every iteration
-    double orbThrs{-1.0};                ///< Convergence threshold for norm of orbital update
-    double propThrs{-1.0};               ///< Convergence threshold for property
-    double helmPrec{-1.0};               ///< Precision for construction of Helmholtz operators
-    double orbPrec[3]{-1.0, -1.0, -1.0}; ///< Dynamic precision: [current_prec, start_prec, end_prec]
-    std::string methodName;              ///< Name of electronic structure method to appear in output
-    std::string relativityName{"None"};  ///< Name of ZORA method
-    std::string environmentName{"None"}; ///< Aggregated name for external environment
+    int history{0};                        ///< Maximum length of KAIN history
+    int maxIter{-1};                       ///< Maximum number of iterations
+    bool checkpoint{false};                ///< Dump orbitals to file every iteration
+    double orbThrs{-1.0};                  ///< Convergence threshold for norm of orbital update
+    double propThrs{-1.0};                 ///< Convergence threshold for property
+    double helmPrec{-1.0};                 ///< Precision for construction of Helmholtz operators
+    double orbPrec[3]{-1.0, -1.0, -1.0};   ///< Dynamic precision: [current_prec, start_prec, end_prec]
+    std::string methodName;                ///< Name of electronic structure method to appear in output
+    std::string relativityName{"None"};    ///< Name of ZORA method
+    std::string environmentName{"None"};   ///< Name for external environment
+    std::string externalFieldName{"None"}; ///< Name for external fields
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error

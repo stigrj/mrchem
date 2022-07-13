@@ -68,10 +68,10 @@ void Permittivity::printParameters() {
 
     // Print
     mrcpp::print::header(0, "Solvation Cavity");
-    print_utils::scalar(0, "Cavity width", cavity.getWidth(), "", 6);
-    print_utils::scalar(0, "Dielec. Const. (in)", getEpsIn(), "", 6);
-    print_utils::scalar(0, "Dielec. Const. (out)", getEpsOut(), "", 6);
     print_utils::text(0, "Formulation", getFormulation(), true);
+    print_utils::scalar(0, "Cavity width", cavity.getWidth(), "", 6);
+    print_utils::scalar(0, "Dielectric constant", getEpsIn(), "(in)", 6);
+    print_utils::scalar(0, "", getEpsOut(), "(out)", 6);
     mrcpp::print::separator(0, '-');
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');

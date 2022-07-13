@@ -8,23 +8,23 @@
       {                                      # (one entry per atom)
         "atom": string,                      # Atomic symbol
         "xyz": array[float]                  # Nuclear Cartesian coordinate
-      }                                      
-    ],                                       
+      }
+    ],
     "cavity": {
       "spheres": array[                      # Array of cavity spheres
         {                                    # (one entry per sphere)
           "center": array[float],            # Cartesian coordinate of sphere center
           "radius": float                    # Radius of cavity sphere
-        }                                      
-      ],                                       
-      "width": float                         # Width of cavity boundary
+        }
+      ],
+      "sigma": float                         # Width of cavity boundary
     }
-  },                                         
+  },
   "mpi": {                                   # Section for MPI specification
     "bank_size": int,                        # Number of MPI ranks in memory bank
     "numerically_exact": bool,               # Guarantee MPI invariant results
     "shared_memory_size": int                # Size (MB) of MPI shared memory blocks
-  },                                         
+  },
   "mra": {                                   # Section for MultiResolution Analysis
     "basis_type": string,                    # Basis type (interpolating/legendre)
     "basis_order": int,                      # Polynomial order of basis
@@ -32,43 +32,42 @@
     "min_scale": int,                        # Minimum level of refinement (root scale)
     "boxes": array[int],                     # Number of root boxes
     "corner": array[int]                     # Translation of first root box
-  },                                         
+  },
   "printer": {                               # Section for printed output
     "file_name": string,                     # Name of output file
     "print_level": int,                      # Amount of printed output
     "print_mpi": bool,                       # Use separate output file for each MPI
     "print_prec": int,                       # Number of digits for printed output
     "print_width": int                       # Line width of printed output
-  },                                         
+  },
   "scf_calculation": {                       # Section for SCF specification
     "fock_operator": {                       # Contributions to Fock operator
       "kinetic_operator": {                  # Add Kinetic operator to Fock
         "derivative": string                 # Type of derivative operator
-      },                                     
+      },
       "nuclear_operator": {                  # Add Nuclear operator to Fock
         "proj_prec": float,                  # Projection prec for potential
         "smooth_prec": float,                # Smoothing parameter for potential
         "shared_memory": bool                # Use shared memory for potential
-      },                                     
+      },
       "coulomb_operator": {                  # Add Coulomb operator to Fock
         "poisson_prec": float,               # Build prec for Poisson operator
         "shared_memory": bool                # Use shared memory for potential
-      },                                     
+      },
       "exchange_operator": {                 # Add Exchange operator to Fock
         "poisson_prec": float,               # Build prec for Poisson operator
         "screen": bool                       # Use screening in Exchange operator
-      },                                     
+      },
       "reaction_operator": {                 # Add Reaction operator to Fock
-        "accelerate_Vr": bool,               # Extrapolate on the reaction potential
-        "algorithm": string,                 # Reaction field algorithm
-        "convergence_criterion": string,     # Criterion for when convergence is signaled
-        "density_type": string,              # Type of total molecular charge
-        "epsilon_in": float,                 # Permittivity inside the cavity
-        "epsilon_out": float,                # Permittivity outside the cavity
-        "formulation": string,               # Formulation of the permittivity function
+        "poisson_prec": float,               # Precision for Poisson operator
         "kain": int,                         # Length of KAIN history in nested SCRF procedure
         "max_iter": int,                     # Maximum number of iterations in nested SCRF procedure
-        "poisson_prec": float                # Precision for Poisson operator
+        "optimizer": string,                 # Use density or potential in KAIN solver
+        "dynamic_thrs": bool,                # Use static or dynamic convergence threshold
+        "density_type": string,              # Type of charge density [total, nuclear, electronic]
+        "epsilon_in": float,                 # Permittivity inside the cavity
+        "epsilon_out": float,                # Permittivity outside the cavity
+        "formulation": string                # Formulation of the permittivity function
       },
       "xc_operator": {                       # Add XC operator to Fock
         "shared_memory": bool,               # Use shared memory for potential
@@ -76,15 +75,14 @@
           "spin": bool,                      # Use spin separated functional
           "cutoff": float,                   # Cutoff value for small densities
           "functionals": array[              # Array of density functionals
-            {                                
+            {
               "coef": float,                 # Numerical coefficient
               "name": string                 # Functional name
-            }                                
-          ]                                  
-        }                                    
-      },                                     
+            }
+          ]
+        }
+      },
      "zora_operator": {
-        "light_speed": float,                # Light speed used in ZORA Hamiltonian
         "include_nuclear": bool,             # Include V_nuc in ZORA potential
         "include_coulomb": bool,             # Include V_coul in ZORA potential
         "include_xc": bool                   # Include V_xc in ZORA potential
@@ -92,8 +90,8 @@
       "external_operator": {                 # Add external field operator to Fock
         "electric_field": array[float],      # Electric field vector
         "r_O": array[float]                  # Gauge orgigin for electric field
-      }                                      
-    },                                       
+      }
+    },
     "initial_guess": {                       # Initial guess specification
       "type": string,                        # Type of initial guess
       "prec": float,                         # Precision for initial guess
@@ -114,7 +112,7 @@
       "file_CUBE_a": str,                    # Path to CUBE orbital file (alpha)
       "file_CUBE_b": str,                    # Path to CUBE orbital file (beta)
       "file_CUBE_p": str                     # Path to CUBE orbital file (paired)
-    },                                       
+    },
     "scf_solver": {                          # SCF solver specification
       "kain": int,                           # Length of KAIN history
       "max_iter": int,                       # Maximum number of iterations
@@ -129,21 +127,21 @@
       "helmholtz_prec": float,               # Precision for Helmholtz operators
       "orbital_thrs": float,                 # Convergence threshold orbitals
       "energy_thrs":float                    # Convergence threshold energy
-    },                                       
+    },
     "properties": {                          # Collection of properties to compute
       "dipole_moment": {                     # Collection of dipole moments
         id (string): {                       # Unique id: 'dip-${number}'
           "precision": float,                # Operator precision
           "operator": string,                # Operator used for property
           "r_O": array[float]                # Operator gauge origin
-        }                                    
-      },                                     
+        }
+      },
       "quadrupole_moment": {                 # Collection of quadrupole moments
         id (string): {                       # Unique id: 'quad-${number}'
           "precision": float,                # Operator precision
           "operator": string,                # Operator used for property
           "r_O": array[float]                # Operator gauge origin
-        }                                    
+        }
       },
       "geometric_derivative": {              # Collection of geometric derivatives
         id (string): {                       # Unique id: 'geom-${number}'
@@ -165,14 +163,14 @@
         "B": array[float],                   # Plotting range B vector
         "C": array[float]                    # Plotting range C vector
     }
-  },                                         
+  },
   "rsp_calculations": {                      # Collection of response calculations
     id (string): {                           # Response id: e.g. 'ext_el-${frequency}'
       "dynamic": bool,                       # Use dynamic response solver
       "frequency": float,                    # Perturbation frequency
       "perturbation": {                      # Perturbation operator
         "operator": string                   # Operator used in response calculation
-      },                                     
+      },
       "components": array[                   # Array of perturbation components
         {                                    # (one per Cartesian direction)
           "initial_guess": {                 # Initial guess specification
@@ -186,7 +184,7 @@
             "file_y_a": string,              # Path to MW file for Y (alpha)
             "file_y_b": string,              # Path to MW file for Y (beta)
             "file_y_p": string               # Path to MW file for Y (paired)
-          },                                 
+          },
           "rsp_solver": {                    # Response solver specification
             "kain": int,                     # Length of KAIN history
             "max_iter": int,                 # Maximum number of iterations
@@ -200,17 +198,17 @@
             "helmholtz_prec": float,         # Precision for Helmholtz operators
             "orbital_thrs": float,           # Convergence threshold orbitals
             "property_thrs": float           # Convergence threshold property
-          }                                  
-        }                                    
-      ],                                     
+          }
+        }
+      ],
       "properties": {                        # Collection of properties to compute
         "polarizability": {                  # Collection of polarizabilities
            id (string): {                    # Unique id: 'pol-${frequency}'
             "precision": float,              # Operator precision
             "operator": string,              # Operator used for property
             "r_O": array[float]              # Operator gauge origin
-          }                                  
-        },                                   
+          }
+        },
         "magnetizability": {                 # Collection of magnetizabilities
           id (string): {                     # Unique id: 'mag-${frequency}'
             "frequency": float,              # Perturbation frequency
@@ -219,8 +217,8 @@
             "para_operator": string,         # Operator used for paramagnetic property
             "derivative": string,            # Operator derivative type
             "r_O": array[float]              # Operator gauge origin
-          }                                  
-        },                                   
+          }
+        },
         "nmr_shielding": {                   # Collection of NMR shieldings
           id (string): {                     # Unique id: 'nmr-${nuc_idx}${atom_symbol}'
             "precision": float,              # Operator precision
@@ -230,25 +228,25 @@
             "smoothing": float,              # Operator smoothing parameter
             "r_O": array[float],             # Operator gauge origin
             "r_K": array[float]              # Nuclear coordinate
-          }                                  
-        }                                    
-      },                                     
+          }
+        }
+      },
       "fock_operator": {                     # Contributions to perturbed Fock operator
         "coulomb_operator": {                # Add Coulomb operator to Fock
           "poisson_prec": float,             # Build prec for Poisson operator
           "shared_memory": bool              # Use shared memory for potential
-        },                                   
+        },
         "exchange_operator": {               # Add Exchange operator to Fock
           "poisson_prec": float,             # Build prec for Poisson operator
           "screen": bool                     # Use screening in Exchange operator
-        },                                   
+        },
         "xc_operator": {                     # Add XC operator to Fock
           "shared_memory": bool,             # Use shared memory for potential
           "xc_functional": {                 # XC functional specification
             "spin": bool,                    # Use spin separated functional
             "cutoff": float,                 # Cutoff value for small densities
             "functionals": array[            # Array of density functionals
-              {                              
+              {
                 "coef": float,               # Numerical coefficient
                 "name": string               # Functional name
               }

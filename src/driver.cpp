@@ -151,10 +151,9 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
             radii.push_back(sphere["radius"]);
             coords.push_back(sphere["center"]);
         }
-        auto width = json_cavity["width"];
+        auto width = json_cavity["sigma"];
 
         mol.initCavity(coords, radii, width);
-        // mol.printCavity();
     }
 }
 
@@ -263,6 +262,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto method = json_scf["scf_solver"]["method"];
         auto relativity = json_scf["scf_solver"]["relativity"];
         auto environment = json_scf["scf_solver"]["environment"];
+        auto external_field = json_scf["scf_solver"]["external_field"];
         auto max_iter = json_scf["scf_solver"]["max_iter"];
         auto rotation = json_scf["scf_solver"]["rotation"];
         auto localize = json_scf["scf_solver"]["localize"];
@@ -281,6 +281,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setMethodName(method);
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
+        solver.setExternalFieldName(external_field);
         solver.setCheckpoint(checkpoint);
         solver.setCheckpointFile(file_chk);
         solver.setMaxIterations(max_iter);
@@ -394,15 +395,17 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto method = json_guess["method"];
     auto relativity = json_guess["relativity"];
     auto environment = json_guess["environment"];
+    auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
 
     mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation  ", "Compute initial energy");
-    print_utils::text(0, "Method       ", method);
-    print_utils::text(0, "Relativity   ", relativity);
-    print_utils::text(0, "Environment  ", environment);
-    print_utils::text(0, "Precision    ", print_utils::dbl_to_str(prec, 5, true));
-    print_utils::text(0, "Localization ", (localize) ? "On" : "Off");
+    print_utils::text(0, "Calculation    ", "Compute initial energy");
+    print_utils::text(0, "Method         ", method);
+    print_utils::text(0, "Relativity     ", relativity);
+    print_utils::text(0, "Environment    ", environment);
+    print_utils::text(0, "External fields", external_field);
+    print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 
     Timer t_scf;
@@ -1026,23 +1029,24 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         // preparing Reaction Operator
         auto poisson_prec = json_fock["reaction_operator"]["poisson_prec"];
-        auto P_r = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
-        auto D_r = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-        auto hist_r = json_fock["reaction_operator"]["kain"];
+        auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
+        auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
+        auto cavity_p = mol.getCavity_p();
 
-        auto cavity_r = mol.getCavity_p();
-        auto eps_in_r = json_fock["reaction_operator"]["epsilon_in"];
-        auto eps_out_r = json_fock["reaction_operator"]["epsilon_out"];
+        auto kain = json_fock["reaction_operator"]["kain"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];
-        auto convergence_criterion = json_fock["reaction_operator"]["convergence_criterion"];
-        auto algorithm = json_fock["reaction_operator"]["algorithm"]; // This has no use as of now
-        auto accelerate_Vr = json_fock["reaction_operator"]["accelerate_Vr"];
-        auto formulation = json_fock["reaction_operator"]["formulation"];
+        auto optimizer = json_fock["reaction_operator"]["optimizer"];
+        auto dynamic_thrs = json_fock["reaction_operator"]["dynamic_thrs"];
         auto density_type = json_fock["reaction_operator"]["density_type"];
-        Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r, formulation);
+        auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
+        auto eps_o = json_fock["reaction_operator"]["epsilon_out"];
+        auto formulation = json_fock["reaction_operator"]["formulation"];
+        auto accelerate_pot = (optimizer == "potential") ? true : false;
+
+        Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
         dielectric_func.printParameters();
 
-        auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, convergence_criterion, algorithm, density_type);
+        auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_p, D_p, poisson_prec, kain, max_iter, accelerate_pot, dynamic_thrs, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
     }

@@ -329,6 +329,15 @@ User input reference
     **Predicates**
       - ``value.lower() in ['none', 'zora', 'nzora']``
   
+   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. 
+  
+    **Type** ``str``
+  
+    **Default** ``none``
+  
+    **Predicates**
+      - ``value.lower() in ['none', 'pcm']``
+  
  :ZORA: Define required parameters for the ZORA Hamiltonian. 
 
   :red:`Keywords`
@@ -773,71 +782,79 @@ User input reference
   
     **Default** ``user['SCF']['localize']``
   
- :Environment: Includes parameters related to the computation of the reaction field energy of a system in an environment. 
+ :PCM: Includes parameters related to the computation of the reaction field energy of a system in an environment within the Polarizable Continuum Model. 
 
-  :red:`Keywords`
-   :max_iter: Max number of iterations allowed in the nested procedure. 
-  
-    **Type** ``int``
-  
-    **Default** ``100``
-  
-   :run_environment: Perform the reaction field calculation of the reaction potential of the interaction between environment and molecule.  
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
-   :algorithm: What algorithm to use for the reaction field ``scrf`` runs a nested algorithm where the generalized Poisson equation is solved iterativelly until self consistency wrt. the convergence threshold. 
-  
-    **Type** ``str``
-  
-    **Default** ``scrf``
-  
-    **Predicates**
-      - ``value.lower() in ['scrf']``
-  
-   :convergence_criterion: Adjust the convergence threshold for the nested procedure. ``dynamic`` Uses the absolute value of the latest orbital update as convergence threshold. When the orbitals are close to convergence (``mo_residual < world_prec*10``) the convergence threshold will be equal to ``world_prec``. ``static`` uses ``world_prec`` as convergence threshold. 
-  
-    **Type** ``str``
-  
-    **Default** ``dynamic``
-  
-    **Predicates**
-      - ``value.lower() in ['dynamic', 'static']``
-  
-   :extrapolate_Vr: Extrapolate on the reaction potential if true, or on the surface charge distribution in the convergence acceleration. 
-  
-    **Type** ``bool``
-  
-    **Default** ``True``
-  
-   :density_type: What part of the total molecular charge density to use in the algorithm. ``total`` uses the total charge density. ``nuclear`` uses only the nuclear part of the total charge density. ``electronic`` uses only the electronic part of the total charge density. 
-  
-    **Type** ``str``
-  
-    **Default** ``total``
-  
-    **Predicates**
-      - ``value.lower() in ['total', 'nuclear', 'electronic']``
-  
-   :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
-  
-    **Type** ``int``
-  
-    **Default** ``user['SCF']['kain']``
-  
   :red:`Sections`
+   :SCRF: Parameters for the Self-Consistent Reaction Field optimization. 
+  
+      :red:`Keywords`
+       :max_iter: Max number of iterations allowed in the nested procedure. 
+      
+        **Type** ``int``
+      
+        **Default** ``100``
+      
+       :dynamic_thrs: Set the convergence threshold for the nested procedure. ``true`` will dynamically tighten the convergence threshold based on the absolute value of the latest orbital update as. When the orbitals are close to convergence (``mo_residual < world_prec*10``) the convergence threshold will be set equal to ``world_prec``. ``false`` uses ``world_prec`` as convergence threshold throughout. 
+      
+        **Type** ``bool``
+      
+        **Default** ``True``
+      
+       :optimizer: Choose which function to use in the KAIN solver, the surface charge ``density`` (gamma) or the reaction ``potential`` (V_R). 
+      
+        **Type** ``str``
+      
+        **Default** ``potential``
+      
+        **Predicates**
+          - ``value.lower() in ['density', 'potential']``
+      
+       :density_type: What part of the total molecular charge density to use in the algorithm. ``total`` uses the total charge density. ``nuclear`` uses only the nuclear part of the total charge density. ``electronic`` uses only the electronic part of the total charge density. 
+      
+        **Type** ``str``
+      
+        **Default** ``total``
+      
+        **Predicates**
+          - ``value.lower() in ['total', 'nuclear', 'electronic']``
+      
+       :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
+      
+        **Type** ``int``
+      
+        **Default** ``user['SCF']['kain']``
+      
    :Cavity: Define the interlocking spheres cavity. 
   
       :red:`Keywords`
-       :spheres: Coordinates and radii  of the spheres written as $spheres x_0    y_0    z_0    R_0 ... x_N    y_N    z_N    R_N $end The units used are the same specified with the `world_unit` keyword. 
+       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified using the `$spheres` section with ``i R [alpha] [beta] [sigma]`` syntax. Extra spheres can be added using the `$spheres` section with ``x y z R [alpha] [beta] [sigma]`` syntax. ``explicit``: centers and radii given explicitly in the ``spheres`` block, no rescaling applied. 
+      
+        **Type** ``str``
+      
+        **Default** ``atoms``
+      
+        **Predicates**
+          - ``value.lower() in ['atoms', 'explicit']``
+      
+       :spheres: This input parameter affects the list of spheres used to generate the cavity. In ``atoms`` mode, you can give $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule should use radius ``R`` instead of the pre-tabulated vdW radius. ``alpha``, ``beta``, and ``sigma`` can also be modified, but it's not mandatory to specify them in the list. In ``atoms`` you can also add extra spheres to the list with: $spheres x y z R [alpha] [beta] [sigma] $end In ``explicit`` mode the same syntax for this list: $spheres x y z R [alpha] [beta] [sigma] $end will explicitly create the list of spheres. The units used are the same as specified with the ``world_unit`` keyword. Note that these radii are *not* rescaled before use (R_i <- alpha*R_i + beta*sigma), but are used as is. 
       
         **Type** ``str``
       
         **Default** ````
       
-       :cavity_width: Width of cavity boundary 
+       :alpha: Scaling factor on the radius term for the cavity rescaling (R_i <- alpha*R_i + beta*sigma). Only used for the default vdW radii in `atoms` mode, not if explicit ``$spheres`` are given. 
+      
+        **Type** ``float``
+      
+        **Default** ``1.1``
+      
+       :beta: Scaling factor on the boundary width term for the cavity rescaling (R_i <- alpha*R_i + beta*sigma). Only used for the default vdW radii in `atoms` mode, not if explicit ``$spheres`` are given. 
+      
+        **Type** ``float``
+      
+        **Default** ``0.5``
+      
+       :sigma: Width of cavity boundary, smaller value means sharper transition. 
       
         **Type** ``float``
       
@@ -856,7 +873,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.0``
+        **Default** ``1.0``
       
        :formulation: Formulation of the Permittivity function. Currently only the exponential is used. 
       

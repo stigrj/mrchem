@@ -72,18 +72,17 @@ def write_scf_fock(user_dict, wf_dict, origin):
     }
 
     # Reaction
-    if user_dict["Environment"]["run_environment"]:
+    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
         fock_dict["reaction_operator"] = {
             "poisson_prec": user_dict["world_prec"],
-            "kain": user_dict["Environment"]["kain"],
-            "algorithm": user_dict["Environment"]["algorithm"],
-            "epsilon_in": user_dict["Environment"]["Permittivity"]["epsilon_in"],
-            "epsilon_out": user_dict["Environment"]["Permittivity"]["epsilon_out"],
-            "formulation": user_dict["Environment"]["Permittivity"]["formulation"],
-            "max_iter": user_dict["Environment"]["max_iter"],
-            "convergence_criterion": user_dict["Environment"]["convergence_criterion"],
-            "accelerate_Vr": user_dict["Environment"]["extrapolate_Vr"],
-            "density_type": user_dict["Environment"]["density_type"]
+            "kain": user_dict["PCM"]["SCRF"]["kain"],
+            "max_iter": user_dict["PCM"]["SCRF"]["max_iter"],
+            "optimizer": user_dict["PCM"]["SCRF"]["optimizer"],
+            "dynamic_thrs": user_dict["PCM"]["SCRF"]["dynamic_thrs"],
+            "density_type": user_dict["PCM"]["SCRF"]["density_type"],
+            "epsilon_in": user_dict["PCM"]["Permittivity"]["epsilon_in"],
+            "epsilon_out": user_dict["PCM"]["Permittivity"]["epsilon_out"],
+            "formulation": user_dict["PCM"]["Permittivity"]["formulation"]
     }
 
     # Coulomb
@@ -168,6 +167,7 @@ def write_scf_guess(user_dict, wf_dict):
         "method": wf_dict["method_name"],
         "relativity": wf_dict["relativity_name"],
         "environment": wf_dict["environment_name"],
+        "external_field": wf_dict["external_name"],
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
         "restricted": user_dict["WaveFunction"]["restricted"],
@@ -201,6 +201,7 @@ def write_scf_solver(user_dict, wf_dict):
         "method": wf_dict["method_name"],
         "relativity": wf_dict["relativity_name"],
         "environment": wf_dict["environment_name"],
+        "external_field": wf_dict["external_name"],
         "kain": scf_dict["kain"],
         "max_iter": scf_dict["max_iter"],
         "rotation": scf_dict["rotation"],
@@ -441,39 +442,34 @@ def parse_wf_method(user_dict):
         if user_dict["ZORA"]["include_xc"] and not restricted:
             raise RuntimeError("ZORA (V_xc) not available for unrestricted wavefunctions")
 
-    # TODO: Improve label determination. Make it easier to extent for future env additions
-    # TODO: Move determination to its own function to clean up this one
-    # TODO: Control precision of x,y,z strengths in label
-    # Determine the appropriate `Environment` printout in SCF
-    # The relevant algorithms are implicit solvation and finite external fields
-    env = user_dict['Environment']
-    ext = user_dict['ExternalFields']
 
-    # Keep track of active environments
-    has_solvent = env['run_environment']
-    has_external_fields = len(ext['electric_field']) > 0
-
+    # Determine environment name label for print outs to the output file
     environment_name = "None"
-    if has_solvent or has_external_fields:
+    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+        environment_name = "PCM"
+
+
+    # Determine external name label for print outs to the output file
+    ext_dict = user_dict['ExternalFields']
+    has_external_fields = len(ext_dict['electric_field']) > 0
+
+    external_name = "None"
+    if has_external_fields:
         # If no external fields, then the list will be empty
         # Need to catch the exception and store placeholders
         try:
-            x, y, z = ext['electric_field']
+            x, y, z = ext_dict['electric_field']
         except ValueError:
             x, y, z = None, None, None  # Useless placeholders
 
         # Labels to aggregate
-        label_sol = 'PCM'
-        label_ext = f'Electric field ({x}, {y}, {z})'
+        external_name = f'Electric field ({x}, {y}, {z})'
 
-        # Aggregate labels
-        labels = [label_sol, label_ext]
-        envs = [has_solvent, has_external_fields]
-        environment_name = ' ; '.join([label for label, has_env in zip(labels, envs)])
 
     wf_dict = {
         "relativity_name": relativity_name,
         "environment_name": environment_name,
+        "external_name": external_name,
         "method_name": method_name,
         "method_type": method_type,
         "dft_funcs": dft_funcs
