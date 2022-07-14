@@ -9,17 +9,18 @@
   "coords": "Li 0.0 0.0 0.0"
 },
 "WaveFunction": {
-  "method": "pbe0"
+  "method": "pbe0",
+  "environment": "pcm"
 },
-"Environment": {
-  "run_environment": true,
-  "algorithm": "scrf",
-  "kain": 5,
-  "max_iter": 100,
-  "convergence_criterion": "dynamic",
-  "extrapolate_Vr": true,
+"PCM": {
+  "SCRF": {
+    "kain": 5,
+    "max_iter": 100,
+    "dynamic_thrs": true,
+    "optimizer": "potential"
+  },
   "Cavity": {
-    "cavity_width": 0.5,
+    "sigma": 0.5,
     "spheres": "0.0 0.0 0.0 4.0"
   },
   "Permittivity": {
@@ -29,9 +30,7 @@
   }
 },
 "SCF": {
-  "run": true,
-  "kain": 5,
-  "orbital_thrs": 1.0e-1,
+  "run": false,
   "guess_type": "sad_dz"
 }
 }
