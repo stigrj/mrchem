@@ -348,6 +348,7 @@ void SCRF::printParameters() const {
 
     nlohmann::json data = {
         {"Method                ", "SCRF"},
+        {"Optimizer             ", (accelerate_Vr) ? "Potential" : "Density"},
         {"Max iterations        ", max_iter},
         {"KAIN solver           ", o_kain.str()},
         {"Density type          ", density_type},
