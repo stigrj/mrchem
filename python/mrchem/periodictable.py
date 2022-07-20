@@ -60,6 +60,7 @@ class Element(
         )
 
 
+# fmt: off
 PeriodicTable = OrderedDict({
     'h':
     Element([
@@ -640,6 +641,7 @@ PeriodicTable = OrderedDict({
         '0.00', '', '0.00', '-'
     ])
 })
+# fmt: on
 
 PeriodicTableByName = PeriodicTable
 

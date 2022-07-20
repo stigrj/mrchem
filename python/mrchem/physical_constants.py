@@ -59,71 +59,74 @@ class MRChemPhysConstants:
         ########################
 
         # Convert from au to SI units for magnetizability
-        name = 'hartree2simagnetizability'
-        unit = 'J T^-2'
+        name = "hartree2simagnetizability"
+        unit = "J T^-2"
         value = self.HARTREE2SIMAGNETIZABILITY
         docstring = f"| Conversion factor for magnetizability from atomic units to SI units  (unit: {unit}). Affected code: Printed value of the magnetizability property."
         self.add_constant(name, unit, value, docstring)
 
         # Speed of light in atomic units
-        name = 'light_speed'
-        unit = 'au'
+        name = "light_speed"
+        unit = "au"
         value = self.qce.c_au
         docstring = f"| Speed of light in atomic units  (unit: {unit}). Affected code: Relativistic Hamiltonians (ZORA, etc.)"
         self.add_constant(name, unit, value, docstring)
 
         # Convert from Angstrom to Bohr
-        name = 'angstrom2bohrs'
-        unit = 'Å^-1'
+        name = "angstrom2bohrs"
+        unit = "Å^-1"
         value = 1.0 / self.qce.bohr2angstroms
         docstring = f"| Conversion factor for Cartesian coordinates from Angstrom to Bohr  (unit: {unit}). Affected code: Parsing of input coordinates, printed coordinates"
         self.add_constant(name, unit, value, docstring)
 
         # Convert from Hartree to kJ/mol
-        name = 'hartree2kjmol'
-        unit = 'kJ mol^-1'
+        name = "hartree2kjmol"
+        unit = "kJ mol^-1"
         value = self.qce.hartree2kJmol
         docstring = f"| Conversion factor from Hartree to kJ/mol  (unit: {unit}). Affected code: Printed value of energies."
         self.add_constant(name, unit, value, docstring)
 
         # Convert from Hartree to kcal/mol
-        name = 'hartree2kcalmol'
-        unit = 'kcal mol^-1'
+        name = "hartree2kcalmol"
+        unit = "kcal mol^-1"
         value = self.qce.hartree2kcalmol
         docstring = f"| Conversion factor from Hartree to kcal/mol  (unit: {unit}). Affected code: Printed value of energies."
         self.add_constant(name, unit, value, docstring)
 
         # Convert from Hartree to eV
-        name = 'hartree2ev'
-        unit = 'ev'
+        name = "hartree2ev"
+        unit = "ev"
         value = self.qce.hartree2ev
-        docstring = f"| Conversion factor from Hartree to eV  (unit: {unit}). Affected code: Printed value of energies."""
+        docstring = (
+            f"| Conversion factor from Hartree to eV  (unit: {unit}). Affected code: Printed value of energies."
+            ""
+        )
         self.add_constant(name, unit, value, docstring)
 
         # Convert from Hartree to cm-1
-        name = 'hartree2wavenumbers'
-        unit = 'cm^-1'
+        name = "hartree2wavenumbers"
+        unit = "cm^-1"
         value = self.qce.hartree2wavenumbers
         docstring = f"| Conversion factor from Hartree to wavenumbers (unit: {unit}). Affected code: Printed value of frequencies."
         self.add_constant(name, unit, value, docstring)
 
         # Fine-structure constant in atomic units
-        name = 'fine_structure_constant'
-        unit = 'au'
+        name = "fine_structure_constant"
+        unit = "au"
         value = self.qce.fine_structure_constant
         docstring = f"| Fine-structure constant in atomic units (unit: {unit}). Affected code: Certain magnetic interaction operators."
         self.add_constant(name, unit, value, docstring)
 
         # Electron g factor in atomic units
-        name = 'electron_g_factor'
-        unit = 'au'
+        name = "electron_g_factor"
+        unit = "au"
         value = self.qce.electron_g_factor
         docstring = f"| Electron g factor in atomic units (unit: {unit}). Affected code: Certain magnetic interaction operators."
         self.add_constant(name, unit, value, docstring)
 
         # Convert from atomic units to Debye
-        name = 'dipmom_au2debye'
-        unit = '?'
+        name = "dipmom_au2debye"
+        unit = "?"
         value = self.qce.dipmom_au2debye
         docstring = f"| Conversion factor for dipoles from atomic units to Debye (unit: {unit}). Affected code: Printed value of dipole moments."
         self.add_constant(name, unit, value, docstring)
@@ -136,11 +139,12 @@ class MRChemPhysConstants:
         """Add constant to `data` instance attribute."""
         self.data.append((name, unit, value, docstring))
 
-    def print_constants_for_tests(self, varname='testConstants'):
+    def print_constants_for_tests(self, varname="testConstants"):
         """Helper function for printing constants for copy/pasting into the c++ code.
         We need to store the constants internally for the unit tests to pass."""
         for name, _, value, _ in sorted(self.data, key=lambda x: x[0]):
-            print(f'{{\"{name}\", {value}}},')
+            print(f'{{"{name}", {value}}},')
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     MRChemPhysConstants().print_constants_for_tests()

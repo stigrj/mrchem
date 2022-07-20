@@ -32,7 +32,7 @@ from .helpers import (
     write_scf_properties,
     write_scf_plot,
     write_rsp_calc,
-    parse_wf_method
+    parse_wf_method,
 )
 from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
@@ -41,9 +41,9 @@ from .validators import MoleculeValidator
 def translate_input(user_dict):
     # get the origin in the desired units of measure
     origin = user_dict["world_origin"]
-    pc = user_dict['Constants']
+    pc = user_dict["Constants"]
     if user_dict["world_unit"] == "angstrom":
-        origin = [pc['angstrom2bohrs'] * r for r in origin]
+        origin = [pc["angstrom2bohrs"] * r for r in origin]
 
     # prepare bits and pieces
     mol_dict = write_molecule(user_dict, origin)
@@ -62,7 +62,7 @@ def translate_input(user_dict):
         "molecule": mol_dict,
         "scf_calculation": scf_dict,
         "rsp_calculations": rsp_dict,
-        "constants": user_dict["Constants"]
+        "constants": user_dict["Constants"],
     }
     return program_dict
 
