@@ -23,9 +23,10 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-import math
 import itertools
+import math
 import re
+from copy import deepcopy
 
 from .periodictable import PeriodicTable, PeriodicTableByZ
 
@@ -118,11 +119,11 @@ class MoleculeValidator:
 
         # Cavity related data
         self.cavity_dict = user_dict["PCM"]["Cavity"]
+        self.cavity_mode = self.cavity_dict["mode"]
         self.spheres_raw = self.cavity_dict["spheres"]
         self.cavity_alpha = self.cavity_dict["alpha"]
         self.cavity_beta = self.cavity_dict["beta"]
         self.cavity_sigma = self.cavity_dict["sigma"]
-        self.has_sphere_input = len(self.spheres_raw.strip().splitlines()) > 0
 
         # Validate atomic coordinates
         self.atomic_symbols, self.atomic_coords = self.validate_atomic_coordinates()
@@ -136,7 +137,13 @@ class MoleculeValidator:
             self.translate_com_to_origin()
 
         # Validate cavity spheres
-        self.cavity_radii, self.cavity_coords = self.validate_cavity()
+        (
+            self.cavity_radii,
+            self.cavity_coords,
+            self.cavity_alphas,
+            self.cavity_betas,
+            self.cavity_sigmas,
+        ) = self.validate_cavity()
 
         # Perform some sanity checks
         self.check_for_nuclear_singularities()
@@ -147,7 +154,7 @@ class MoleculeValidator:
             self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
             self.cavity_coords = self.ang2bohr_array(self.cavity_coords)
             self.cavity_radii = self.ang2bohr_vector(self.cavity_radii)
-            self.cavity_sigma *= self.pc["angstrom2bohrs"]
+            self.cavity_sigmas = self.ang2bohr_vector(self.cavity_sigmas)
 
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
@@ -158,18 +165,22 @@ class MoleculeValidator:
 
     def get_cavity_in_program_syntax(self):
         """Convert cavity spheres from JSON syntax to program syntax."""
-        # Use sphere coordinates and radii if given
-        if self.has_sphere_input:
-            return [
-                {"center": center, "radius": radius}
-                for center, radius in zip(self.cavity_coords, self.cavity_radii)
-            ]
-        # If not build spheres from nuclear coordinates and default radii
-        else:
-            return [
-                {"center": coord, "radius": PeriodicTable[label.lower()].radius}
-                for label, coord in zip(self.atomic_symbols, self.atomic_coords)
-            ]
+        return [
+            {
+                "center": center,
+                "radius": radius,
+                "alpha": alpha,
+                "beta": beta,
+                "sigma": sigma,
+            }
+            for center, radius, alpha, beta, sigma in zip(
+                self.cavity_coords,
+                self.cavity_radii,
+                self.cavity_alphas,
+                self.cavity_betas,
+                self.cavity_sigmas,
+            )
+        ]
 
     def validate_atomic_coordinates(self):
         """Parse the $coords block and ensure correct formatting."""
@@ -203,11 +214,12 @@ class MoleculeValidator:
         p_with_symbol = re.compile(atom_with_symbol)
         p_with_number = re.compile(atom_with_number)
 
+        lines = [x.strip() for x in self.coords_raw.strip().splitlines() if x != ""]
         # Parse coordinates
         coords = []
         labels = []
         bad_atoms = []
-        for atom in self.coords_raw.strip().splitlines():
+        for atom in lines:
             match_symbol = p_with_symbol.match(atom)
             match_number = p_with_number.match(atom)
             if match_symbol:
@@ -245,36 +257,90 @@ class MoleculeValidator:
     def validate_cavity(self):
         """Parse the $spheres block and ensure correct formatting."""
         # Regex components
-        line_start = r"^"
-        line_end = r"$"
-        decimal = r"[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)"
-        one_or_more_whitespace = r"[\s]+"
-        zero_or_more_whitespace = r"[\s]*"
+        integer = r"[0-9]+"
+        decimal = r"[+-]?[0-9]+\.?[0-9]*|\.[0-9]+"
+        positive_decimal = r"[0-9]+\.?[0-9]*|\.[0-9]+"
 
-        # Build regex
-        valid_sphere = (
-            line_start
-            + zero_or_more_whitespace
-            + decimal
-            + (one_or_more_whitespace + decimal) * 3
-            + zero_or_more_whitespace
-            + line_end
-        )
-        p = re.compile(valid_sphere)
+        # Build regexes
+        valid_atom = rf"^(?P<index>{integer})\s+(?P<radius>{positive_decimal})(?:\s+)?(?P<alpha>{positive_decimal})?(?:\s+)?(?P<beta>{positive_decimal})?(?:\s+)?(?P<sigma>{positive_decimal})?$"
+        p = re.compile(valid_atom)
+        valid_sphere = rf"^(?P<X>{decimal})\s+(?P<Y>{decimal})\s+(?P<Z>{decimal})\s+(?P<radius>{positive_decimal})(?:\s+)?(?P<alpha>{positive_decimal})?(?:\s+)?(?P<beta>{positive_decimal})?(?:\s+)?(?P<sigma>{positive_decimal})?$"
+        q = re.compile(valid_sphere)
+
+        # the centers of the spheres are the same as the atoms
+        if self.cavity_mode == "atoms":
+            coords = deepcopy(self.atomic_coords)
+            radii = [
+                PeriodicTable[label.lower()].radius for label in self.atomic_symbols
+            ]
+            alphas = [self.cavity_alpha] * len(radii)
+            betas = [self.cavity_beta] * len(radii)
+            sigmas = [self.cavity_sigma] * len(radii)
+        else:
+            coords = []
+            radii = []
+            alphas = []
+            betas = []
+            sigmas = []
 
         # Parse spheres
-        coords = []
-        radii = []
         bad_spheres = []
 
-        for sphere in self.spheres_raw.strip().splitlines():
-            match = p.match(sphere)
-            if match:
-                g = match.group()
-                radii.append(float(g.split()[-1].strip()))
-                coords.append([float(c.strip()) for c in g.split()[:-1]])
+        lines = [x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""]
+        for sphere in lines:
+            p_match = p.match(sphere)
+            q_match = q.match(sphere)
+            if p_match:
+                # the indexing of the atoms is 1-based in the user input!
+                index = int(p_match.group("index")) - 1
+
+                radii[index] = float(p_match.group("radius"))
+
+                if p_match.group("alpha"):
+                    alphas[index] = float(p_match.group("alpha"))
+
+                if p_match.group("beta"):
+                    betas[index] = float(p_match.group("beta"))
+
+                if p_match.group("sigma"):
+                    sigmas[index] = float(p_match.group("sigma"))
+            elif q_match:
+                coords.append(
+                    [
+                        float(q_match.group("X")),
+                        float(q_match.group("Y")),
+                        float(q_match.group("Z")),
+                    ]
+                )
+                radii.append(float(q_match.group("radius")))
+
+                alphas.append(
+                    (
+                        float(q_match.group("alpha"))
+                        if q_match.group("alpha")
+                        else self.cavity_alpha
+                    )
+                )
+
+                betas.append(
+                    (
+                        float(q_match.group("beta"))
+                        if q_match.group("beta")
+                        else self.cavity_beta
+                    )
+                )
+
+                sigmas.append(
+                    (
+                        float(q_match.group("sigma"))
+                        if q_match.group("sigma")
+                        else self.cavity_sigma
+                    )
+                )
             else:
                 bad_spheres.append(sphere)
+
+        print(f"{coords=}\n{radii=}\n{alphas=}\n{betas=}\n{sigmas=}")
 
         if bad_spheres:
             newline = "\n"
@@ -290,7 +356,7 @@ class MoleculeValidator:
                 self.ERROR_MESSAGE_CAVITY_RADII("Cavity radii cannot be negative")
             )
 
-        return radii, coords
+        return radii, coords, alphas, betas, sigmas
 
     def check_for_nuclear_singularities(self):
         """Check for singularities in the nuclear positions."""

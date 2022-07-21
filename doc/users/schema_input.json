@@ -15,9 +15,11 @@
         {                                    # (one entry per sphere)
           "center": array[float],            # Cartesian coordinate of sphere center
           "radius": float                    # Radius of cavity sphere
+          "alpha": float                     # Scaling factor of radius
+          "beta": float                      # Scaling factor of width
+          "sigma": float                     # Width of cavity boundary
         }
       ],
-      "sigma": float                         # Width of cavity boundary
     }
   },
   "mpi": {                                   # Section for MPI specification

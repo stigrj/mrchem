@@ -130,7 +130,6 @@ def write_molecule(user_dict, origin):
     if user_dict["WaveFunction"]["environment"].lower() == "pcm":
         mol_dict["cavity"] = {
             "spheres": mol.get_cavity_in_program_syntax(),
-            "sigma": mol.cavity_sigma,
         }
 
     return mol_dict
