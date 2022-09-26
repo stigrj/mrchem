@@ -270,12 +270,6 @@ User input reference
   
     **Default** ``abgv_00``
   
-   :zora: Derivative used ZORA potential. 
-  
-    **Type** ``str``
-  
-    **Default** ``abgv_00``
-  
  :Molecule: Define molecule. 
 
   :red:`Keywords`
@@ -320,15 +314,6 @@ User input reference
   
     **Default** ``True``
   
-   :relativity: Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section. ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence over keywords in the ``ZORA`` section). 
-  
-    **Type** ``str``
-  
-    **Default** ``none``
-  
-    **Predicates**
-      - ``value.lower() in ['none', 'zora', 'nzora']``
-  
    :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. 
   
     **Type** ``str``
@@ -337,27 +322,6 @@ User input reference
   
     **Predicates**
       - ``value.lower() in ['none', 'pcm']``
-  
- :ZORA: Define required parameters for the ZORA Hamiltonian. 
-
-  :red:`Keywords`
-   :include_nuclear: Include the nuclear potential ``V_nuc`` in the ZORA potential. 
-  
-    **Type** ``bool``
-  
-    **Default** ``True``
-  
-   :include_coulomb: Include the Coulomb potential ``J`` in the ZORA potential. 
-  
-    **Type** ``bool``
-  
-    **Default** ``True``
-  
-   :include_xc: Include the XC potential ``V_xc`` in the ZORA potential. 
-  
-    **Type** ``bool``
-  
-    **Default** ``True``
   
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
@@ -827,7 +791,7 @@ User input reference
    :Cavity: Define the interlocking spheres cavity. 
   
       :red:`Keywords`
-       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified using the `$spheres` section with ``i R [alpha] [beta] [sigma]`` syntax. Extra spheres can be added using the `$spheres` section with ``x y z R [alpha] [beta] [sigma]`` syntax. ``explicit``: centers and radii given explicitly in the ``spheres`` block, no rescaling applied. 
+       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified and/or extra spheres added, using the `$spheres` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block. 
       
         **Type** ``str``
       
@@ -836,7 +800,7 @@ User input reference
         **Predicates**
           - ``value.lower() in ['atoms', 'explicit']``
       
-       :spheres: This input parameter affects the list of spheres used to generate the cavity. In ``atoms`` mode, you can give $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule should use radius ``R`` instead of the pre-tabulated vdW radius. ``alpha``, ``beta``, and ``sigma`` can also be modified, but it's not mandatory to specify them in the list. In ``atoms`` you can also add extra spheres to the list with: $spheres x y z R [alpha] [beta] [sigma] $end In ``explicit`` mode the same syntax for this list: $spheres x y z R [alpha] [beta] [sigma] $end will explicitly create the list of spheres. The units used are the same as specified with the ``world_unit`` keyword. Note that these radii are *not* rescaled before use (R_i <- alpha*R_i + beta*sigma), but are used as is. 
+       :spheres: This input parameter affects the list of spheres used to generate the cavity. In all cases, values for the radius, the radius scaling factor (``alpha``), the width (``sigma``), and the width scaling factor (``beta``) can be modified. If they are not specified their global default values are used. In ``atoms`` mode, we *modify* the default list of spheres, built with centers from the molecular geometry and radii from internal tabulated van der Waals values. To *substitute* a sphere, include a line like: $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R`` instead of the pre-tabulated vdW radius. To *add* a sphere, include a line like: $spheres x y z R [alpha] [beta] [sigma] $end to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. In ``explicit`` mode, we *build* the complete sphere list from scratch. You can add a line like: $spheres x y z R [alpha] [beta] [sigma] $end to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. Alternatively, you can specify a line like: $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R``. Spheres added in this way are aware of their parent atom. They will contribute to the molecular gradient. 
       
         **Type** ``str``
       

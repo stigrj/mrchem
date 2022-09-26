@@ -84,11 +84,6 @@
           ]
         }
       },
-     "zora_operator": {
-        "include_nuclear": bool,             # Include V_nuc in ZORA potential
-        "include_coulomb": bool,             # Include V_coul in ZORA potential
-        "include_xc": bool                   # Include V_xc in ZORA potential
-      },
       "external_operator": {                 # Add external field operator to Fock
         "electric_field": array[float],      # Electric field vector
         "r_O": array[float]                  # Gauge orgigin for electric field
