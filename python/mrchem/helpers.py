@@ -50,14 +50,6 @@ SHORTHAND_FUNCTIONALS = [
 def write_scf_fock(user_dict, wf_dict, origin):
     fock_dict = {}
 
-    # ZORA
-    if user_dict["WaveFunction"]["relativity"].lower() == "zora":
-        fock_dict["zora_operator"] = {
-            "include_nuclear": user_dict["ZORA"]["include_nuclear"],
-            "include_coulomb": user_dict["ZORA"]["include_coulomb"],
-            "include_xc": user_dict["ZORA"]["include_xc"],
-        }
-
     # Kinetic
     fock_dict["kinetic_operator"] = {"derivative": user_dict["Derivatives"]["kinetic"]}
 
@@ -412,38 +404,6 @@ def parse_wf_method(user_dict):
 
     # Determine relativity name label for print outs to the output file
     relativity_name = "None"
-    if user_dict["WaveFunction"]["relativity"].lower() in ["none"]:
-        user_dict["WaveFunction"]["relativity"] = "off"
-        user_dict["ZORA"]["include_nuclear"] = False
-        user_dict["ZORA"]["include_coulomb"] = False
-        user_dict["ZORA"]["include_xc"] = False
-
-    if user_dict["WaveFunction"]["relativity"].lower() in ["nzora"]:
-        user_dict["WaveFunction"]["relativity"] = "zora"
-        user_dict["ZORA"]["include_nuclear"] = True
-        user_dict["ZORA"]["include_coulomb"] = False
-        user_dict["ZORA"]["include_xc"] = False
-
-    if user_dict["WaveFunction"]["relativity"].lower() in ["zora"]:
-        components = [
-            user_dict["ZORA"]["include_nuclear"],
-            user_dict["ZORA"]["include_coulomb"],
-            user_dict["ZORA"]["include_xc"],
-        ]
-        names = ["V_nuc", "J", "V_xc"]
-
-        if any(components):
-            zora_terms = " + ".join(
-                [name for name, comp in zip(names, components) if comp]
-            )
-            relativity_name = "ZORA (" + zora_terms + ")"
-        else:
-            raise RuntimeError("ZORA selected, but no ZORA potential included")
-
-        if user_dict["ZORA"]["include_xc"] and not restricted:
-            raise RuntimeError(
-                "ZORA (V_xc) not available for unrestricted wavefunctions"
-            )
 
     # Determine environment name label for print outs to the output file
     environment_name = "None"

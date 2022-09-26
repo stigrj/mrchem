@@ -1,5 +1,50 @@
 # Change log
 
+## Version 1.1.0 2022-09-26
+
+### Added
+
+- Solvent effects through cavity-free PCM
+- Geometric derivative
+- Geometry optimization through QCEngine (beware of numerical instabilities)
+- CUBE initial guess: read generic CUBE files as starting orbitals
+- SAD_GTO initial guess: using 3-21G AO basis instead of Hydrogen functions
+- SAD input files for 5th row elements (Rb-Xe)
+- Tunable physical constants through user input
+
+### Changed
+
+- Updated MRCPP to v1.4.1
+- Improved Exchange efficiency and scaling
+- Improved MPI parallelization
+
+## Version 1.0.2 2021-10-13
+
+### Changed
+
+- Updated MRCPP to v1.4.0
+- Updated Eigen to v3.4.0
+
+### Fixed
+
+- Compile error with Eigen-3.4 due to conversion std::array<double> -> Eigen::VectorXd
+
+## Version 1.0.1 2020-12-04
+
+### Changed
+
+- Moved CI from Travis to GitHub Actions
+- Abort on failure when reading MW guess
+
+### Fixed
+
+- Minor issues with the printed output
+- Error in NMR tensor output (dia term printed transposed)
+- Precision issue with CHK guess (now full world_prec is used)
+- MPI dead-lock when mixing shared-mem potentials with orbital bank
+- SAD guess for large systems (Eigen threading error in matrix multiply)
+- CORE/SAD guess for heavy atoms (force refinement for sharp s-functions)
+
 ## Version 1.0.0 2020-10-28
 
 ### Added
