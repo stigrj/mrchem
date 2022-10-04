@@ -65,7 +65,7 @@ SCRF::SCRF(Permittivity e,
         , history(kain_hist)
         , apply_prec(orb_prec)
         , conv_thrs(1.0)
-        , mo_residual(-1.0)
+        , mo_residual(1.0)
         , epsilon(e)
         , rho_nuc(false)
         , rho_ext(false)
@@ -216,6 +216,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
         printConvergenceRow(iter, norm, update, t_iter.elapsed());
         iter++;
     }
+    if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter-1 << " iterations, residual " << update);
     mrcpp::print::separator(3, '-');
     this->dVr_n.real().clear();
     this->dVr_n.real().setZero();
