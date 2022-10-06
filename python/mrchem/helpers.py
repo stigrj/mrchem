@@ -23,7 +23,7 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from .CUBEparser import write_cube_dict
+from .CUBEparser import write_cube_vectors
 
 # yapf: disable
 SHORTHAND_FUNCTIONALS = [
@@ -146,7 +146,7 @@ def write_scf_guess(user_dict, wf_dict):
     file_dict = user_dict["Files"]
 
     if guess_type == "cube":
-        write_cube_dict(user_dict)
+        write_cube_vectors(user_dict)
 
     vector_dir = file_dict["cube_vectors"]
     guess_dict = {
