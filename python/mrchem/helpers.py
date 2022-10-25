@@ -52,8 +52,10 @@ SHORTHAND_FUNCTIONALS = [
 def write_scf_fock(user_dict, wf_dict, origin):
     fock_dict = {}
 
+    nuc_exp = -1.0
     # ZORA
     if user_dict["WaveFunction"]["relativity"].lower() == "zora":
+        nuc_exp = user_dict["ZORA"]["nuclear_exponent"]
         fock_dict["zora_operator"] = {
             "include_nuclear": user_dict["ZORA"]["include_nuclear"],
             "include_coulomb": user_dict["ZORA"]["include_coulomb"],
@@ -68,6 +70,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
         "proj_prec": user_dict["Precisions"]["nuclear_prec"],
         "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
         "shared_memory": user_dict["MPI"]["share_nuclear_potential"],
+        "nuclear_exponent": nuc_exp
     }
 
     # Reaction

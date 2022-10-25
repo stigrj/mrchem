@@ -359,6 +359,12 @@ User input reference
   
     **Default** ``True``
   
+   :nuclear_exponent: Gaussian exponent for finite nuclear charge. Negative value means point nucleus.  
+  
+    **Type** ``float``
+  
+    **Default** ``-1.0``
+  
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
   :red:`Keywords`

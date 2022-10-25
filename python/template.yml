@@ -319,6 +319,11 @@ sections:
         default: true
         docstring: |
           Include the XC potential ``V_xc`` in the ZORA potential.
+      - name: nuclear_exponent
+        type: float
+        default: -1.0
+        docstring: |
+          Gaussian exponent for finite nuclear charge. Negative value means point nucleus. 
   - name: DFT
     docstring: |
       Define the exchange-correlation functional in case of DFT.
