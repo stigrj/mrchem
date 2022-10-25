@@ -359,6 +359,12 @@ User input reference
   
     **Default** ``True``
   
+   :nuclear_exponent: Gaussian exponent for finite nuclear charge. Negative value means point nucleus.  
+  
+    **Type** ``float``
+  
+    **Default** ``-1.0``
+  
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
   :red:`Keywords`
@@ -642,7 +648,7 @@ User input reference
   
     **Type** ``str``
   
-    **Default** ``sad_dz``
+    **Default** ``sad_gto``
   
     **Predicates**
       - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']``

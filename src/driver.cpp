@@ -993,12 +993,17 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("nuclear_operator")) {
         auto proj_prec = json_fock["nuclear_operator"]["proj_prec"].get<double>();
+        auto nuc_exp = json_fock["nuclear_operator"]["nuclear_exponent"].get<double>();
         auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"].get<double>();
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"].get<bool>();
-        bool proj_charge = true;
-        auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, proj_charge);
-        // auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
-        F.getNuclearOperator() = V_p;
+	if (nuc_exp > 0.0) {
+            bool proj_charge = true;
+            auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, nuc_exp, shared_memory, proj_charge);
+            F.getNuclearOperator() = V_p;
+	} else {
+            auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
+            F.getNuclearOperator() = V_p;
+	}
     }
     ///////////////////////////////////////////////////////////
     //////////////////////   Zora Operator   //////////////////
