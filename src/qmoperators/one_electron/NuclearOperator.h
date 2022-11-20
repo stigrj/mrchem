@@ -41,7 +41,11 @@ private:
     void allreducePotential(double prec, QMFunction &V_tot, QMFunction &V_loc) const;
 
     void projectFiniteNucleus(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share);
+    void coulomb_HFYGB(const Nuclei &nucs, double proj_prec, bool mpi_share);
+    void homogeneus_charge_sphere(const Nuclei &nucs, double proj_prec, bool mpi_share);
+    void gaussian(const Nuclei &nucs, double proj_prec, bool mpi_share);
     void applyFiniteNucleus(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share);
+
 };
 
 } // namespace mrchem
