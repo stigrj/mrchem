@@ -29,6 +29,11 @@
 
 #include "NuclearOperator.h"
 
+#include<fstream>
+#include<iostream>
+#include<limits>
+#include<nlohmann/json.hpp>
+
 #include "analyticfunctions/NuclearFunction.h"
 #include "chemistry/chemistry_utils.h"
 #include "parallel.h"
@@ -39,16 +44,43 @@
 #include "utils/print_utils.h"
 #include "utils/math_utils.h"
 
+
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
+    if (proj_charge >= 2) {
+        // open file
+        std::ifstream f("param_V.json");
+        // skip lines starting from '#'
+        while (f.peek() == '#') f.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+        // read json data from file
+        nlohmann::json j = nlohmann::json::parse(f);
+        // close file
+        f.close();
+
+        // print json contents
+        //std::cout << j.dump() << std::endl;
+
+        double sum = 0.0;
+        for (auto item : j["element"]) {
+            const auto name = static_cast<std::string>( item["name"] );
+            const double epsilon = static_cast<double>( item["epsilon"] );
+            const double rms = static_cast<double>( item["rms"] );
+            std::cout << name << " | " << epsilon << " | " << rms << std::endl;
+            sum += rms;
+        }
+        std::cout << "Sum rms: " << sum << std::endl;
+
+        return 0;
+    }
+
 
 NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share, int proj_charge) {
     if (proj_charge = 1) {
-        projectFiniteNucleus(nucs, proj_prec, exponent, mpi_share);
-    } else if (proj_charge = 2) {
         coulomb_HFYGB(nucs, proj_prec, mpi_share);
+    } else if (proj_charge = 2) {
+        projectFiniteNucleus(nucs, proj_prec, exponent, mpi_share);
     } else if (proj_charge = 3) {
         homogeneus_charge_sphere(nucs, proj_prec, mpi_share);
     } else if (proj_charge = 4) {
@@ -61,35 +93,6 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double ex
 /** Compute finite nucleus potential by projecting analytic expression for the potential.
 *   Works only for single nucleus for now!
 */
-void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share) {
-    Timer t_tot;
-    mrcpp::print::header(2, "Projecting nuclear potential");
-
-    auto f_smooth = [sqrt_exp, &nucs] (const mrcpp::Coord<3> &r) -> double {
-        double tmp_sum = 0.0;
-        for (int k = 0; k < nucs.size(); k++)
-        const auto A = nucs.getElement(); 
-        //read json file
-        exponen = exponentjson // for the elemtn X = A
-        double sqrt_exp = std::sqrt(exponent);
-        const auto Z_I = nuc.getCharge();
-        const auto &R_I = nuc.getCoord();
-        double R = math_utils::calc_distance(r, R_I);
-        tmp_sum =+ -(Z_I / R) * std::erf(sqrt_exp * R);
-    return tmp_sum
-    };
-
-    Timer t_pot;
-    auto V_nuc = std::make_shared<QMPotential>(1, mpi_share);
-    qmfunction::project(*V_nuc, f_smooth, NUMBER::Real, proj_prec);
-    t_pot.stop();
-
-    // Invoke operator= to assign *this operator
-    RankZeroOperator &O = (*this);
-    O = V_nuc;
-    O.name() = "V_nuc";
-}
-
 void NuclearOperator::coulomb_HFYGB(const Nuclei &nucs, double proj_prec, bool mpi_share) {
     Timer t_tot;
     mrcpp::print::header(0, "Projecting nuclear potential coulomb_HFYGB");
@@ -117,6 +120,38 @@ void NuclearOperator::coulomb_HFYGB(const Nuclei &nucs, double proj_prec, bool m
     O = V_nuc;
     O.name() = "V_nuc";
 }
+
+
+
+void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share) {
+    Timer t_tot;
+    mrcpp::print::header(2, "Projecting nuclear potential");
+
+    auto f_smooth = [sqrt_exp, &nucs] (const mrcpp::Coord<3> &r) -> double {
+        double tmp_sum = 0.0;
+        for (int k = 0; k < nucs.size(); k++)
+        const auto A = nucs.getElement(); 
+        // Here I want that if A is equal item element in json file than take the value expoent for such element.
+        exponent = exponentjson // for the element X = A
+        double sqrt_exp = std::sqrt(exponent);
+        const auto Z_I = nuc.getCharge();
+        const auto &R_I = nuc.getCoord();
+        double R = math_utils::calc_distance(r, R_I);
+        tmp_sum =+ -(Z_I / R) * std::erf(sqrt_exp * R);
+    return tmp_sum
+    };
+
+    Timer t_pot;
+    auto V_nuc = std::make_shared<QMPotential>(1, mpi_share);
+    qmfunction::project(*V_nuc, f_smooth, NUMBER::Real, proj_prec);
+    t_pot.stop();
+
+    // Invoke operator= to assign *this operator
+    RankZeroOperator &O = (*this);
+    O = V_nuc;
+    O.name() = "V_nuc";
+}
+
 
 
 void NuclearOperator::homogeneus_charge_sphere(const Nuclei &nucs, double proj_prec, bool mpi_share) {
