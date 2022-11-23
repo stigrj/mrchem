@@ -30,7 +30,6 @@
 #include "NuclearOperator.h"
 
 #include<fstream>
-#include<iostream>
 #include<limits>
 #include<nlohmann/json.hpp>
 
@@ -49,6 +48,7 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
+    /*/
     if (proj_charge >= 2) {
         // open file
         std::ifstream f("param_V.json");
@@ -74,16 +74,16 @@ namespace mrchem {
 
         return 0;
     }
-
+    */
 
 NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share, int proj_charge) {
-    if (proj_charge = 1) {
+    if (proj_charge == 1) {
         coulomb_HFYGB(nucs, proj_prec, mpi_share);
-    } else if (proj_charge = 2) {
+    } else if (proj_charge == 2) {
         projectFiniteNucleus(nucs, proj_prec, exponent, mpi_share);
-    } else if (proj_charge = 3) {
+    } else if (proj_charge == 3) {
         homogeneus_charge_sphere(nucs, proj_prec, mpi_share);
-    } else if (proj_charge = 4) {
+    } else if (proj_charge == 4) {
         gaussian(nucs, proj_prec, mpi_share);
     } else {
         applyFiniteNucleus(nucs, proj_prec, proj_prec, exponent, mpi_share);
@@ -97,16 +97,22 @@ void NuclearOperator::coulomb_HFYGB(const Nuclei &nucs, double proj_prec, bool m
     Timer t_tot;
     mrcpp::print::header(0, "Projecting nuclear potential coulomb_HFYGB");
  
-    auto f_smooth = [&nucs] (const mrcpp::Coord<3> &r) -> double {
+    auto f_smooth = [&nucs,proj_prec] (const mrcpp::Coord<3> &r) -> double {
         double tmp_sum = 0.0;
-        for (int k = 0; k < nucs.size(); k++) 
-        const auto Z_I = nucs.getCharge();
-        const auto &R_I = nucs.getCoord();
-        double R = math_utils::calc_distance(r, R_I);
-        double factor = (0.00435 * proj_prec / Z_I**5)**(1./3.);
-        double u = std::erf(R)/R + (1/(3*std::sqrt(mrcpp::pi,0.5)))*(std::exp(-(R**2)) + 16*std::exp(-4*R**2));
-        tmp_sum =+ -(Z_I * u) / factor
-    return tmp_sum 
+        //for (int k = 0; k < nucs.size(); k++)
+        for (auto &nuc : nucs) {
+            const auto Z_I = nuc.getCharge();
+            const auto &R_I = nuc.getCoord();
+            const double R = math_utils::calc_distance(r, R_I);
+            //double factor = (0.00435 * proj_prec / Z_I**5)**(1./3.);
+            const double Z_I_2 = Z_I * Z_I;
+            const double Z_I_5 = Z_I_2 * Z_I_2 * Z_I;
+            const double factor = std::cbrt(0.00435 * proj_prec / Z_I_5);
+            //double u = std::erf(R)/R + (1/(3*std::sqrt(mrcpp::pi,0.5)))*(std::exp(-(R**2)) + 16*std::exp(-4*R**2));
+            const double u = std::erf(R)/R + (1/(3*std::sqrt(mrcpp::pi)))*(std::exp(-(R*R)) + 16*std::exp(-4*R*R));
+            tmp_sum += -(Z_I * u) / factor;
+        }
+        return tmp_sum;
     };
 
 
@@ -127,18 +133,34 @@ void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec,
     Timer t_tot;
     mrcpp::print::header(2, "Projecting nuclear potential");
 
-    auto f_smooth = [sqrt_exp, &nucs] (const mrcpp::Coord<3> &r) -> double {
+    std::ifstream f("param_V.json");
+    while (f.peek() == '#') f.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    nlohmann::json param_V = nlohmann::json::parse(f);
+    f.close();
+
+    auto f_smooth = [&nucs, &param_V] (const mrcpp::Coord<3> &r) -> double {
         double tmp_sum = 0.0;
-        for (int k = 0; k < nucs.size(); k++)
-        const auto A = nucs.getElement(); 
-        // Here I want that if A is equal item element in json file than take the value expoent for such element.
-        exponent = exponentjson // for the element X = A
-        double sqrt_exp = std::sqrt(exponent);
-        const auto Z_I = nuc.getCharge();
-        const auto &R_I = nuc.getCoord();
-        double R = math_utils::calc_distance(r, R_I);
-        tmp_sum =+ -(Z_I / R) * std::erf(sqrt_exp * R);
-    return tmp_sum
+        //for (int k = 0; k < nucs.size(); k++)
+        //const auto A = nucs.getElement(); 
+        for (auto &nuc : nucs) {
+            const auto &A = nuc.getElement().getSymbol(); // or getName() ?
+            // Here I want that if A is equal item element in json file than take the value expoent for such element.
+            // exponent = exponentjson // for the element X = A
+            double exponent = 0.0;
+            for (auto item : param_V["element"]) {
+                const auto name = static_cast<std::string>( item["name"] );
+                if (name == A) {
+                    exponent = static_cast<double>( item["xi"] ); // is it exponent?
+                    break;
+                }
+            }
+            const double sqrt_exp = std::sqrt(exponent);
+            const auto Z_I = nuc.getCharge();
+            const auto &R_I = nuc.getCoord();
+            const double R = math_utils::calc_distance(r, R_I);
+            tmp_sum += -(Z_I / R) * std::erf(sqrt_exp * R);
+        }
+        return tmp_sum;
     };
 
     Timer t_pot;
@@ -157,28 +179,44 @@ void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec,
 void NuclearOperator::homogeneus_charge_sphere(const Nuclei &nucs, double proj_prec, bool mpi_share) {
     Timer t_tot;
     mrcpp::print::header(0, "Projecting nuclear potential homogeneus_charge_sphere");
- 
-    auto f_smooth = [&nucs] (const mrcpp::Coord<3> &r) -> double {
-        double tmp_sum = 0.0;
-        for (int k = 0; k < nucs.size(); k++) 
-        const auto A = nucs.getElement();
-        //read json file
-        const RMS = RMSjson //for the elelemnt X = A; 
-        const RMS2 = RMS**2.0;
-        const auto Z_I = nucs.getCharge();
-        const auto &R_I = nucs.getCoord();
-        double R = math_utils::calc_distance(r, R_I);
-        double R0 = (RMS2*(5.0/3.0))**0.5;
 
-        if (R <= R0) {
-            double prec = -Z_I / (2.0*R0);
-            double factor = 3.0 - (R**2.0)/(R0**2.0); 
-        } else { 
-            double prec = -Z_I / R;
-            double factor = 1.0; 
-        } 
-        tmp_sum =+ prec / factor;
-    return tmp_sum 
+    std::ifstream f("param_V.json");
+    while (f.peek() == '#') f.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    nlohmann::json param_V = nlohmann::json::parse(f);
+    f.close();
+ 
+    auto f_smooth = [&nucs,&param_V] (const mrcpp::Coord<3> &r) -> double {
+        double tmp_sum = 0.0;
+        //for (int k = 0; k < nucs.size(); k++) 
+        //const auto A = nucs.getElement();
+        //read json file
+        for (auto &nuc : nucs) {
+            const auto &A = nuc.getElement().getSymbol(); // or getName() ?
+            //const RMS = RMSjson //for the elelemnt X = A; 
+            double RMS = 0.0;
+            for (auto item : param_V["element"]) {
+                const auto name = static_cast<std::string>( item["name"] );
+                if (name == A) {
+                    RMS = static_cast<double>( item["rms"] );
+                    break;
+                }
+            }
+            const auto RMS2 = RMS*RMS;
+            const auto Z_I = nuc.getCharge();
+            const auto &R_I = nuc.getCoord();
+            double R = math_utils::calc_distance(r, R_I);
+            double R0 = std::sqrt(RMS2*(5.0/3.0));
+            double prec, factor;
+            if (R <= R0) {
+                prec = -Z_I / (2.0*R0);
+                factor = 3.0 - (R*R)/(R0*R0);
+            } else { 
+                prec = -Z_I / R;
+                factor = 1.0;
+            }
+            tmp_sum += prec / factor;
+        }
+        return tmp_sum;
     };
 
 
@@ -197,20 +235,36 @@ void NuclearOperator::homogeneus_charge_sphere(const Nuclei &nucs, double proj_p
 void NuclearOperator::gaussian(const Nuclei &nucs, double proj_prec, bool mpi_share) {
     Timer t_tot;
     mrcpp::print::header(0, "Projecting nuclear potential homogeneus_charge_sphere");
+
+    std::ifstream f("param_V.json");
+    while (f.peek() == '#') f.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    nlohmann::json param_V = nlohmann::json::parse(f);
+    f.close();
  
-    auto f_smooth = [&nucs] (const mrcpp::Coord<3> &r) -> double {
+    auto f_smooth = [&nucs,&param_V] (const mrcpp::Coord<3> &r) -> double {
         double tmp_sum = 0.0;
-        for (int k = 0; k < nucs.size(); k++) 
-        const auto A = nucs.getElement();
-        //read json file
-        const epsilon = epsilonjson //for the elelemnt X = A;
-        const auto Z_I = nucs.getCharge();
-        const auto &R_I = nucs.getCoord();
-        double R = math_utils::calc_distance(r, R_I);
-        double prec = -Z_I / R
-        double u = std::erf(std::sqrt(epsilon) * R);
-        tmp_sum =+ prec * u
-    return tmp_sum 
+        //for (int k = 0; k < nucs.size(); k++) 
+        for (auto &nuc : nucs) {
+            //const auto A = nucs.getElement();
+            const auto &A = nuc.getElement().getSymbol(); // or getName() ?
+            //read json file
+            //const epsilon = epsilonjson //for the elelemnt X = A;
+            double epsilon = 0.0;
+            for (auto item : param_V["element"]) {
+                const auto name = static_cast<std::string>( item["name"] );
+                if (name == A) {
+                    epsilon = static_cast<double>( item["epsilon"] ); // is it exponent?
+                    break;
+                }
+            }
+            const auto Z_I = nuc.getCharge();
+            const auto &R_I = nuc.getCoord();
+            const double R = math_utils::calc_distance(r, R_I);
+            const double prec = -Z_I / R;
+            const double u = std::erf(std::sqrt(epsilon) * R);
+            tmp_sum += prec * u;
+        }
+        return tmp_sum;
     };
 
 
