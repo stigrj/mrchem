@@ -124,7 +124,7 @@ void NuclearOperator::projectFiniteNucleus(const Nuclei &nucs, double proj_prec,
             for (auto item : param_V["element"]) {
                 const auto name = static_cast<std::string>( item["name"] );
                 if (name == A) {
-                    exponent = static_cast<double>( item["xi"] ); // is it exponent?
+                    exponent = static_cast<double>( item["epsilon"] ); // is it exponent?
                     break;
                 }
             }
