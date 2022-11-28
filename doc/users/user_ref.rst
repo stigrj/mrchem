@@ -338,6 +338,12 @@ User input reference
     **Predicates**
       - ``value.lower() in ['none', 'pcm']``
   
+   :nuclear_model: Type of nucleus model. 0,1=numerically smoothed, 2=finite homogeneous sphere, 2=finite Gaussian 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
  :ZORA: Define required parameters for the ZORA Hamiltonian. 
 
   :red:`Keywords`
@@ -358,12 +364,6 @@ User input reference
     **Type** ``bool``
   
     **Default** ``True``
-  
-   :nuclear_exponent: Gaussian exponent for finite nuclear charge. Negative value means point nucleus.  
-  
-    **Type** ``float``
-  
-    **Default** ``-1.0``
   
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
