@@ -48,33 +48,7 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-    /*/
-    if (proj_charge >= 2) {
-        // open file
-        std::ifstream f("param_V.json");
-        // skip lines starting from '#'
-        while (f.peek() == '#') f.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-        // read json data from file
-        nlohmann::json j = nlohmann::json::parse(f);
-        // close file
-        f.close();
 
-        // print json contents
-        //std::cout << j.dump() << std::endl;
-
-        double sum = 0.0;
-        for (auto item : j["element"]) {
-            const auto name = static_cast<std::string>( item["name"] );
-            const double epsilon = static_cast<double>( item["epsilon"] );
-            const double rms = static_cast<double>( item["rms"] );
-            std::cout << name << " | " << epsilon << " | " << rms << std::endl;
-            sum += rms;
-        }
-        std::cout << "Sum rms: " << sum << std::endl;
-
-        return 0;
-    }
-    */
 
 NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double exponent, bool mpi_share, int proj_charge) {
     if (proj_charge == 1) {
