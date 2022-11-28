@@ -300,6 +300,11 @@ sections:
         docstring: |
           Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model,
           which will activate the ``PCM`` input section for further parametrization options.
+      - name: nuclear_model
+        type: int
+        default: 0
+        docstring: |
+          Type of nucleus model. 0,1=numerically smoothed, 2=finite homogeneous sphere, 2=finite Gaussian
   - name: ZORA
     docstring: |
       Define required parameters for the ZORA Hamiltonian.
@@ -319,11 +324,6 @@ sections:
         default: true
         docstring: |
           Include the XC potential ``V_xc`` in the ZORA potential.
-      - name: nuclear_exponent
-        type: float
-        default: -1.0
-        docstring: |
-          Gaussian exponent for finite nuclear charge. Negative value means point nucleus. 
   - name: DFT
     docstring: |
       Define the exchange-correlation functional in case of DFT.
