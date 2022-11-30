@@ -554,23 +554,59 @@ User input reference
   
     **Default** ``initial_guess/Y_b``
   
-   :guess_cube_p: File name for paired orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube 
+   :guess_cube_p: File name for paired orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
   
     **Type** ``str``
   
     **Default** ``initial_guess/phi_p``
   
-   :guess_cube_a: File name for alpha orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_a>_scf_idx_<0...Na>_<re/im>.cube 
+   :guess_cube_a: File name for alpha orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
   
     **Type** ``str``
   
     **Default** ``initial_guess/phi_a``
   
-   :guess_cube_b: File name for beta orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube 
+   :guess_cube_b: File name for beta orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
   
     **Type** ``str``
   
     **Default** ``initial_guess/phi_b``
+  
+   :guess_cube_x_p: File name for paired response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/x_p``
+  
+   :guess_cube_x_a: File name for alpha response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/x_a``
+  
+   :guess_cube_x_b: File name for beta response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/x_b``
+  
+   :guess_cube_y_p: File name for paired response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/y_p``
+  
+   :guess_cube_y_a: File name for alpha response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/y_a``
+  
+   :guess_cube_y_b: File name for beta response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/y_b``
   
    :cube_vectors: Directory where cube vectors are stored for mrchem calculation. 
   
@@ -644,7 +680,7 @@ User input reference
   
     **Default** ``-1.0``
   
-   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. 
+   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. 
   
     **Type** ``str``
   
@@ -744,7 +780,7 @@ User input reference
     **Default** ``none``
   
     **Predicates**
-      - ``value.lower() in ['none', 'chk', 'mw']``
+      - ``value.lower() in ['none', 'chk', 'mw', 'cube']``
   
    :write_checkpoint: Write perturbed orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. 
   

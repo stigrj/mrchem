@@ -1,0 +1,699 @@
+{
+  "input": {
+    "constants": {
+      "angstrom2bohrs": 1.8897261246257702,
+      "dipmom_au2debye": 2.5417464739297717,
+      "electron_g_factor": -2.00231930436256,
+      "fine_structure_constant": 0.0072973525693,
+      "hartree2ev": 27.211386245988,
+      "hartree2kcalmol": 627.5094740630558,
+      "hartree2kjmol": 2625.4996394798254,
+      "hartree2simagnetizability": 78.9451185,
+      "hartree2wavenumbers": 219474.6313632,
+      "light_speed": 137.035999084
+    },
+    "molecule": {
+      "charge": 0,
+      "coords": [
+        {
+          "atom": "h",
+          "xyz": [
+            0.0,
+            0.0,
+            -0.7001435291738478
+          ]
+        },
+        {
+          "atom": "h",
+          "xyz": [
+            0.0,
+            0.0,
+            0.7001435291738478
+          ]
+        }
+      ],
+      "multiplicity": 1
+    },
+    "mpi": {
+      "bank_size": -1,
+      "numerically_exact": true,
+      "shared_memory_size": 10000
+    },
+    "mra": {
+      "basis_order": 5,
+      "basis_type": "interpolating",
+      "boxes": [
+        2,
+        2,
+        2
+      ],
+      "corner": [
+        -1,
+        -1,
+        -1
+      ],
+      "max_scale": 20,
+      "min_scale": -5
+    },
+    "printer": {
+      "file_name": "h2",
+      "print_constants": false,
+      "print_level": 0,
+      "print_mpi": false,
+      "print_prec": 6,
+      "print_width": 75
+    },
+    "rsp_calculations": {
+      "ext_el-0.000000": {
+        "components": [
+          {
+            "initial_guess": {
+              "file_CUBE_x_a": "cube_vectors/CUBE_x_a_0_vector.json",
+              "file_CUBE_x_b": "cube_vectors/CUBE_x_b_0_vector.json",
+              "file_CUBE_x_p": "cube_vectors/CUBE_x_p_0_vector.json",
+              "file_CUBE_y_a": "cube_vectors/CUBE_y_a_0_vector.json",
+              "file_CUBE_y_b": "cube_vectors/CUBE_y_b_0_vector.json",
+              "file_CUBE_y_p": "cube_vectors/CUBE_y_p_0_vector.json",
+              "file_chk_x": "checkpoint/X_rsp_0",
+              "file_chk_y": "checkpoint/Y_rsp_0",
+              "file_x_a": "initial_guess/X_a_rsp_0",
+              "file_x_b": "initial_guess/X_b_rsp_0",
+              "file_x_p": "initial_guess/X_p_rsp_0",
+              "file_y_a": "initial_guess/Y_a_rsp_0",
+              "file_y_b": "initial_guess/Y_b_rsp_0",
+              "file_y_p": "initial_guess/Y_p_rsp_0",
+              "prec": 0.001,
+              "type": "cube"
+            }
+          },
+          {
+            "initial_guess": {
+              "file_CUBE_x_a": "cube_vectors/CUBE_x_a_1_vector.json",
+              "file_CUBE_x_b": "cube_vectors/CUBE_x_b_1_vector.json",
+              "file_CUBE_x_p": "cube_vectors/CUBE_x_p_1_vector.json",
+              "file_CUBE_y_a": "cube_vectors/CUBE_y_a_1_vector.json",
+              "file_CUBE_y_b": "cube_vectors/CUBE_y_b_1_vector.json",
+              "file_CUBE_y_p": "cube_vectors/CUBE_y_p_1_vector.json",
+              "file_chk_x": "checkpoint/X_rsp_1",
+              "file_chk_y": "checkpoint/Y_rsp_1",
+              "file_x_a": "initial_guess/X_a_rsp_1",
+              "file_x_b": "initial_guess/X_b_rsp_1",
+              "file_x_p": "initial_guess/X_p_rsp_1",
+              "file_y_a": "initial_guess/Y_a_rsp_1",
+              "file_y_b": "initial_guess/Y_b_rsp_1",
+              "file_y_p": "initial_guess/Y_p_rsp_1",
+              "prec": 0.001,
+              "type": "cube"
+            }
+          },
+          {
+            "initial_guess": {
+              "file_CUBE_x_a": "cube_vectors/CUBE_x_a_2_vector.json",
+              "file_CUBE_x_b": "cube_vectors/CUBE_x_b_2_vector.json",
+              "file_CUBE_x_p": "cube_vectors/CUBE_x_p_2_vector.json",
+              "file_CUBE_y_a": "cube_vectors/CUBE_y_a_2_vector.json",
+              "file_CUBE_y_b": "cube_vectors/CUBE_y_b_2_vector.json",
+              "file_CUBE_y_p": "cube_vectors/CUBE_y_p_2_vector.json",
+              "file_chk_x": "checkpoint/X_rsp_2",
+              "file_chk_y": "checkpoint/Y_rsp_2",
+              "file_x_a": "initial_guess/X_a_rsp_2",
+              "file_x_b": "initial_guess/X_b_rsp_2",
+              "file_x_p": "initial_guess/X_p_rsp_2",
+              "file_y_a": "initial_guess/Y_a_rsp_2",
+              "file_y_b": "initial_guess/Y_b_rsp_2",
+              "file_y_p": "initial_guess/Y_p_rsp_2",
+              "prec": 0.001,
+              "type": "cube"
+            },
+            "rsp_solver": {
+              "checkpoint": false,
+              "file_chk_x": "checkpoint/X_rsp_2",
+              "file_chk_y": "checkpoint/Y_rsp_2",
+              "final_prec": 0.001,
+              "helmholtz_prec": -1.0,
+              "kain": 3,
+              "max_iter": 10,
+              "method": "DFT",
+              "orbital_thrs": 0.001,
+              "orth_prec": 1e-14,
+              "property_thrs": -1.0,
+              "start_prec": 0.001
+            }
+          }
+        ],
+        "dynamic": false,
+        "fock_operator": {
+          "coulomb_operator": {
+            "poisson_prec": 0.001,
+            "shared_memory": false
+          },
+          "exchange_operator": {
+            "exchange_prec": -1.0,
+            "poisson_prec": 0.001
+          },
+          "xc_operator": {
+            "shared_memory": false,
+            "xc_functional": {
+              "cutoff": 0.0,
+              "functionals": [],
+              "spin": false
+            }
+          }
+        },
+        "frequency": 0.0,
+        "perturbation": {
+          "operator": "h_e_dip",
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "properties": {
+          "polarizability": {
+            "pol-0.000000": {
+              "frequency": 0.0,
+              "operator": "h_e_dip",
+              "precision": 0.001,
+              "r_O": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          }
+        },
+        "unperturbed": {
+          "fock_operator": {
+            "coulomb_operator": {
+              "poisson_prec": 0.001,
+              "shared_memory": false
+            },
+            "exchange_operator": {
+              "exchange_prec": -1.0,
+              "poisson_prec": 0.001
+            },
+            "kinetic_operator": {
+              "derivative": "abgv_55"
+            },
+            "nuclear_operator": {
+              "proj_prec": 0.001,
+              "shared_memory": false,
+              "smooth_prec": 0.001
+            },
+            "xc_operator": {
+              "shared_memory": false,
+              "xc_functional": {
+                "cutoff": 0.0,
+                "functionals": [],
+                "spin": false
+              }
+            }
+          },
+          "localize": false,
+          "precision": 0.001
+        }
+      },
+      "ext_el-0.001000": {
+        "components": [
+          {
+            "initial_guess": {
+              "file_CUBE_x_a": "cube_vectors/CUBE_x_a_0_vector.json",
+              "file_CUBE_x_b": "cube_vectors/CUBE_x_b_0_vector.json",
+              "file_CUBE_x_p": "cube_vectors/CUBE_x_p_0_vector.json",
+              "file_CUBE_y_a": "cube_vectors/CUBE_y_a_0_vector.json",
+              "file_CUBE_y_b": "cube_vectors/CUBE_y_b_0_vector.json",
+              "file_CUBE_y_p": "cube_vectors/CUBE_y_p_0_vector.json",
+              "file_chk_x": "checkpoint/X_rsp_0",
+              "file_chk_y": "checkpoint/Y_rsp_0",
+              "file_x_a": "initial_guess/X_a_rsp_0",
+              "file_x_b": "initial_guess/X_b_rsp_0",
+              "file_x_p": "initial_guess/X_p_rsp_0",
+              "file_y_a": "initial_guess/Y_a_rsp_0",
+              "file_y_b": "initial_guess/Y_b_rsp_0",
+              "file_y_p": "initial_guess/Y_p_rsp_0",
+              "prec": 0.001,
+              "type": "cube"
+            }
+          },
+          {
+            "initial_guess": {
+              "file_CUBE_x_a": "cube_vectors/CUBE_x_a_1_vector.json",
+              "file_CUBE_x_b": "cube_vectors/CUBE_x_b_1_vector.json",
+              "file_CUBE_x_p": "cube_vectors/CUBE_x_p_1_vector.json",
+              "file_CUBE_y_a": "cube_vectors/CUBE_y_a_1_vector.json",
+              "file_CUBE_y_b": "cube_vectors/CUBE_y_b_1_vector.json",
+              "file_CUBE_y_p": "cube_vectors/CUBE_y_p_1_vector.json",
+              "file_chk_x": "checkpoint/X_rsp_1",
+              "file_chk_y": "checkpoint/Y_rsp_1",
+              "file_x_a": "initial_guess/X_a_rsp_1",
+              "file_x_b": "initial_guess/X_b_rsp_1",
+              "file_x_p": "initial_guess/X_p_rsp_1",
+              "file_y_a": "initial_guess/Y_a_rsp_1",
+              "file_y_b": "initial_guess/Y_b_rsp_1",
+              "file_y_p": "initial_guess/Y_p_rsp_1",
+              "prec": 0.001,
+              "type": "cube"
+            }
+          },
+          {
+            "initial_guess": {
+              "file_CUBE_x_a": "cube_vectors/CUBE_x_a_2_vector.json",
+              "file_CUBE_x_b": "cube_vectors/CUBE_x_b_2_vector.json",
+              "file_CUBE_x_p": "cube_vectors/CUBE_x_p_2_vector.json",
+              "file_CUBE_y_a": "cube_vectors/CUBE_y_a_2_vector.json",
+              "file_CUBE_y_b": "cube_vectors/CUBE_y_b_2_vector.json",
+              "file_CUBE_y_p": "cube_vectors/CUBE_y_p_2_vector.json",
+              "file_chk_x": "checkpoint/X_rsp_2",
+              "file_chk_y": "checkpoint/Y_rsp_2",
+              "file_x_a": "initial_guess/X_a_rsp_2",
+              "file_x_b": "initial_guess/X_b_rsp_2",
+              "file_x_p": "initial_guess/X_p_rsp_2",
+              "file_y_a": "initial_guess/Y_a_rsp_2",
+              "file_y_b": "initial_guess/Y_b_rsp_2",
+              "file_y_p": "initial_guess/Y_p_rsp_2",
+              "prec": 0.001,
+              "type": "cube"
+            },
+            "rsp_solver": {
+              "checkpoint": false,
+              "file_chk_x": "checkpoint/X_rsp_2",
+              "file_chk_y": "checkpoint/Y_rsp_2",
+              "final_prec": 0.001,
+              "helmholtz_prec": -1.0,
+              "kain": 3,
+              "max_iter": 10,
+              "method": "DFT",
+              "orbital_thrs": 0.001,
+              "orth_prec": 1e-14,
+              "property_thrs": -1.0,
+              "start_prec": 0.001
+            }
+          }
+        ],
+        "dynamic": true,
+        "fock_operator": {
+          "coulomb_operator": {
+            "poisson_prec": 0.001,
+            "shared_memory": false
+          },
+          "exchange_operator": {
+            "exchange_prec": -1.0,
+            "poisson_prec": 0.001
+          },
+          "xc_operator": {
+            "shared_memory": false,
+            "xc_functional": {
+              "cutoff": 0.0,
+              "functionals": [],
+              "spin": false
+            }
+          }
+        },
+        "frequency": 0.001,
+        "perturbation": {
+          "operator": "h_e_dip",
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "properties": {
+          "polarizability": {
+            "pol-0.001000": {
+              "frequency": 0.001,
+              "operator": "h_e_dip",
+              "precision": 0.001,
+              "r_O": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          }
+        },
+        "unperturbed": {
+          "fock_operator": {
+            "coulomb_operator": {
+              "poisson_prec": 0.001,
+              "shared_memory": false
+            },
+            "exchange_operator": {
+              "exchange_prec": -1.0,
+              "poisson_prec": 0.001
+            },
+            "kinetic_operator": {
+              "derivative": "abgv_55"
+            },
+            "nuclear_operator": {
+              "proj_prec": 0.001,
+              "shared_memory": false,
+              "smooth_prec": 0.001
+            },
+            "xc_operator": {
+              "shared_memory": false,
+              "xc_functional": {
+                "cutoff": 0.0,
+                "functionals": [],
+                "spin": false
+              }
+            }
+          },
+          "localize": false,
+          "precision": 0.001
+        }
+      }
+    },
+    "scf_calculation": {
+      "fock_operator": {
+        "coulomb_operator": {
+          "poisson_prec": 0.001,
+          "shared_memory": false
+        },
+        "exchange_operator": {
+          "exchange_prec": -1.0,
+          "poisson_prec": 0.001
+        },
+        "kinetic_operator": {
+          "derivative": "abgv_55"
+        },
+        "nuclear_operator": {
+          "proj_prec": 0.001,
+          "shared_memory": false,
+          "smooth_prec": 0.001
+        },
+        "xc_operator": {
+          "shared_memory": false,
+          "xc_functional": {
+            "cutoff": 0.0,
+            "functionals": [],
+            "spin": false
+          }
+        }
+      },
+      "initial_guess": {
+        "environment": "None",
+        "external_field": "None",
+        "file_CUBE_a": "cube_vectors/CUBE_a_vector.json",
+        "file_CUBE_b": "cube_vectors/CUBE_b_vector.json",
+        "file_CUBE_p": "cube_vectors/CUBE_p_vector.json",
+        "file_basis": "initial_guess/mrchem.bas",
+        "file_chk": "checkpoint/phi_scf",
+        "file_gto_a": "initial_guess/mrchem.moa",
+        "file_gto_b": "initial_guess/mrchem.mob",
+        "file_gto_p": "initial_guess/mrchem.mop",
+        "file_phi_a": "initial_guess/phi_a_scf",
+        "file_phi_b": "initial_guess/phi_b_scf",
+        "file_phi_p": "initial_guess/phi_p_scf",
+        "localize": false,
+        "method": "DFT",
+        "prec": 0.001,
+        "relativity": "None",
+        "restricted": true,
+        "screen": 12.0,
+        "type": "sad",
+        "zeta": 2
+      },
+      "properties": {
+        "dipole_moment": {
+          "dip-1": {
+            "operator": "h_e_dip",
+            "precision": 0.001,
+            "r_O": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "schema_name": "mrchem_input",
+    "schema_version": 1
+  },
+  "output": {
+    "properties": {
+      "center_of_mass": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "charge": 0,
+      "dipole_moment": {
+        "dip-1": {
+          "magnitude": 0.0015265202992582132,
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "vector": [
+            0.0,
+            0.0,
+            0.0015265202992582132
+          ],
+          "vector_el": [
+            0.0,
+            0.0,
+            0.0015265202991980391
+          ],
+          "vector_nuc": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "geometry": [
+        {
+          "symbol": "H",
+          "xyz": [
+            0.0,
+            0.0,
+            -0.7001435291738478
+          ]
+        },
+        {
+          "symbol": "H",
+          "xyz": [
+            0.0,
+            0.0,
+            0.7001435291738478
+          ]
+        }
+      ],
+      "multiplicity": 1,
+      "orbital_energies": {
+        "energy": [
+          -0.014357670942241461
+        ],
+        "occupation": [
+          2.0
+        ],
+        "spin": [
+          "p"
+        ],
+        "sum_occupied": -0.028715341884482923
+      },
+      "polarizability": {
+        "pol-0.000000": {
+          "frequency": 0.0,
+          "isotropic_average": null,
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "tensor": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            -1.8798097891209705e-09,
+            -1.879814843510864e-09,
+            11.653324369889642
+          ]
+        },
+        "pol-0.001000": {
+          "frequency": 0.001,
+          "isotropic_average": null,
+          "r_O": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "tensor": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            8.828454910035952e-10,
+            8.828465009614914e-10,
+            11.65241305963326
+          ]
+        }
+      },
+      "scf_energy": {
+        "E_ee": 1.1852491743136642,
+        "E_eext": 0.0,
+        "E_el": -1.2139645161981472,
+        "E_en": -3.2748276942218673,
+        "E_kin": 0.8756140037100559,
+        "E_next": 0.0,
+        "E_nn": 0.7141392859689609,
+        "E_nuc": 0.7141392859689609,
+        "E_tot": -0.49982523022918623,
+        "E_x": 0.0,
+        "E_xc": 0.0,
+        "Er_el": 0.0,
+        "Er_nuc": 0.0,
+        "Er_tot": 0.0
+      }
+    },
+    "provenance": {
+      "creator": "MRChem",
+      "mpi_processes": 1,
+      "nthreads": 8,
+      "routine": "mrchem.x",
+      "total_cores": 8,
+      "version": "1.2.0-alpha"
+    },
+    "rsp_calculations": {
+      "ext_el-0.000000": {
+        "components": [
+          {
+            "rsp_solver": {
+              "converged": true,
+              "cycles": [
+                {
+                  "mo_residual": 12.267793362546016,
+                  "property_update": -24.885465951690684,
+                  "symmetric_property": -24.885465951690684,
+                  "wall_time": 6.980395791
+                },
+                {
+                  "mo_residual": 5.518227501090269,
+                  "property_update": 14.194751790422504,
+                  "symmetric_property": -10.690714161268179,
+                  "wall_time": 2.683862416
+                },
+                {
+                  "mo_residual": 0.39835398071454153,
+                  "property_update": -0.9615740617924722,
+                  "symmetric_property": -11.652288223060651,
+                  "wall_time": 1.744799542
+                },
+                {
+                  "mo_residual": 0.046925484934567434,
+                  "property_update": -0.0015835211930728121,
+                  "symmetric_property": -11.653871744253724,
+                  "wall_time": 1.505897583
+                },
+                {
+                  "mo_residual": 0.014355998640465016,
+                  "property_update": 0.0029045446918409823,
+                  "symmetric_property": -11.650967199561883,
+                  "wall_time": 1.488326875
+                },
+                {
+                  "mo_residual": 0.0009067452339631849,
+                  "property_update": -0.0023571703277589506,
+                  "symmetric_property": -11.653324369889642,
+                  "wall_time": 1.498762042
+                }
+              ],
+              "wall_time": 15.90212125
+            }
+          }
+        ],
+        "frequency": 0.0,
+        "perturbation": "h_e_dip",
+        "success": true
+      },
+      "ext_el-0.001000": {
+        "components": [
+          {
+            "rsp_solver": {
+              "converged": true,
+              "cycles": [
+                {
+                  "mo_residual": 17.35031324257007,
+                  "property_update": -24.88646970511864,
+                  "symmetric_property": -24.88646970511864,
+                  "wall_time": 2.388401125
+                },
+                {
+                  "mo_residual": 7.806068315671397,
+                  "property_update": 14.19518213040423,
+                  "symmetric_property": -10.691287574714408,
+                  "wall_time": 2.52835425
+                },
+                {
+                  "mo_residual": 0.563557761936465,
+                  "property_update": -0.9617440852167114,
+                  "symmetric_property": -11.65303165993112,
+                  "wall_time": 2.912790125
+                },
+                {
+                  "mo_residual": 0.06662880669858816,
+                  "property_update": -0.0015798414219609924,
+                  "symmetric_property": -11.65461150135308,
+                  "wall_time": 2.67667025
+                },
+                {
+                  "mo_residual": 0.02032695195236673,
+                  "property_update": 0.0029179043654856684,
+                  "symmetric_property": -11.651693596987595,
+                  "wall_time": 3.333245125
+                },
+                {
+                  "mo_residual": 0.0014158986041166487,
+                  "property_update": -0.0024537217214479767,
+                  "symmetric_property": -11.654147318709043,
+                  "wall_time": 2.847543625
+                },
+                {
+                  "mo_residual": 0.0006950818299225851,
+                  "property_update": 0.0017342590757838394,
+                  "symmetric_property": -11.65241305963326,
+                  "wall_time": 2.847319375
+                }
+              ],
+              "wall_time": 19.534396709
+            }
+          }
+        ],
+        "frequency": 0.001,
+        "perturbation": "h_e_dip",
+        "success": true
+      }
+    },
+    "scf_calculation": {
+      "initial_energy": {
+        "E_ee": 1.1852491743136642,
+        "E_eext": 0.0,
+        "E_el": -1.2139645161981472,
+        "E_en": -3.2748276942218673,
+        "E_kin": 0.8756140037100559,
+        "E_next": 0.0,
+        "E_nn": 0.7141392859689609,
+        "E_nuc": 0.7141392859689609,
+        "E_tot": -0.49982523022918623,
+        "E_x": 0.0,
+        "E_xc": 0.0,
+        "Er_el": 0.0,
+        "Er_nuc": 0.0,
+        "Er_tot": 0.0
+      },
+      "success": true
+    },
+    "schema_name": "mrchem_output",
+    "schema_version": 1,
+    "success": true
+  }
+}

@@ -102,6 +102,7 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+*.ipynb
 
 #Virtual environments
 venv
@@ -131,3 +132,5 @@ Pipfile.lock
 
 #Visual Studio Code
 .vscode
+
+cube_vectors/

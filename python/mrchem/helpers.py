@@ -23,7 +23,9 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from .CUBEparser import write_cube_vectors
+from pathlib import Path
+
+from .CUBEparser import parse_files
 
 # yapf: disable
 SHORTHAND_FUNCTIONALS = [
@@ -134,9 +136,19 @@ def write_scf_guess(user_dict, wf_dict):
     zeta = 0
 
     scf_dict = user_dict["SCF"]
+
     guess_prec = scf_dict["guess_prec"]
+
     if guess_type == "chk":
-        guess_prec = user_dict["world_prec"]
+        chk_Phi = Path(f"{scf_dict['path_checkpoint']}/phi_scf")
+        if not chk_Phi.is_file():
+            print(
+                f"No checkpoint guess found in {scf_dict['path_checkpoint']}, falling back to 'sad_gto' initial guess"
+            )
+            guess_type = "sad_gto"
+        else:
+            # adjust guess precision if checkpoint files are present
+            guess_prec = user_dict["world_prec"]
 
     if guess_type in ["core", "sad"]:
         zeta_str = guess_str.split("_")[1]
@@ -156,7 +168,12 @@ def write_scf_guess(user_dict, wf_dict):
     file_dict = user_dict["Files"]
 
     if guess_type == "cube":
-        write_cube_vectors(user_dict)
+        found = parse_files(user_dict)
+        if not found:
+            print(
+                f"No CUBE guess found in any of the 'initial_guess' sub-folders, falling back to 'sad_gto' initial guess"
+            )
+            guess_type = "sad_gto"
 
     vector_dir = file_dict["cube_vectors"]
     guess_dict = {
@@ -170,7 +187,7 @@ def write_scf_guess(user_dict, wf_dict):
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
         "restricted": user_dict["WaveFunction"]["restricted"],
-        "file_chk": scf_dict["path_checkpoint"] + "/phi_scf",
+        "file_chk": f"{scf_dict['path_checkpoint']}/phi_scf",
         "file_basis": file_dict["guess_basis"],
         "file_gto_p": file_dict["guess_gto_p"],
         "file_gto_a": file_dict["guess_gto_a"],
@@ -282,38 +299,72 @@ def write_rsp_calc(omega, user_dict, origin):
     }
 
     guess_str = rsp_dict["guess_type"].lower()
-    guess_type = guess_str.split("_")[0]
-    guess_prec = rsp_dict["guess_prec"]
-    if guess_type == "chk":
-        guess_prec = user_dict["world_prec"]
+    user_guess_type = guess_str.split("_")[0]
+    user_guess_prec = rsp_dict["guess_prec"]
+
+    vector_dir = file_dict["cube_vectors"]
 
     rsp_calc["components"] = []
-    for d in [0, 1, 2]:
+    for dir in [0, 1, 2]:
+
         rsp_comp = {}
+
+        program_guess_type = user_guess_type
+        program_guess_prec = user_guess_prec
+
+        # check that initial guess files exist
+        if user_guess_type == "chk":
+            chk_X = Path(f"{rsp_dict['path_checkpoint']}/X_rsp_{dir:d}")
+            chk_Y = Path(f"{rsp_dict['path_checkpoint']}/Y_rsp_{dir:d}")
+            if not (chk_X.is_file() and chk_Y.is_file()):
+                print(
+                    f"No checkpoint guess found in {rsp_dict['path_checkpoint']} for direction {dir:d}, falling back to zero initial guess"
+                )
+                program_guess_type = "none"
+            else:
+                # adjust guess precision if checkpoint files are present
+                program_guess_prec = user_dict["world_prec"]
+        elif user_guess_type == "cube":
+            found = parse_files(user_dict, dir)
+            if not found:
+                print(
+                    f"No CUBE guess found in any of the 'initial_guess' sub-folders for direction {dir:d}, falling back to zero initial guess"
+                )
+                program_guess_type = "none"
+        else:
+            # do no checks on other types of guess
+            pass
+
         rsp_comp["initial_guess"] = {
-            "prec": guess_prec,
-            "type": guess_type,
-            "file_chk_x": rsp_dict["path_checkpoint"] + "/X_rsp_" + str(d),
-            "file_chk_y": rsp_dict["path_checkpoint"] + "/Y_rsp_" + str(d),
-            "file_x_p": file_dict["guess_x_p"] + "_rsp_" + str(d),
-            "file_x_a": file_dict["guess_x_a"] + "_rsp_" + str(d),
-            "file_x_b": file_dict["guess_x_b"] + "_rsp_" + str(d),
-            "file_y_p": file_dict["guess_y_p"] + "_rsp_" + str(d),
-            "file_y_a": file_dict["guess_y_a"] + "_rsp_" + str(d),
-            "file_y_b": file_dict["guess_y_b"] + "_rsp_" + str(d),
+            "prec": program_guess_prec,
+            "type": program_guess_type,
+            "file_chk_x": f"{rsp_dict['path_checkpoint']}/X_rsp_{dir:d}",
+            "file_chk_y": f"{rsp_dict['path_checkpoint']}/Y_rsp_{dir:d}",
+            "file_x_p": f"{file_dict['guess_x_p']}_rsp_{dir:d}",
+            "file_x_a": f"{file_dict['guess_x_a']}_rsp_{dir:d}",
+            "file_x_b": f"{file_dict['guess_x_b']}_rsp_{dir:d}",
+            "file_y_p": f"{file_dict['guess_y_p']}_rsp_{dir:d}",
+            "file_y_a": f"{file_dict['guess_y_a']}_rsp_{dir:d}",
+            "file_y_b": f"{file_dict['guess_y_b']}_rsp_{dir:d}",
+            "file_CUBE_x_p": f"{vector_dir}CUBE_x_p_{dir:d}_vector.json",
+            "file_CUBE_x_a": f"{vector_dir}CUBE_x_a_{dir:d}_vector.json",
+            "file_CUBE_x_b": f"{vector_dir}CUBE_x_b_{dir:d}_vector.json",
+            "file_CUBE_y_p": f"{vector_dir}CUBE_y_p_{dir:d}_vector.json",
+            "file_CUBE_y_a": f"{vector_dir}CUBE_y_a_{dir:d}_vector.json",
+            "file_CUBE_y_b": f"{vector_dir}CUBE_y_b_{dir:d}_vector.json",
         }
         if rsp_dict["write_orbitals"]:
             path_orbitals = rsp_dict["path_orbitals"]
             rsp_comp["write_orbitals"] = {
-                "file_x_p": path_orbitals + "/X_p_rsp_" + str(d),
-                "file_x_a": path_orbitals + "/X_a_rsp_" + str(d),
-                "file_x_b": path_orbitals + "/X_b_rsp_" + str(d),
-                "file_y_p": path_orbitals + "/Y_p_rsp_" + str(d),
-                "file_y_a": path_orbitals + "/Y_a_rsp_" + str(d),
-                "file_y_b": path_orbitals + "/Y_b_rsp_" + str(d),
+                "file_x_p": f"{path_orbitals}/X_p_rsp_{dir:d}",
+                "file_x_a": f"{path_orbitals}/X_a_rsp_{dir:d}",
+                "file_x_b": f"{path_orbitals}/X_b_rsp_{dir:d}",
+                "file_y_p": f"{path_orbitals}/Y_p_rsp_{dir:d}",
+                "file_y_a": f"{path_orbitals}/Y_a_rsp_{dir:d}",
+                "file_y_b": f"{path_orbitals}/Y_b_rsp_{dir:d}",
             }
-        if rsp_dict["run"][d]:
-            rsp_comp["rsp_solver"] = write_rsp_solver(user_dict, wf_dict, d)
+        if rsp_dict["run"][dir]:
+            rsp_comp["rsp_solver"] = write_rsp_solver(user_dict, wf_dict, dir)
         rsp_calc["components"].append(rsp_comp)
     return rsp_calc
 

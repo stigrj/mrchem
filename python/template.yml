@@ -512,18 +512,69 @@ sections:
         docstring: |
           File name for paired orbitals, used with ``cube`` guess.
           Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube
+          where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
       - name: guess_cube_a
         type: str
         default: initial_guess/phi_a
         docstring: |
           File name for alpha orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/phi_a>_scf_idx_<0...Na>_<re/im>.cube
+          Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.cube
+          where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
       - name: guess_cube_b
         type: str
         default: initial_guess/phi_b
         docstring: |
           File name for beta orbitals, used with ``cube`` guess.
           Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube
+          where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+      - name: guess_cube_x_p
+        type: str
+        default: initial_guess/x_p
+        docstring: |
+          File name for paired response orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube
+          where `0,1,2` indicate the index of the components of the response vectors.
+          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+      - name: guess_cube_x_a
+        type: str
+        default: initial_guess/x_a
+        docstring: |
+          File name for alpha response orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube
+          where `0,1,2` indicate the index of the components of the response vectors.
+          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+      - name: guess_cube_x_b
+        type: str
+        default: initial_guess/x_b
+        docstring: |
+          File name for beta response orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube
+          where `0,1,2` indicate the index of the components of the response vectors.
+          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+      - name: guess_cube_y_p
+        type: str
+        default: initial_guess/y_p
+        docstring: |
+          File name for paired response orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube
+          where `0,1,2` indicate the index of the components of the response vectors.
+          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+      - name: guess_cube_y_a
+        type: str
+        default: initial_guess/y_a
+        docstring: |
+          File name for alpha response orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube
+          where `0,1,2` indicate the index of the components of the response vectors.
+          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+      - name: guess_cube_y_b
+        type: str
+        default: initial_guess/y_b
+        docstring: |
+          File name for beta response orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube
+          where `0,1,2` indicate the index of the components of the response vectors.
+          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
       - name: cube_vectors
         type: str
         default: cube_vectors/
@@ -616,6 +667,7 @@ sections:
           ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO
           basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic
           Densities Hamiltonian, respectively.
+          ``cube`` will start from orbitals saved in cubefiles from external calculations.
       - name: write_checkpoint
         type: bool
         default: false
@@ -708,7 +760,7 @@ sections:
         type: str
         default: none
         predicates:
-          - value.lower() in ['none', 'chk', 'mw']
+          - value.lower() in ['none', 'chk', 'mw', 'cube']
         docstring: |
           Type of initial guess for response.
           ``none`` will start from a zero guess for the response functions.
@@ -891,7 +943,6 @@ sections:
             docstring: |
               Formulation of the Permittivity function. Currently only the
               exponential is used.
-
   - name: Constants
     docstring: Physical and mathematical constants used by MRChem
     keywords:

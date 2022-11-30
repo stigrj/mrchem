@@ -123,7 +123,6 @@ bool initial_guess::cube::project_mo(OrbitalVector &Phi, double prec, const std:
             CUBEfunction phi_i = CUBEVector[i];
             Phi[i].alloc(NUMBER::Real);
             mrcpp::project(prec, Phi[i].real(), phi_i);
-            Phi[i].real().normalize();
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;
             o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
