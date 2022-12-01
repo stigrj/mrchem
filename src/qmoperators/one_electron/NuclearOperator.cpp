@@ -162,7 +162,7 @@ void NuclearOperator::projectGaussian(const Nuclei &nucs, double proj_prec, bool
             for (auto item : param_V["element"]) {
                 const auto name = item["name"];
                 if (name == A) {
-                    epsilon = item["epsilon"];
+                    epsilon = item["xi"];
                     break;
                 }
             }
