@@ -42,7 +42,6 @@ public:
     double evalf(const mrcpp::Coord<3> &r) const override;
 
 protected:
-    void normalize_basis();
 
     int N_atoms;
     int N_val;
@@ -54,6 +53,6 @@ protected:
     std::vector<double> atom_charges;
     std::vector<mrcpp::Coord<3>> atom_coords;
 
-    Eigen::Matrix3d normalized_basis; // multiply each row by its 1/norm^2
+    Eigen::Matrix3d inv_basis; // multiply each row by its 1/norm^2
 };
 } // namespace mrchem

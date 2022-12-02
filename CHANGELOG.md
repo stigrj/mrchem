@@ -1,5 +1,13 @@
 # Change log
 
+## Version 1.1.1 2022-12-03
+
+### Fixed
+
+- Use dynamic threshold in 0th iteration (initial guess) SCRF
+- Bundling issue with pyparsing in input parser
+- Bug in CUBEfile parser
+
 ## Version 1.1.0 2022-09-26
 
 ### Added

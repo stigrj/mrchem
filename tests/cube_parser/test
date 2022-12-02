@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+import sys
+from os import environ
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+sys.path.append(environ["MRCHEM_PYTHON_MODULE"])
+
+from mrchem.CUBEparser import parse_cube_file  # isort:skip
+from tester import *  # isort:skip
+
+
+voxel_reference = [
+    -2.92929293,
+    -1.31313131,
+    5.95959596,
+    4.34343434,
+    8.38383838,
+    6.36363636,
+    -6.16161616,
+    9.39393939,
+    1.71717172,
+    2.52525253,
+    -9.39393939,
+    7.97979798,
+    -3.33333333,
+    3.93939394,
+    7.17171717,
+    0.1010101,
+    -9.5959596,
+    7.77777778,
+    -5.15151515,
+    -9.7979798,
+    6.16161616,
+    1.91919192,
+    -0.70707071,
+    -5.35353535,
+    3.73737374,
+    -8.78787879,
+    1.31313131,
+]
+
+pc = {
+    "hartree2simagnetizability": 78.9451185,
+    "light_speed": 137.035999084,
+    "angstrom2bohrs": 1.8897261246257702,
+    "hartree2kjmol": 2625.4996394798254,
+    "hartree2kcalmol": 627.5094740630558,
+    "hartree2ev": 27.211386245988,
+    "hartree2wavenumbers": 219474.6313632,
+    "fine_structure_constant": 0.0072973525693,
+    "electron_g_factor": -2.00231930436256,
+    "dipmom_au2debye": 2.5417464739297717,
+}
+
+world_unit = "bohr"
+test_files = [
+    "phi_a_test_idx_0_re.cube",
+    "phi_a_test_idx_1_re.cube",
+    "phi_a_test_idx_2_re.cube",
+    "phi_a_test_idx_3_re.cube",
+]
+parsed_cubes = [
+    parse_cube_file((Path(__file__).parent / "reference" / test_path), world_unit, pc)
+    for test_path in test_files
+]
+
+
+ierr = 0
+for elem in parsed_cubes:
+    passed, message = compare_values(
+        elem["CUBE_data"][0],
+        voxel_reference,
+        "Parsed data from cube file vs. reference data",
+        rtol=1.0e-6,
+        atol=1.0e-6,
+    )
+    sys.stdout.write(f"{message}\n")
+    ierr += 0 if passed else 137
+
+sys.exit(ierr)
