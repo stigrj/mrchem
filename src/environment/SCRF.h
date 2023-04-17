@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "DHScreening.h"
 #include "Permittivity.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
@@ -47,8 +48,13 @@ public:
          bool acc_pot,
          bool dyn_thrs,
          std::string density_type);
+
     ~SCRF();
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
+    void setDHScreening(DHScreening kappa) {
+        this->kappa = kappa;
+        this->run_pb = true;
+    }
 
     double setConvergenceThreshold(double prec);
 
@@ -72,6 +78,7 @@ protected:
 private:
     bool accelerate_Vr;
     bool dynamic_thrs;
+    bool run_pb;
     std::string density_type;
 
     int max_iter;
@@ -81,6 +88,7 @@ private:
     double mo_residual;
 
     Permittivity epsilon;
+    DHScreening kappa;
 
     Density rho_nuc;
     Density rho_ext;
@@ -94,6 +102,8 @@ private:
     mrcpp::ComplexFunction dgamma_n;
     mrcpp::ComplexFunction gamma_nm1;
 
+    mrcpp::ComplexFunction pbe_term;
+
     mrcpp::FunctionTreeVector<3> d_cavity; //!< Vector containing the 3 partial derivatives of the cavity function
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
@@ -102,6 +112,8 @@ private:
 
     void computeDensities(OrbitalVector &Phi);
     void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
+    void computePBTerm(mrcpp::ComplexFunction &V_tot);
+
 
     mrcpp::ComplexFunction solvePoissonEquation(const mrcpp::ComplexFunction &ingamma);
 

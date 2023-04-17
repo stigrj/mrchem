@@ -854,6 +854,12 @@ User input reference
         **Predicates**
           - ``value.lower() in ['total', 'nuclear', 'electronic']``
       
+       :run_pb: Run the Poisson-Boltzmann equation. 
+      
+        **Type** ``bool``
+      
+        **Default** ``False``
+      
        :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
       
         **Type** ``int``
@@ -919,6 +925,27 @@ User input reference
       
         **Predicates**
           - ``value.lower() in ['exponential']``
+      
+   :D_H_screening: Parameters for the debye-huckel screening factor 
+  
+      :red:`Keywords`
+       :kappa_out: Value of the debye-Huckel screening factor outside of a designated radius. This value represents the electrolyte strength in the solvent. 
+      
+        **Type** ``float``
+      
+        **Default** ``1.0``
+      
+       :ion_radius: Amount with which the vdw-radius of the atoms will be increased. The screening factor will have an area of effect that is often going to be larger than the vdw-cavity, but centered in the same atoms. 
+      
+        **Type** ``float``
+      
+        **Default** ``0.0``
+      
+       :ion_width: Width of the transition between the solute and the ion accessible part. 
+      
+        **Type** ``float``
+      
+        **Default** ``0.2``
       
  :Constants: Physical and mathematical constants used by MRChem
 

@@ -66,6 +66,7 @@ class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
     Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, const std::vector<double> &alphas, const std::vector<double> &betas, const std::vector<double> &sigmas);
     Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, double sigma);
+    Cavity(){};
     double evalf(const mrcpp::Coord<3> &r) const override;
     auto getGradVector() const { return this->gradvector; }
     std::vector<mrcpp::Coord<3>> getCoordinates() const { return this->centers; } //!< Returns #centers.
@@ -74,6 +75,12 @@ public:
     std::vector<double> getRadiiScalings() const { return this->alphas; }         //!< Returns #alphas.
     std::vector<double> getWidths() const { return this->sigmas; }                //!< Returns #sigmas.
     std::vector<double> getWidthScalings() const { return this->betas; }          //!< Returns #betas.
+
+    void setCoordinates(const std::vector<mrcpp::Coord<3>> &coords) { this->centers = coords; } //!< Sets #centers.
+    void setRadii(const std::vector<double> &R) { this->radii_0 = R; }                          //!< Sets #radii_0.
+    void setRadiiScalings(const std::vector<double> &a) { this->alphas = a; }                   //!< Sets #alphas.
+    void setWidths(const std::vector<double> &s) { this->sigmas = s; }                          //!< Sets #sigmas.
+    void setWidthScalings(const std::vector<double> &b) { this->betas = b; }                    //!< Sets #betas.
 
 protected:
     std::vector<double> radii_0;                                             //!< Contains the *unscaled* radius of each sphere in #Center.
