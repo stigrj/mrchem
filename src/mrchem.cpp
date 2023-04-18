@@ -37,6 +37,8 @@
 #include "chemistry/Molecule.h"
 #include "chemistry/PhysicalConstants.h"
 
+#include "vc_sqnm/mrchem_optimizer.hpp"
+
 // Initializing global variables
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
@@ -61,6 +63,9 @@ int main(int argc, char **argv) {
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
     if (json_inp["printer"]["print_constants"]) PhysicalConstants::Print();
+
+    optimize_positions(scf_inp, mol_inp);
+    return 0;
 
     Timer timer;
     Molecule mol;
