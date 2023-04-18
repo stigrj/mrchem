@@ -64,9 +64,9 @@ Molecule optimize_positions(json scf_inp, json mol_inp) {
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     int num_atoms = mol.getNNuclei();
-    double init_step_size = .5;
+    double init_step_size = -.1;
     int max_history_length = 10;
-    double minimal_step_size = 0.0001;
+    double minimal_step_size = 0.01;
     double subspace_tolerance = 1e-3;
 
     // relaxation parameters:
@@ -89,10 +89,8 @@ Molecule optimize_positions(json scf_inp, json mol_inp) {
         std::cerr << pos << + "\n";
         std::cerr << "forces:\n";
         std::cerr << forces << + "\n";
-        std::cerr << i << " " << energy << " " << forces.norm() << " " << (pos.col(0) - pos.col(1)).norm() << " grepperp \n";
-        std::cerr << (pos.col(0) - pos.col(1)).norm() << " grepperp before \n";
+        std::cerr << i << " " << energy << " " << forces.norm() << "\n";
         optimizer.step(pos, energy, forces);
-        std::cerr << (pos.col(0) - pos.col(1)).norm() << " grepperp after \n";
         setPositions(mol_inp, pos);
         energyAndForces(mol_inp, scf_inp, energy, forces);
         pos = getPositions(mol_inp);
