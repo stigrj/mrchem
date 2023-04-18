@@ -92,6 +92,7 @@ Molecule optimize_positions(json scf_inp, json mol_inp) {
         std::cerr << i << " " << energy << " " << forces.norm() << "\n";
         optimizer.step(pos, energy, forces);
         setPositions(mol_inp, pos);
+        scf_inp["initial_guess"]["type"] = "mw";
         energyAndForces(mol_inp, scf_inp, energy, forces);
         pos = getPositions(mol_inp);
         i++;
