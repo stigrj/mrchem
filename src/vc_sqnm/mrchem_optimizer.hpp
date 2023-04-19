@@ -43,7 +43,17 @@ void setPositions(json &mol_inp, Eigen::MatrixXd &pos) {
     }
 }
 
-void energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd &forces) {
+/**
+ * @brief Calculates energy and forces of a molecule.
+ * 
+ * @param mol_inp: json that describes the molecule.
+ * @param scf_inp: scf settings.
+ * @param energy: energy will be stored in this variable.
+ * @param forces: forces will be stored here. Dimension of matrix is (3, num_atoms).
+ * 
+ * @return: json summary of scf results.
+*/
+json energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd &forces) {
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
@@ -53,23 +63,35 @@ void energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd
     for (int i = 0; i < mol.getNNuclei(); i++)
     {
         for (int j = 0; j < 3; j++) {
+            // is this safe? will the forces always be stored in ["geometric_derivative"]["geom-1"]?
             forces(j, i) = results["geometric_derivative"]["geom-1"]["total"][3*i + j];
         }
     }
+    // forces are the negative nuclear gradient.
     forces = -forces;
+    return results;
 }
 
+/**
+ * @brief Optimizes positions of nuclei.
+ * 
+ * @param scf_inp: scf settings.
+ * @param mol_inp: json that contains the molecule.
+ * @param geopt_inp: json that contains the geometry optization settings.
+ * @return: A summary of the geometry optimization trajectory.
+*/
 json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
 
     int num_atoms = mol_inp["coords"].size();
 
     // define default parameters
+    // The sqnm parameters are documented in the periodic_optimizer.hpp file.
     double init_step_size = -.1;
     int max_history_length = 10;
     double minimal_step_size = 0.01;
     double subspace_tolerance = 1e-3;
     int max_iter = 100;
-    double max_force_component = 1e-4;
+    double max_force_component = 5e-3;
 
     // overwrite parameters with user defined parameters:
     if (geopt_inp.contains("init_step_size")) init_step_size = geopt_inp["init_step_size"];
@@ -79,30 +101,38 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
     if (geopt_inp.contains("max_iter")) max_iter = geopt_inp["max_iter"];
     if (geopt_inp.contains("max_force_component")) max_force_component = geopt_inp["max_force_component"];
     
-
     PES_optimizer::periodic_optimizer optimizer(num_atoms, init_step_size, max_history_length, minimal_step_size, subspace_tolerance);
     
     int i = 0;
     Eigen::MatrixXd forces(3, num_atoms);
     double energy;
     
+    json results = energyAndForces(mol_inp, scf_inp, energy, forces);
+    // write progress to stderr for earier debugging.
+    std::cerr << i << " " << energy << " " << forces.cwiseAbs().maxCoeff() << "\n";
 
-    energyAndForces(mol_inp, scf_inp, energy, forces);
+    json summary;
+    summary[i] = {
+        {"results", results},
+        {"molecule", mol_inp}
+    };
 
     Eigen::MatrixXd pos = getPositions(mol_inp);
 
     while (i < max_iter && forces.cwiseAbs().maxCoeff() > max_force_component) {
-        std::cerr << "pos:\n";
-        std::cerr << pos << + "\n";
-        std::cerr << "forces:\n";
-        std::cerr << forces << + "\n";
-        std::cerr << i << " " << energy << " " << forces.cwiseAbs().maxCoeff() << "\n";
         optimizer.step(pos, energy, forces);
         setPositions(mol_inp, pos);
         scf_inp["initial_guess"]["type"] = "mw";
-        energyAndForces(mol_inp, scf_inp, energy, forces);
+        results = energyAndForces(mol_inp, scf_inp, energy, forces);
         i++;
+        summary[i] = {
+            {"results", results},
+            {"molecule", mol_inp}
+        };
+        std::cerr << i << " " << energy << " " << forces.cwiseAbs().maxCoeff() << "\n";
     }
-    return mol_inp;
+    std::cerr << "Estimated energy of the current local minimum:                        " << optimizer.lower_bound() << "\n";
+    std::cerr << "Energy difference of current energy to estimated ground state energy: " << energy - optimizer.lower_bound() << "\n";
+    return summary;
 
 }

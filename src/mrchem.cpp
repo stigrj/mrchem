@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
     const auto &scf_inp = json_inp["scf_calculation"];
     const auto &rsp_inp = json_inp["rsp_calculations"];
     const auto &con_inp = json_inp["constants"];
+    // TODO: parse geometry optimization settings.
     const json geopt_inp = {};
 
     // Instantiate the physical constants singleton
