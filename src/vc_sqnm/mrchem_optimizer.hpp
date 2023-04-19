@@ -57,6 +57,7 @@ json energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
+    // TODO: Ask someone if this mpi barrier is needed!
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     json results = driver::print_properties(mol);
     energy = results["scf_energy"]["E_tot"];
