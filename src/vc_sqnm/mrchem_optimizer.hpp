@@ -87,7 +87,7 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
 
     // define default parameters
     // The sqnm parameters are documented in the periodic_optimizer.hpp file.
-    double init_step_size = -.1;
+    double init_step_size = -.5;
     int max_history_length = 10;
     double minimal_step_size = 0.01;
     double subspace_tolerance = 1e-3;
