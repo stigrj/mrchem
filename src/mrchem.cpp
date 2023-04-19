@@ -59,12 +59,13 @@ int main(int argc, char **argv) {
     const auto &scf_inp = json_inp["scf_calculation"];
     const auto &rsp_inp = json_inp["rsp_calculations"];
     const auto &con_inp = json_inp["constants"];
+    const json geopt_inp = {};
 
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
     if (json_inp["printer"]["print_constants"]) PhysicalConstants::Print();
 
-    optimize_positions(scf_inp, mol_inp);
+    optimize_positions(scf_inp, mol_inp, geopt_inp);
     return 0;
 
     Timer timer;
