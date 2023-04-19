@@ -47,6 +47,7 @@ void energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     json results = driver::print_properties(mol);
     energy = results["scf_energy"]["E_tot"];
     for (int i = 0; i < mol.getNNuclei(); i++)
@@ -58,20 +59,26 @@ void energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd
     forces = -forces;
 }
 
-Molecule optimize_positions(json scf_inp, json mol_inp) {
+json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
 
-    // sqnm parameters
-    Molecule mol;
-    driver::init_molecule(mol_inp, mol);
-    int num_atoms = mol.getNNuclei();
+    int num_atoms = mol_inp["coords"].size();
+
+    // define default parameters
     double init_step_size = -.1;
     int max_history_length = 10;
     double minimal_step_size = 0.01;
     double subspace_tolerance = 1e-3;
-
-    // relaxation parameters:
     int max_iter = 100;
     double max_force_component = 1e-4;
+
+    // overwrite parameters with user defined parameters:
+    if (geopt_inp.contains("init_step_size")) init_step_size = geopt_inp["init_step_size"];
+    if (geopt_inp.contains("max_history_length")) max_history_length = geopt_inp["max_history_length"];
+    if (geopt_inp.contains("minimal_step_size")) minimal_step_size = geopt_inp["minimal_step_size"];
+    if (geopt_inp.contains("subspace_tolerance")) subspace_tolerance = geopt_inp["subspace_tolerance"];
+    if (geopt_inp.contains("max_iter")) max_iter = geopt_inp["max_iter"];
+    if (geopt_inp.contains("max_force_component")) max_force_component = geopt_inp["max_force_component"];
+    
 
     PES_optimizer::periodic_optimizer optimizer(num_atoms, init_step_size, max_history_length, minimal_step_size, subspace_tolerance);
     
@@ -84,18 +91,18 @@ Molecule optimize_positions(json scf_inp, json mol_inp) {
 
     Eigen::MatrixXd pos = getPositions(mol_inp);
 
-    while (i < max_iter && forces.norm() > max_force_component) {
+    while (i < max_iter && forces.cwiseAbs().maxCoeff() > max_force_component) {
         std::cerr << "pos:\n";
         std::cerr << pos << + "\n";
         std::cerr << "forces:\n";
         std::cerr << forces << + "\n";
-        std::cerr << i << " " << energy << " " << forces.norm() << "\n";
+        std::cerr << i << " " << energy << " " << forces.cwiseAbs().maxCoeff() << "\n";
         optimizer.step(pos, energy, forces);
         setPositions(mol_inp, pos);
         scf_inp["initial_guess"]["type"] = "mw";
         energyAndForces(mol_inp, scf_inp, energy, forces);
-        pos = getPositions(mol_inp);
         i++;
     }
+    return mol_inp;
 
 }
