@@ -997,7 +997,7 @@ sections:
           Maximum length of history.
       - name: subspace_tolerance
         type: float
-        default: 1e-3
+        default: 0.001
         docstring: |
           Subspace tolerance.
       - name: max_iter
@@ -1007,7 +1007,7 @@ sections:
           Maximum number of iterations.
       - name: max_force_component
         type: float
-        default: 5e-3
+        default: 0.005
         docstring: |
           Maximum force component.
   - name: Constants

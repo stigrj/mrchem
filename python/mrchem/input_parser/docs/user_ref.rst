@@ -967,7 +967,7 @@ User input reference
   
     **Type** ``float``
   
-    **Default** ``1e-3``
+    **Default** ``0.001``
   
    :max_iter: Maximum number of iterations. 
   
@@ -979,7 +979,7 @@ User input reference
   
     **Type** ``float``
   
-    **Default** ``5e-3``
+    **Default** ``0.005``
   
  :Constants: Physical and mathematical constants used by MRChem
 
