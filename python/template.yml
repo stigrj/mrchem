@@ -383,7 +383,7 @@ sections:
           Compute NMR shielding tensor.
       - name: geometric_derivative
         type: bool
-        default: false
+        default: user['GeometryOptimizer']['run']
         docstring: |
           Compute geometric derivative.
       - name: plot_density
@@ -970,6 +970,46 @@ sections:
                   Whether to use the nonequilibrium formulation of response,
                   *i.e.* use the dynamic permittivity for the calculation of the
                   response reaction field. Defaults to false.
+  - name: GeometryOptimizer
+    docstring: |
+      Includes parameters related to the internal geometry optimization using the
+      SQNM (Stabilized Quasi-Newton Method) for noisy PES.
+    keywords:
+      - name: run
+        type: bool
+        default: false
+        docstring: |
+          Run optimizer. Otherwise single point energy/properties are computed.
+      - name: init_step_size
+        type: float
+        default: -0.5
+        docstring: |
+          Initial step size.
+      - name: minimal_step_size
+        type: float
+        default: 0.01
+        docstring: |
+          Minimal step size.
+      - name: max_history_length
+        type: int
+        default: 10
+        docstring: |
+          Maximum length of history.
+      - name: subspace_tolerance
+        type: float
+        default: 1e-3
+        docstring: |
+          Subspace tolerance.
+      - name: max_iter
+        type: int
+        default: 100
+        docstring: |
+          Maximum number of iterations.
+      - name: max_force_component
+        type: float
+        default: 5e-3
+        docstring: |
+          Maximum force component.
   - name: Constants
     docstring: Physical and mathematical constants used by MRChem
     keywords:
