@@ -62,6 +62,7 @@ def translate_input(user_dict):
         "molecule": mol_dict,
         "scf_calculation": scf_dict,
         "rsp_calculations": rsp_dict,
+        "geom_opt": user_dict['GeometryOptimizer'],
         "constants": user_dict["Constants"],
     }
     return program_dict

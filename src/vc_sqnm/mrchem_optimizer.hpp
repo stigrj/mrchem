@@ -87,21 +87,13 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
 
     // define default parameters
     // The sqnm parameters are documented in the periodic_optimizer.hpp file.
-    double init_step_size = -.5;
-    int max_history_length = 10;
-    double minimal_step_size = 0.01;
-    double subspace_tolerance = 1e-3;
-    int max_iter = 100;
-    double max_force_component = 5e-3;
+    auto max_iter = geopt_inp["max_iter"];
+    auto max_history_length = geopt_inp["max_history_length"];
+    auto init_step_size = geopt_inp["init_step_size"];
+    auto minimal_step_size = geopt_inp["minimal_step_size"];
+    auto subspace_tolerance = geopt_inp["subspace_tolerance"];
+    auto max_force_component = geopt_inp["max_force_component"];
 
-    // overwrite parameters with user defined parameters:
-    if (geopt_inp.contains("init_step_size")) init_step_size = geopt_inp["init_step_size"];
-    if (geopt_inp.contains("max_history_length")) max_history_length = geopt_inp["max_history_length"];
-    if (geopt_inp.contains("minimal_step_size")) minimal_step_size = geopt_inp["minimal_step_size"];
-    if (geopt_inp.contains("subspace_tolerance")) subspace_tolerance = geopt_inp["subspace_tolerance"];
-    if (geopt_inp.contains("max_iter")) max_iter = geopt_inp["max_iter"];
-    if (geopt_inp.contains("max_force_component")) max_force_component = geopt_inp["max_force_component"];
-    
     PES_optimizer::periodic_optimizer optimizer(num_atoms, init_step_size, max_history_length, minimal_step_size, subspace_tolerance);
     
     int i = 0;
