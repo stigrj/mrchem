@@ -49,12 +49,20 @@ public:
          bool dyn_thrs,
          std::string density_type);
 
+    SCRF(Permittivity e,
+         DHScreening kappa,
+         const Nuclei &N,
+         std::shared_ptr<mrcpp::PoissonOperator> P,
+         std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
+         double orb_prec,
+         int kain_hist,
+         int max_iter,
+         bool acc_pot,
+         bool dyn_thrs,
+         std::string density_type);
+
     ~SCRF();
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
-    void setDHScreening(DHScreening kappa) {
-        this->kappa = kappa;
-        this->run_pb = true;
-    }
 
     double setConvergenceThreshold(double prec);
 
@@ -88,7 +96,6 @@ private:
     double mo_residual;
 
     Permittivity epsilon;
-    DHScreening kappa;
 
     Density rho_nuc;
     Density rho_ext;
@@ -102,6 +109,7 @@ private:
     mrcpp::ComplexFunction dgamma_n;
     mrcpp::ComplexFunction gamma_nm1;
 
+    mrcpp::ComplexFunction kappa;
     mrcpp::ComplexFunction pbe_term;
 
     mrcpp::FunctionTreeVector<3> d_cavity; //!< Vector containing the 3 partial derivatives of the cavity function
@@ -109,6 +117,7 @@ private:
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
 
     void setDCavity();
+    void setKappa(DHScreening k);
 
     void computeDensities(OrbitalVector &Phi);
     void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);

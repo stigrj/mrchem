@@ -1071,9 +1071,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
             auto cavity_centers = cavity_p->getCoordinates();
             auto cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
-            auto dhscreening = std::make_shared<DHScreening>(*cavity_ion, kappa_o, formulation);
-            dhscreening->printParameters();
-            scrf_p->setDHScreening(*dhscreening);
+            DHScreening dhscreening(*cavity_ion, kappa_o, formulation);
+            dhscreening.printParameters();
+            auto scrf_temp_p = std::make_unique<SCRF>(dielectric_func, dhscreening, nuclei, P_p, D_p, poisson_prec, kain, max_iter, accelerate_pot, dynamic_thrs, density_type);
+            scrf_p.reset(scrf_temp_p.release());
         }
 
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
