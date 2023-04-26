@@ -4,16 +4,13 @@
 "MPI": {
   "numerically_exact": true
 },
-"Printer": {
-  "print_level" : 3                       
-},
 "Molecule": {
   "charge": -1,
   "coords": "H 0.0 0.0 0.0"
 },
 "WaveFunction": {
   "method": "pbe0",
-  "environment": "pcm_pb"
+  "environment": "pcm_lpb"
 },
 "PCM": {
   "SCRF": {
