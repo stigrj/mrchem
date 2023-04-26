@@ -51,7 +51,6 @@ namespace mrchem {
 SCRF::SCRF(Permittivity e, const Nuclei &N, PoissonOperator_p P, DerivativeOperator_p D, double orb_prec, int kain_hist, int max_iter, bool acc_pot, bool dyn_thrs, std::string density_type)
         : accelerate_Vr(acc_pot)
         , dynamic_thrs(dyn_thrs)
-        , run_pb(false)
         , density_type(density_type)
         , max_iter(max_iter)
         , history(kain_hist)
@@ -68,6 +67,7 @@ SCRF::SCRF(Permittivity e, const Nuclei &N, PoissonOperator_p P, DerivativeOpera
         , gamma_n(false)
         , dgamma_n(false)
         , gamma_nm1(false)
+        , kappa(false)
         , pbe_term(false)
         , derivative(D)
         , poisson(P) {
@@ -88,7 +88,6 @@ SCRF::SCRF(Permittivity e,
            std::string density_type)
         : accelerate_Vr(acc_pot)
         , dynamic_thrs(dyn_thrs)
-        , run_pb(true)
         , density_type(density_type)
         , max_iter(max_iter)
         , history(kain_hist)
@@ -139,6 +138,7 @@ void SCRF::setDCavity() {
     mrcpp::project<3>(this->apply_prec / 100, this->d_cavity, this->epsilon.getGradVector());
 }
 
+// this is not where this should be defined
 void SCRF::setKappa(DHScreening k) {
     mrcpp::cplxfunc::project(this->kappa, k, NUMBER::Real, this->apply_prec);
 }
@@ -168,12 +168,17 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
 }
 
 void SCRF::computePBTerm(mrcpp::ComplexFunction &V_tot) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
-    auto sinh_f = [](const double &V) { return (1.0 / (4.0 * mrcpp::pi)) * std::sinh(V); };
-    resetComplexFunction(this->pbe_term);
-    mrcpp::ComplexFunction sinhV;
-    sinhV.alloc(NUMBER::Real);
-    mrcpp::map(this->apply_prec, sinhV.real(), V_tot.real(), sinh_f);
-    mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, sinhV, this->apply_prec);
+    if (this->do_linear_pb) {
+        resetComplexFunction(this->pbe_term);
+        mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, V_tot, this->apply_prec);
+    } else {
+        auto sinh_f = [](const double &V) { return (1.0 / (4.0 * mrcpp::pi)) * std::sinh(V); };
+        resetComplexFunction(this->pbe_term);
+        mrcpp::ComplexFunction sinhV;
+        sinhV.alloc(NUMBER::Real);
+        mrcpp::map(this->apply_prec, sinhV.real(), V_tot.real(), sinh_f);
+        mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, sinhV, this->apply_prec);
+    }
 }
 
 mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma) {
@@ -225,85 +230,53 @@ void SCRF::nestedSCRF(mrcpp::ComplexFunction V_vac) {
     int iter = 1;
     while (update >= this->conv_thrs && iter <= max_iter) {
         Timer t_iter;
-        // solve the poisson equation
-        if (this->run_pb) { // DO PB equation
+        mrcpp::ComplexFunction Vr_np1;
+        // solve the poisson equation        
+        if (this->kappa.norm() != -1.0) { // DO PB equation
             mrcpp::ComplexFunction temp_poiss_operand;
             mrcpp::cplxfunc::add(temp_poiss_operand, 1.0, this->gamma_n, -1.0, this->pbe_term, -1.0);
-            mrcpp::ComplexFunction Vr_np1 = solvePoissonEquation(temp_poiss_operand);
+            Vr_np1 = solvePoissonEquation(temp_poiss_operand);
             temp_poiss_operand.free(NUMBER::Real);
-            norm = Vr_np1.norm();
-
-            // use a convergence accelerator
-            resetComplexFunction(this->dVr_n);
-            mrcpp::cplxfunc::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
-
-            if (iter > 1 and this->history > 0 and this->accelerate_Vr) {
-                accelerateConvergence(dVr_n, Vr_n, kain);
-                Vr_np1.free(NUMBER::Real);
-                mrcpp::cplxfunc::add(Vr_np1, 1.0, Vr_n, 1.0, dVr_n, -1.0);
-            }
-            update = dVr_n.norm();
-
-            // set up for next iteration
-            mrcpp::ComplexFunction V_tot;
-            mrcpp::cplxfunc::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
-            updateCurrentReactionPotential(Vr_np1); // push_back() maybe
-
-            // compute new PB term
-
-            computePBTerm(V_tot);
-
-            // compute the new gamma
-            mrcpp::ComplexFunction gamma_np1;
-            computeGamma(V_tot, gamma_np1);
-
-            resetmrcpp::ComplexFunction(dgamma_n);
-            mrcpp::cplxfunc::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
-
-            if (iter > 1 and this->history > 0 and (not this->accelerate_Vr)) {
-                accelerateConvergence(dgamma_n, gamma_n, kain);
-                gamma_np1.free(NUMBER::Real);
-                mrcpp::cplxfunc::add(gamma_np1, 1.0, gamma_n, 1.0, dgamma_n, -1.0);
-            }
-
-            updateCurrentGamma(gamma_np1);
-            printConvergenceRow(iter, norm, update, t_iter.elapsed());
-
-        } else { // Do standard PCM
-            mrcpp::ComplexFunction Vr_np1 = solvePoissonEquation(this->gamma_n);
-            norm = Vr_np1.norm();
-
-            // use a convergence accelerator
-            resetComplexFunction(this->dVr_n);
-            mrcpp::cplxfunc::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
-
-            if (iter > 1 and this->history > 0 and this->accelerate_Vr) {
-                accelerateConvergence(dVr_n, Vr_n, kain);
-                Vr_np1.free(NUMBER::Real);
-                mrcpp::cplxfunc::add(Vr_np1, 1.0, Vr_n, 1.0, dVr_n, -1.0);
-            }
-            update = dVr_n.norm();
-
-            // set up for next iteration
-            mrcpp::ComplexFunction V_tot;
-            mrcpp::cplxfunc::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
-            updateCurrentReactionPotential(Vr_np1); // push_back() maybe
-
-            mrcpp::ComplexFunction gamma_np1;
-            computeGamma(V_tot, gamma_np1);
-
-            resetComplexFunction(dgamma_n);
-            mrcpp::cplxfunc::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
-
-            if (iter > 1 and this->history > 0 and (not this->accelerate_Vr)) {
-                accelerateConvergence(dgamma_n, gamma_n, kain);
-                gamma_np1.free(NUMBER::Real);
-                mrcpp::cplxfunc::add(gamma_np1, 1.0, gamma_n, 1.0, dgamma_n, -1.0);
-            }
-
-            updateCurrentGamma(gamma_np1);
-            printConvergenceRow(iter, norm, update, t_iter.elapsed());
+        } else {
+            Vr_np1 = solvePoissonEquation(this->gamma_n);
         }
+
+        norm = Vr_np1.norm();
+
+        // use a convergence accelerator
+        resetComplexFunction(this->dVr_n);
+        mrcpp::cplxfunc::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
+
+        if (iter > 1 and this->history > 0 and this->accelerate_Vr) {
+            accelerateConvergence(dVr_n, Vr_n, kain);
+            Vr_np1.free(NUMBER::Real);
+            mrcpp::cplxfunc::add(Vr_np1, 1.0, Vr_n, 1.0, dVr_n, -1.0);
+        }
+        update = dVr_n.norm();
+
+        // set up for next iteration
+        mrcpp::ComplexFunction V_tot;
+        mrcpp::cplxfunc::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
+        updateCurrentReactionPotential(Vr_np1); // push_back() maybe
+
+        // compute new PB term
+        if (this->kappa.norm() != -1.0) { computePBTerm(V_tot); }
+
+        // compute the new gamma
+        mrcpp::ComplexFunction gamma_np1;
+        computeGamma(V_tot, gamma_np1);
+
+        resetComplexFunction(dgamma_n);
+        mrcpp::cplxfunc::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
+
+        if (iter > 1 and this->history > 0 and (not this->accelerate_Vr)) {
+            accelerateConvergence(dgamma_n, gamma_n, kain);
+            gamma_np1.free(NUMBER::Real);
+            mrcpp::cplxfunc::add(gamma_np1, 1.0, gamma_n, 1.0, dgamma_n, -1.0);
+        }
+
+        updateCurrentGamma(gamma_np1);
+        printConvergenceRow(iter, norm, update, t_iter.elapsed());
         iter++;
     }
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
@@ -357,7 +330,7 @@ mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
         computeGamma(V_vac, gamma_0);
         this->Vr_n = solvePoissonEquation(gamma_0);
         mrcpp::cplxfunc::add(V_tot, 1.0, V_vac, 1.0, this->Vr_n, -1.0);
-        if (this->run_pb) { // DO PB equation
+        if (this->kappa.norm() != -1.0) { // DO PB equation
             mrcpp::ComplexFunction temp_poiss_operand;
             computePBTerm(V_vac); // should compute the pbterm as if there was no reaction field from the solvent cavity
             mrcpp::cplxfunc::add(temp_poiss_operand, 1.0, gamma_0, -1.0, this->pbe_term, -1.0);
@@ -380,7 +353,7 @@ mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
         mrcpp::cplxfunc::add(V_tot, 1.0, this->Vr_n, 1.0, V_vac, -1.0);
         resetComplexFunction(this->gamma_n);
         computeGamma(V_tot, this->gamma_n);
-        if (this->run_pb) { computePBTerm(V_tot); }
+        if (this->kappa.norm() != -1.0) { computePBTerm(V_tot); }
     } else {
         mrcpp::ComplexFunction temp_gamma_n;
         mrcpp::cplxfunc::add(temp_gamma_n, 1.0, this->gamma_n, 1.0, this->dgamma_n, -1.0);

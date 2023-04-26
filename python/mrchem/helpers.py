@@ -71,7 +71,8 @@ def write_scf_fock(user_dict, wf_dict, origin):
     }
 
     # Reaction
-    if user_dict["WaveFunction"]["environment"].lower() == "pcm" :
+    environment = user_dict["WaveFunction"]["environment"].lower().split("_")
+    if environment[0] == "pcm" :
         fock_dict["reaction_operator"] = {
             "poisson_prec": user_dict["world_prec"],
             "kain": user_dict["PCM"]["SCRF"]["kain"],
@@ -83,11 +84,21 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "epsilon_out": user_dict["PCM"]["Permittivity"]["epsilon_out"],
             "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
         }
-        if user_dict["PCM"]["SCRF"]["run_pb"] :
+        if environment[-1] == "pb" :
             fock_dict["reaction_operator"]["Poisson_Boltzmann"] = {
                 "kappa_out" : user_dict["PCM"]["D_H_screening"]["kappa_out"],
                 "ion_radius" : user_dict["PCM"]["D_H_screening"]["ion_radius"],
-                "ion_width" : user_dict["PCM"]["D_H_screening"]["ion_width"]
+                "ion_width" : user_dict["PCM"]["D_H_screening"]["ion_width"],
+                "formulation" : user_dict["PCM"]["D_H_screening"]["formulation"],
+                "solver_type": "standard"
+            }
+        elif environment[-1] == "lpb" :
+            fock_dict["reaction_operator"]["Poisson_Boltzmann"] = {
+                "kappa_out" : user_dict["PCM"]["D_H_screening"]["kappa_out"],
+                "ion_radius" : user_dict["PCM"]["D_H_screening"]["ion_radius"],
+                "ion_width" : user_dict["PCM"]["D_H_screening"]["ion_width"],
+                "formulation" : user_dict["PCM"]["D_H_screening"]["formulation"],
+                "solver_type": "linearized"
             }
 
     # Coulomb

@@ -13,15 +13,14 @@
 },
 "WaveFunction": {
   "method": "pbe0",
-  "environment": "pcm"
+  "environment": "pcm_pb"
 },
 "PCM": {
   "SCRF": {
     "kain": 5,
     "max_iter": 100,
     "dynamic_thrs": false,
-    "optimizer": "potential",
-    "run_pb": true
+    "optimizer": "potential"
   },
   "Cavity": {
     "spheres": "0 2.645616384 1.0 0.0 0.2"

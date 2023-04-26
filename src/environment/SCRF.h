@@ -65,6 +65,7 @@ public:
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
 
     double setConvergenceThreshold(double prec);
+    void setSolverType(bool linear_pb) { this->do_linear_pb = linear_pb; }
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->Vr_n; }
     mrcpp::ComplexFunction &getPreviousReactionPotential() { return this->Vr_nm1; }
@@ -86,7 +87,7 @@ protected:
 private:
     bool accelerate_Vr;
     bool dynamic_thrs;
-    bool run_pb;
+    bool do_linear_pb;
     std::string density_type;
 
     int max_iter;
