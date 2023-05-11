@@ -938,7 +938,7 @@ sections:
             docstring: |
               Formulation of the Permittivity function. Currently only the
               exponential is used.
-      - name: D_H_screening
+      - name: DHScreening
         docstring: |
           Parameters for the debye-huckel screening factor
         keywords:

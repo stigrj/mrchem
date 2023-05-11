@@ -70,7 +70,7 @@ void DHScreening::printParameters() const {
     o_head << std::setw(w4) << "z";
 
     // Print
-    mrcpp::print::header(0, "Square of the Debye-Huckel screening parameter");
+    mrcpp::print::header(0, "Debye-Huckel Screening");
     print_utils::text(0, "Formulation", getFormulation(), true);
     print_utils::scalar(0, "Screening function value", 0.0, "(in)", 6);
     print_utils::scalar(0, "", getKOut(), "(out)", 6);

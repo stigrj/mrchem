@@ -1060,13 +1060,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         dielectric_func.printParameters();
         auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_p, D_p, poisson_prec, kain, max_iter, accelerate_pot, dynamic_thrs, density_type);
 
-        if (json_fock["reaction_operator"].contains("Poisson_Boltzmann")) {
-            double ion_radius = json_fock["reaction_operator"]["Poisson_Boltzmann"]["ion_radius"];
-            auto kappa_o = json_fock["reaction_operator"]["Poisson_Boltzmann"]["kappa_out"];
+        if (json_fock["reaction_operator"].contains("poisson_boltzmann")) {
+            double ion_radius = json_fock["reaction_operator"]["poisson_boltzmann"]["ion_radius"];
+            auto kappa_o = json_fock["reaction_operator"]["poisson_boltzmann"]["kappa_out"];
 
-            auto width_ion = json_fock["reaction_operator"]["Poisson_Boltzmann"]["ion_width"];
-            auto kformulation = json_fock["reaction_operator"]["Poisson_Boltzmann"]["formulation"];
-            auto solver_type = json_fock["reaction_operator"]["Poisson_Boltzmann"]["solver_type"];
+            auto width_ion = json_fock["reaction_operator"]["poisson_boltzmann"]["ion_width"];
+            auto kformulation = json_fock["reaction_operator"]["poisson_boltzmann"]["formulation"];
+            auto solver_type = json_fock["reaction_operator"]["poisson_boltzmann"]["solver_type"];
             auto radii_0 = cavity_p->getOriginalRadii();
             auto radii_ion = std::vector<double>(radii_0.size());
 

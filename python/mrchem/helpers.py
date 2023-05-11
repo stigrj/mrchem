@@ -85,19 +85,19 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
         }
         if environment[-1] == "pb" :
-            fock_dict["reaction_operator"]["Poisson_Boltzmann"] = {
-                "kappa_out" : user_dict["PCM"]["D_H_screening"]["kappa_out"],
-                "ion_radius" : user_dict["PCM"]["D_H_screening"]["ion_radius"],
-                "ion_width" : user_dict["PCM"]["D_H_screening"]["ion_width"],
-                "formulation" : user_dict["PCM"]["D_H_screening"]["formulation"],
+            fock_dict["reaction_operator"]["poisson_boltzmann"] = {
+                "kappa_out" : user_dict["PCM"]["DHScreening"]["kappa_out"],
+                "ion_radius" : user_dict["PCM"]["DHScreening"]["ion_radius"],
+                "ion_width" : user_dict["PCM"]["DHScreening"]["ion_width"],
+                "formulation" : user_dict["PCM"]["DHScreening"]["formulation"],
                 "solver_type": "standard"
             }
         elif environment[-1] == "lpb" :
-            fock_dict["reaction_operator"]["Poisson_Boltzmann"] = {
-                "kappa_out" : user_dict["PCM"]["D_H_screening"]["kappa_out"],
-                "ion_radius" : user_dict["PCM"]["D_H_screening"]["ion_radius"],
-                "ion_width" : user_dict["PCM"]["D_H_screening"]["ion_width"],
-                "formulation" : user_dict["PCM"]["D_H_screening"]["formulation"],
+            fock_dict["reaction_operator"]["poisson_boltzmann"] = {
+                "kappa_out" : user_dict["PCM"]["DHScreening"]["kappa_out"],
+                "ion_radius" : user_dict["PCM"]["DHScreening"]["ion_radius"],
+                "ion_width" : user_dict["PCM"]["DHScreening"]["ion_width"],
+                "formulation" : user_dict["PCM"]["DHScreening"]["formulation"],
                 "solver_type": "linearized"
             }
 
@@ -517,6 +517,10 @@ def parse_wf_method(user_dict):
     environment_name = "None"
     if user_dict["WaveFunction"]["environment"].lower() == "pcm":
         environment_name = "PCM"
+    elif user_dict["WaveFunction"]["environment"].lower() == "pcm_pb":
+        environment_name = "PCM (Poisson-Boltzmann)"
+    elif user_dict["WaveFunction"]["environment"].lower() == "pcm_lpb":
+        environment_name = "PCM (Linearized Poisson-Boltzmann)"
 
     # Determine external name label for print outs to the output file
     ext_dict = user_dict["ExternalFields"]
