@@ -920,7 +920,7 @@ User input reference
         **Predicates**
           - ``value.lower() in ['exponential']``
       
-   :D_H_screening: Parameters for the debye-huckel screening factor 
+   :DHScreening: Parameters for the debye-huckel screening factor 
   
       :red:`Keywords`
        :kappa_out: Value of the debye-Huckel screening factor outside of a designated radius. This value represents the electrolyte strength in the solvent. 
