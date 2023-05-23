@@ -221,6 +221,7 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         for (int i = 0; i < gto_exp.size(); i++) {
             Timer t_i;
             Phi.push_back(Orbital(SPIN::Paired));
+            Phi.back().setRank(Phi.size() - 1);
             GaussExp<3> ao_i = gto_exp.getAO(i);
             ao_i.calcScreening(screen);
             if (mrcpp::mpi::my_orb(Phi.back())) {
