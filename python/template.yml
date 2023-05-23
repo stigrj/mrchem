@@ -691,7 +691,7 @@ sections:
           and ``chk`` guess.
       - name: write_orbitals
         type: bool
-        default: false
+        default: user['GeometryOptimizer']['use_previous_guess']
         docstring: |
           Write final orbitals to disk, file name
           ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``.
@@ -980,6 +980,14 @@ sections:
         default: false
         docstring: |
           Run optimizer. Otherwise single point energy/properties are computed.
+      - name: use_previous_guess
+        type: bool
+        default: false
+        docstring: |
+          Start each SCF from the converged orbitals from the previous geometry step. The guess_type
+          will change to "mw" after the first iteration, and the intermediate orbitals will be stored
+          in the "orbitals" directory. If toggled off, start over using the same initial guess method
+          as in the first iteration.
       - name: init_step_size
         type: float
         default: -0.5

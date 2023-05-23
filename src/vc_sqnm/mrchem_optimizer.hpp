@@ -115,7 +115,12 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
     while (i < max_iter && forces.cwiseAbs().maxCoeff() > max_force_component) {
         optimizer.step(pos, energy, forces);
         setPositions(mol_inp, pos);
-        scf_inp["initial_guess"]["type"] = "mw";
+        if (geopt_inp["use_previous_guess"]) {
+            scf_inp["initial_guess"]["type"] = "mw";
+            scf_inp["initial_guess"]["file_phi_p"] = scf_inp["write_orbitals"]["file_phi_p"];
+            scf_inp["initial_guess"]["file_phi_a"] = scf_inp["write_orbitals"]["file_phi_a"];
+            scf_inp["initial_guess"]["file_phi_b"] = scf_inp["write_orbitals"]["file_phi_b"];
+        }
         results = energyAndForces(mol_inp, scf_inp, energy, forces);
         i++;
         summary[i] = {
