@@ -973,7 +973,10 @@ sections:
   - name: GeometryOptimizer
     docstring: |
       Includes parameters related to the internal geometry optimization using the
-      SQNM (Stabilized Quasi-Newton Method) for noisy PES.
+      SQNM (Stabilized Quasi-Newton Method) for noisy PES. Geometry optimizations require accurate forces.
+      Consider setting world_prec to 1e-5 to 1e-7.
+      Convergence issues can usually be solved by increasing the precision of the SCF calculation. If that does 
+      not work, try setting the initial step size manually.
     keywords:
       - name: run
         type: bool
@@ -992,32 +995,41 @@ sections:
         type: float
         default: -0.5
         docstring: |
-          Initial step size.
+          Initial step size. For systems with hard bonds (e.g. C-C) use a value between and 1.0 and
+          2.5. If a system only contains weaker bonds a value up to 5.0 may speed up the convergence.
+          Use a small negative number (should be between -0.1 and -0.5) for an automatic guess. The
+          optimal step size is the inverse of the largest eigenvalue of the hessian matrix.
       - name: minimal_step_size
         type: float
         default: 0.01
         docstring: |
-          Minimal step size.
+          Minimal step size. It rarely makes sense to change it.
       - name: max_history_length
         type: int
         default: 10
         docstring: |
-          Maximum length of history.
+          Maximum length of history list. Energies and forces from the previous n geometry optimization iterations
+          are used to estimate the hessian matrix. Use a value between 2 and 20. A lower value makes the SQNM algorithm
+          behave more like steepest descent and slows down convergence. But it can handle more noise in the energies and forces.
+          It rarely makes sense to change it.
       - name: subspace_tolerance
         type: float
         default: 0.001
         docstring: |
-          Subspace tolerance.
+          Lower limit on linear dependencies of basis vectors in history listSubspace tolerance. Use a number between 1e-9 and 1e-1.
+          A high subspace tolerance slows down convergence but improves numerical stability when the energies and forces contain a lot of noise.
+          It rarely makes sense to change it.
       - name: max_iter
         type: int
         default: 100
         docstring: |
-          Maximum number of iterations.
+          Maximum number of geometry optimization iterations.
       - name: max_force_component
         type: float
         default: 0.005
         docstring: |
-          Maximum force component.
+          The geometry optimization stopps when the absolute value of all force components is smaller than this keyword.
+          A value between 1e-3 and 1e-4 is tight enough for most applications.
   - name: Constants
     docstring: Physical and mathematical constants used by MRChem
     keywords:
