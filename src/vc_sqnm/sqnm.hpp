@@ -138,8 +138,8 @@ namespace sqnm_space
           double l1 = (f_of_x - prev_f + alpha * prev_df_squared) / (0.5 * alpha * alpha * prev_df_squared);
           double l2 = (df_dx - prev_df_dx).norm() / (alpha * prev_df_dx.norm());
           alpha = 1.0 / std::max(l1, l2);
-          std::cerr << "Automatic initial step size guess: " << alpha << '\n';
-          std::cerr << "l1 "<< l1 << " l2 " << l2 << "\n";
+          std::cout << "Automatic initial step size guess for geometry optimization: " << alpha << '\n';
+          std::cout << "Should be between 0.4 and 8. If there are problems in the geometry optimization, consider setting the initial step size manually."
           this->estimate_step_size = false;
         } else
         {
