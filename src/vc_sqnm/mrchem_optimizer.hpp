@@ -18,7 +18,7 @@
 using json = nlohmann::json;
 using namespace mrchem;
 
-Eigen::MatrixXd getPositions(json mol_inp) {
+Eigen::MatrixXd getPositions(const json &mol_inp) {
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     Eigen::MatrixXd pos(3, mol.getNNuclei());
