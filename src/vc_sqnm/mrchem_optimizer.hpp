@@ -36,7 +36,7 @@ Eigen::MatrixXd getPositions(const json &mol_inp) {
     return pos;
 }
 
-void setPositions(json &mol_inp, Eigen::MatrixXd &pos) {
+void setPositions(json &mol_inp, const Eigen::MatrixXd &pos) {
     for (int i = 0; i < mol_inp["coords"].size(); i++) {
         Eigen::VectorXd vvv = pos.col(i);
         mol_inp["coords"][i]["xyz"] = {vvv(0), vvv(1), vvv(2)};
