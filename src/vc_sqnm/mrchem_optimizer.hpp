@@ -18,6 +18,12 @@
 using json = nlohmann::json;
 using namespace mrchem;
 
+/**
+ * @brief Gets postion from a molecule in json format.
+ * @param mol_inp Molecule in json format.
+ * 
+ * @return Positions as an Eigen::matrix of shape (3, num_atoms)
+*/
 Eigen::MatrixXd getPositions(const json &mol_inp) {
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
@@ -31,6 +37,11 @@ Eigen::MatrixXd getPositions(const json &mol_inp) {
     return pos;
 }
 
+/**
+ * @brief Sets positions in json molecule.
+ * @param mol_inp Inpunt molecule in json format.
+ * @param pos Eigen::MatrixXd containing positions. Dimension must be (3, num_atoms)
+*/
 void setPositions(json &mol_inp, const Eigen::MatrixXd &pos) {
     for (int i = 0; i < mol_inp["coords"].size(); i++) {
         Eigen::VectorXd vvv = pos.col(i);
@@ -39,33 +50,49 @@ void setPositions(json &mol_inp, const Eigen::MatrixXd &pos) {
 }
 
 /**
- * @brief Calculates energy and forces of a molecule.
+ * @brief Does an scf calculation of a molecule.
  * 
  * @param mol_inp: json that describes the molecule.
  * @param scf_inp: scf settings.
- * @param energy: energy will be stored in this variable.
- * @param forces: forces will be stored here. Dimension of matrix is (3, num_atoms).
  * 
  * @return: json summary of scf results.
 */
-json energyAndForces(json mol_inp, json scf_inp, double &energy, Eigen::MatrixXd &forces) {
+json getSCFResults(const json mol_inp, const json scf_inp) {
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
     // TODO: Ask someone if this mpi barrier is needed!
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
-    json results = driver::print_properties(mol);
-    energy = results["scf_energy"]["E_tot"];
-    for (int i = 0; i < mol.getNNuclei(); i++)
+    return driver::print_properties(mol);
+}
+
+/**
+ * @brief Extracts forces from json containing scf results.
+ * @param scf_results json containing the results of an scf calculations. Must be obtained using the function getSCFResults.
+ * @param forces: Provide empty matrix of dimension (3, num_atoms).
+ * 
+ * @return Forces acting on nuclei
+*/
+Eigen::MatrixXd extractForcesInPlace(const json scf_results, Eigen::MatrixXd &forces){
+    for (int i = 0; i < forces.cols(); i++)
     {
         for (int j = 0; j < 3; j++) {
             // is this safe? will the forces always be stored in ["geometric_derivative"]["geom-1"]?
-            forces(j, i) = results["geometric_derivative"]["geom-1"]["total"][3*i + j];
+            forces(j, i) = scf_results["geometric_derivative"]["geom-1"]["total"][3*i + j];
         }
     }
     // forces are the negative nuclear gradient.
-    forces = -forces;
-    return results;
+    return -forces;
+}
+
+/**
+ * @brief Extracts energy from json containing scf results.
+ * @param scf_results json containing the results of an scf calculations. Must be obtained using the function getSCFResults.
+ * 
+ * @return Total energy
+*/
+double extractEnergy(const json scf_results){
+    return scf_results["scf_energy"]["E_tot"];
 }
 
 /**
@@ -95,7 +122,9 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
     Eigen::MatrixXd forces(3, num_atoms);
     double energy;
     
-    json results = energyAndForces(mol_inp, scf_inp, energy, forces);
+    json results = getSCFResults(mol_inp, scf_inp);
+    energy = extractEnergy(results);
+    forces = extractForcesInPlace(results, forces);
     // write progress to stderr for earier debugging.
     std::cerr << i << " " << energy << " " << forces.cwiseAbs().maxCoeff() << "\n";
 
@@ -116,7 +145,9 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
             scf_inp["initial_guess"]["file_phi_a"] = scf_inp["write_orbitals"]["file_phi_a"];
             scf_inp["initial_guess"]["file_phi_b"] = scf_inp["write_orbitals"]["file_phi_b"];
         }
-        results = energyAndForces(mol_inp, scf_inp, energy, forces);
+        json results = getSCFResults(mol_inp, scf_inp);
+        energy = extractEnergy(results);
+        forces = extractForcesInPlace(results, forces);
         i++;
         summary[i] = {
             {"results", results},
