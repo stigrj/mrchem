@@ -25,12 +25,7 @@ Eigen::MatrixXd getPositions(const json &mol_inp) {
 
     int i = 0;
     for (const auto &coord : mol_inp["coords"]) {
-        double xyz[3];
-        xyz[0] = coord["xyz"][0];
-        xyz[1] = coord["xyz"][1];
-        xyz[2] = coord["xyz"][2];
-
-        pos.col(i) = Eigen::Vector3d(xyz);
+        pos.col(i) << coord["xyz"][0], coord["xyz"][1], coord["xyz"][2];
         i++;
     }
     return pos;
