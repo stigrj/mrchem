@@ -1,5 +1,11 @@
 # Change log
 
+## Version 1.1.3 2023-08-23
+
+### Fixed
+
+- Fix compatibility issue with Python-3.12
+
 ## Version 1.1.2 2023-01-20
 
 ### Fixed
