@@ -266,14 +266,14 @@ class MoleculeValidator:
 
         - Each sphere "object" in the JSON will contain:
 
-          * Position in Cartesian coordinates :math:`x_{i}, y_{i}, z_{i}`
-          * **Unscaled** radius :math:`R_{i}^{\mathrm{vdW}}`
-          * Radius scaling factor :math:`\alpha_{i}`
-          * Width scaling factor :math:`\beta_{i}`
-          * Width :math:`\sigma_{i}`
+          * Position in Cartesian coordinates x_i, y_i, z_i
+          * **Unscaled** radius R_i^vdW
+          * Radius scaling factor alpha_i
+          * Width scaling factor beta_i
+          * Width sigma_i
 
           Inside MRChem, the radius to be used will be computed as
-          :math:`R_{i} = \alpha_{i}R_{i}^{\mathrm{vdW}} + \beta_{i}\sigma_{i}`.
+          R_i = alpha_i*R_i^vdW + beta_i*sigma_i.
         - In `atoms` mode, we first create the list of spheres from the atomic
           coordinates and built-in radii, alpha (1.1), beta (0.5), and
           sigma (0.2) values. We then read the `$spheres`/`$end` blob of text
