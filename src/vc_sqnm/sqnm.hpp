@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 #include "historylist.hpp"
+#include "MRCPP/Printer"
 
 namespace sqnm_space
 {
@@ -138,8 +139,12 @@ namespace sqnm_space
           double l1 = (f_of_x - prev_f + alpha * prev_df_squared) / (0.5 * alpha * alpha * prev_df_squared);
           double l2 = (df_dx - prev_df_dx).norm() / (alpha * prev_df_dx.norm());
           alpha = 1.0 / std::max(l1, l2);
-          std::cout << "Automatic initial step size guess for geometry optimization: " << alpha << '\n';
-          std::cout << "Should be between 0.4 and 8. If there are problems in the geometry optimization, consider setting the initial step size manually.";
+          mrcpp::print::header(0, "Automatic step size guess for geometry optimization", 0, '=');
+          mrcpp::print::value(0, "Initial step size: ", alpha, "");
+          println(0, "Should be between 0.4 and 8.");
+          println(0, "If there are problems in the geometry optimization,");
+          println(0, "consider setting the initial step size manually.");
+          mrcpp::print::separator(0, '=', 0);
           this->estimate_step_size = false;
         } else
         {
