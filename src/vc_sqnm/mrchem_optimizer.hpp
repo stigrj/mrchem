@@ -142,7 +142,7 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
     mrcpp::print::separator(printLevel, '=', 0);
 
     json summary;
-    summary[i] = {
+    summary["iteration_" + std::to_string(i)] = {
         {"results", results},
         {"molecule", mol_inp}
     };
@@ -162,9 +162,11 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
         energy = extractEnergy(results);
         forces = extractForcesInPlace(results, forces);
         i++;
-        summary[i] = {
+        summary["iteration_" + std::to_string(i)] = {
             {"results", results},
-            {"molecule", mol_inp}
+            {"molecule", mol_inp},
+            {"energy", energy},
+            {"max_force_component", forces.cwiseAbs().maxCoeff()},
         };
         mrcpp::print::header(printLevel, "Geometry optimization summary of iteration:", 0, '=');
         mrcpp::print::value(0, "Iteration:", i, "");
@@ -179,6 +181,8 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
     optimizer.step(pos, energy, forces);
     mrcpp::print::value(0, "Estimated energy of minimum:", optimizer.lower_bound(), "Ha");
     mrcpp::print::value(0, "Est. Energy difference of to minimum:", energy - optimizer.lower_bound(), "Ha");
+    mrcpp::print::separator(printLevel, '=', 0);
+
     return summary;
 
 }
