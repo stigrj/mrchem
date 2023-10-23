@@ -103,7 +103,7 @@ double extractEnergy(const json &scf_results){
  * @param geopt_inp: json that contains the geometry optization settings.
  * @return: A summary of the geometry optimization trajectory.
 */
-json optimize_positions(const json &scf_inp, const json &mol_inp, const json &geopt_inp) {
+json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
 
     int num_atoms = mol_inp["coords"].size();
     int printLevel = 0;
