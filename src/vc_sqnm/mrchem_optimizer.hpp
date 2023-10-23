@@ -70,11 +70,11 @@ json getSCFResults(const json mol_inp, const json scf_inp) {
 /**
  * @brief Extracts forces from json containing scf results.
  * @param scf_results json containing the results of an scf calculations. Must be obtained using the function getSCFResults.
- * @param forces: Provide empty matrix of dimension (3, num_atoms).
+ * @param forces: Provide empty matrix of dimension (3, num_atoms). Contains forces after function was called.
  * 
  * @return Forces acting on nuclei
 */
-Eigen::MatrixXd extractForcesInPlace(const json &scf_results, Eigen::MatrixXd &forces){
+void extractForcesInPlace(const json &scf_results, Eigen::MatrixXd &forces){
     for (int i = 0; i < forces.cols(); i++)
     {
         for (int j = 0; j < 3; j++) {
@@ -82,7 +82,7 @@ Eigen::MatrixXd extractForcesInPlace(const json &scf_results, Eigen::MatrixXd &f
         }
     }
     // forces are the negative nuclear gradient.
-    return -forces;
+    forces = - forces;
 }
 
 /**
@@ -132,7 +132,7 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
     json results = getSCFResults(mol_inp, scf_inp);
     energy = extractEnergy(results);
     double energyOld = energy;
-    forces = extractForcesInPlace(results, forces);
+    extractForcesInPlace(results, forces);
     mrcpp::print::header(printLevel, "Geometry optimization summary of initial iteration:", 0, '=');
     mrcpp::print::value(0, "Iteration:", i, "");
     mrcpp::print::value(0, "Energy:", energy, "Ha");
@@ -159,7 +159,7 @@ json optimize_positions(json scf_inp, json mol_inp, json geopt_inp) {
         }
         json results = getSCFResults(mol_inp, scf_inp);
         energy = extractEnergy(results);
-        forces = extractForcesInPlace(results, forces);
+        extractForcesInPlace(results, forces);
         i++;
         summary["iteration_" + std::to_string(i)] = {
             {"results", results},
