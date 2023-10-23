@@ -74,7 +74,7 @@ json getSCFResults(const json mol_inp, const json scf_inp) {
  * 
  * @return Forces acting on nuclei
 */
-Eigen::MatrixXd extractForcesInPlace(const json scf_results, Eigen::MatrixXd &forces){
+Eigen::MatrixXd extractForcesInPlace(const json &scf_results, Eigen::MatrixXd &forces){
     for (int i = 0; i < forces.cols(); i++)
     {
         for (int j = 0; j < 3; j++) {
