@@ -62,7 +62,7 @@ json getSCFResults(const json mol_inp, const json scf_inp) {
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
-    // TODO: Ask someone if this mpi barrier is needed!
+    // keeping the mpi barrier to be on the safe side, but not sure if it is needed
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     return driver::print_properties(mol);
 }
