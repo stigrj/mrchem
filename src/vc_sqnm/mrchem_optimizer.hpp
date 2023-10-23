@@ -78,7 +78,6 @@ Eigen::MatrixXd extractForcesInPlace(const json scf_results, Eigen::MatrixXd &fo
     for (int i = 0; i < forces.cols(); i++)
     {
         for (int j = 0; j < 3; j++) {
-            // is this safe? will the forces always be stored in ["geometric_derivative"]["geom-1"]?
             forces(j, i) = scf_results["geometric_derivative"]["geom-1"]["total"][3*i + j];
         }
     }
