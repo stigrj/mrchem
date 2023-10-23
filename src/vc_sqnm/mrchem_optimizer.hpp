@@ -91,7 +91,7 @@ void extractForcesInPlace(const json &scf_results, Eigen::MatrixXd &forces){
  * 
  * @return Total energy
 */
-double extractEnergy(const json scf_results){
+double extractEnergy(const json &scf_results){
     return scf_results["scf_energy"]["E_tot"];
 }
 
