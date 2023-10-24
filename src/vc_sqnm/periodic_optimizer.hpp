@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include "sqnm.hpp"
+#include "MRCPP/Printer"
 
 
 namespace PES_optimizer{
@@ -199,7 +200,8 @@ namespace PES_optimizer{
         this->f_std_deviation = .8 * this->f_std_deviation + .2 * fnoise;
       }
       if (this->f_std_deviation > 0.2 * forces.cwiseAbs().maxCoeff()) {
-        std::cerr << "Noise in force is larger than 0.2 times the larges force component. Convergence cannot be guaranteed.\n";
+        println(0, "WARNING: Noise in force is larger than 0.2 times the larges force component!!!");
+        println(0, "Geometry optimization onvergence cannot be guaranteed!!!");
       }
     }
 
