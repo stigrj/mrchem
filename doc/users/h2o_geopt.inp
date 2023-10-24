@@ -5,12 +5,6 @@ WaveFunction {
   method = lda
 }
 
-GeometryOptimizer{
-        run = true
-        use_previous_guess = True
-        max_force_component = 1e-2
-}
-
 Molecule {
 $coords
 O          0.00000        0.00000        0.11779
