@@ -146,6 +146,8 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
         {"molecule", mol_inp}
     };
 
+    i++;
+
     Eigen::MatrixXd pos = getPositions(mol_inp);
 
     while (i < max_iter && forces.cwiseAbs().maxCoeff() > max_force_component) {
@@ -160,7 +162,6 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
         json results = getSCFResults(mol_inp, scf_inp);
         energy = extractEnergy(results);
         extractForcesInPlace(results, forces);
-        i++;
         summary["iteration_" + std::to_string(i)] = {
             {"results", results},
             {"molecule", mol_inp},
@@ -175,7 +176,15 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
         mrcpp::print::value(0, "Energy improvement:", energyOld - energy, "Ha");
         mrcpp::print::separator(printLevel, '=', 0);
         energyOld = energy;
+        i++;
     }
+
+    // print warning if geometry optimization did not converge
+    if (i >= max_iter)
+    {
+        println(printLevel, "The geometry optimization did not converge!!!")
+    }
+    
     // make last step for correct ground state energy estimation.
     optimizer.step(pos, energy, forces);
     mrcpp::print::value(0, "Estimated energy of minimum:", optimizer.lower_bound(), "Ha");
