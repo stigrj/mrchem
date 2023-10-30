@@ -26,4 +26,22 @@ filters = {
 
 ierr = run(options, input_file="beh2_snqm_geomopt", filters=filters)
 
+# get reference optimized geometry
+with Path("reference/beh2_snqm_geomopt.json").open("r") as o:
+    ref_geom = json.load(o)["output"]["iteration_2"]["results"]["geometry"]
+
+# read optimized geometry during the test
+with Path("beh2_snqm_geomopt.json").open("r") as o:
+    geom = json.load(o)["output"]["iteration_2"]["results"]["geometry"]
+
+passed, message = compare_values(
+    geom,
+    ref_geom,
+    "Final optimized geometry",
+    rtol=1.0e-6,
+    atol=1.0e-6,
+)
+sys.stdout.write(f"{message}\n")
+ierr += 0 if passed else 137
+
 sys.exit(ierr)
