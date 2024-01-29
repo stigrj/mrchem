@@ -107,12 +107,13 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
 
     int num_atoms = mol_inp["coords"].size();
     int printLevel = 0;
+    int pprec = 2 * mrcpp::Printer::getPrecision();
 
-    mrcpp::print::header(printLevel, "Starting geometry optimization using the SQNM method", 0, '=');
-    println(printLevel, "Scientific users of the geometry optimization feature should cite");
-    println(printLevel, "M. Gubler, M. Krummenacher, H. Huber, S. Goedecker");
-    println(printLevel, "Journal of Computational Physics: X 2023, DOI: 10.1016/j.jcpx.2023.100131");
-    mrcpp::print::separator(printLevel, '=', 0);
+    mrcpp::print::header(printLevel, "Starting geometry optimization using the SQNM method", 1, '=');
+    println(printLevel, " Scientific users of the geometry optimization feature should cite");
+    println(printLevel, " M. Gubler, M. Krummenacher, H. Huber, S. Goedecker");
+    println(printLevel, " Journal of Computational Physics: X 2023, DOI: 10.1016/j.jcpx.2023.100131\n");
+    mrcpp::print::separator(printLevel, '=', 2);
 
     // define default parameters
     // The sqnm parameters are documented in the periodic_optimizer.hpp file.
@@ -133,12 +134,12 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
     energy = extractEnergy(results);
     double energyOld = energy;
     extractForcesInPlace(results, forces);
-    mrcpp::print::header(printLevel, "Geometry optimization summary of initial iteration:", 0, '=');
-    mrcpp::print::value(0, "Iteration:", i, "");
-    mrcpp::print::value(0, "Energy:", energy, "Ha");
-    mrcpp::print::value(0, "Maximal force component:", forces.cwiseAbs().maxCoeff(), "Ha / Bohr");
-    mrcpp::print::value(0, "Convergence threshold:", max_force_component, "Ha / Bohr");
-    mrcpp::print::separator(printLevel, '=', 0);
+    mrcpp::print::header(-1, "Geometry optimization summary of initial iteration", 0, '=');
+    print_utils::scalar(0, "Iteration", i, "", 0);
+    print_utils::scalar(-1, "Energy", energy, "Ha", pprec, true);
+    print_utils::scalar(0, "Maximal force component", forces.cwiseAbs().maxCoeff(), "Ha / Bohr", pprec, true);
+    print_utils::scalar(0, "Convergence threshold", max_force_component, "Ha / Bohr", pprec, true);
+    mrcpp::print::separator(printLevel, '=', 2);
 
     json summary;
     summary["iteration_" + std::to_string(i)] = {
@@ -168,13 +169,13 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
             {"energy", energy},
             {"max_force_component", forces.cwiseAbs().maxCoeff()},
         };
-        mrcpp::print::header(printLevel, "Geometry optimization summary of iteration:", 0, '=');
-        mrcpp::print::value(0, "Iteration:", i, "");
-        mrcpp::print::value(0, "Energy:", energy, "Ha");
-        mrcpp::print::value(0, "Maximal force component:", forces.cwiseAbs().maxCoeff(), "Ha / Bohr");
-        mrcpp::print::value(0, "Convergence threshold:", max_force_component, "Ha / Bohr");
-        mrcpp::print::value(0, "Energy improvement:", energyOld - energy, "Ha");
-        mrcpp::print::separator(printLevel, '=', 0);
+        mrcpp::print::header(printLevel, "Geometry optimization summary of iteration", 0, '=');
+        print_utils::scalar(0, "Iteration", i, "", 0);
+        print_utils::scalar(-1, "Energy", energy, "Ha", pprec, true);
+        print_utils::scalar(0, "Energy improvement", energyOld - energy, "Ha", pprec, true);
+        print_utils::scalar(0, "Maximal force component", forces.cwiseAbs().maxCoeff(), "Ha / Bohr", pprec, true);
+        print_utils::scalar(0, "Convergence threshold", max_force_component, "Ha / Bohr", pprec, true);
+        mrcpp::print::separator(printLevel, '=', 2);
         energyOld = energy;
         i++;
     }
@@ -187,9 +188,10 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp) {
     
     // make last step for correct ground state energy estimation.
     optimizer.step(pos, energy, forces);
-    mrcpp::print::value(0, "Estimated energy of minimum:", optimizer.lower_bound(), "Ha");
-    mrcpp::print::value(0, "Est. Energy difference of to minimum:", energy - optimizer.lower_bound(), "Ha");
-    mrcpp::print::separator(printLevel, '=', 0);
+    mrcpp::print::separator(-1, '=', 0);
+    mrcpp::print::value(-1, "Est. energy of minimum", optimizer.lower_bound(), "Ha", pprec);
+    mrcpp::print::value(-1, "Est. difference from minimum", energy - optimizer.lower_bound(), "Ha", pprec);
+    mrcpp::print::separator(-1, '=', 0);
 
     return summary;
 

@@ -141,10 +141,11 @@ namespace sqnm_space
           alpha = 1.0 / std::max(l1, l2);
           mrcpp::print::header(0, "Automatic step size guess for geometry optimization", 0, '=');
           mrcpp::print::value(0, "Initial step size: ", alpha, "");
-          println(0, "Should be between 0.4 and 8.");
-          println(0, "If there are problems in the geometry optimization,");
-          println(0, "consider setting the initial step size manually.");
-          mrcpp::print::separator(0, '=', 0);
+          mrcpp::print::separator(0, '-', 0);
+          println(0, " Should be between 0.4 and 8.");
+          println(0, " If there are problems in the geometry optimization,");
+          println(0, " consider setting the initial step size manually.");
+          mrcpp::print::separator(0, '=', 2);
           this->estimate_step_size = false;
         } else
         {
