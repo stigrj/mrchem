@@ -96,11 +96,12 @@ void FockBuilder::setup(double prec) {
         mrcpp::print::value(3, "Light speed", c, "(au)", 5);
         mrcpp::print::separator(3, '-');
         auto vz = collectZoraBasePotential();
-        this->kappa = std::make_shared<ZoraOperator>(*vz, c, prec, false);
-        this->kappa_inv = std::make_shared<ZoraOperator>(*vz, c, prec, true);
+        // chi = kappa - 1. See ZoraOperator.h for more information.
+        this->chi = std::make_shared<ZoraOperator>(*vz, c, prec, false);
+        this->chi_inv = std::make_shared<ZoraOperator>(*vz, c, prec, true);
         this->zora_base = RankZeroOperator(vz);
-        this->kappa->setup(prec);
-        this->kappa_inv->setup(prec);
+        this->chi->setup(prec);
+        this->chi_inv->setup(prec);
         this->zora_base.setup(prec);
         mrcpp::print::footer(3, t_zora, 2);
     };
@@ -120,8 +121,8 @@ void FockBuilder::clear() {
     this->potential().clear();
     this->perturbation().clear();
     if (isZora()) {
-        this->kappa->clear();
-        this->kappa_inv->clear();
+        this->chi->clear();
+        this->chi_inv->clear();
         this->zora_base.clear();
     }
 }
@@ -180,7 +181,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     // Kinetic part
     if (isZora()) {
-        E_kin = qmoperator::calc_kinetic_trace(momentum(), *this->kappa, Phi).real();
+        E_kin = qmoperator::calc_kinetic_trace(momentum(), *this->chi, Phi).real() + qmoperator::calc_kinetic_trace(momentum(), Phi);
     } else {
         E_kin = qmoperator::calc_kinetic_trace(momentum(), Phi);
     }
@@ -205,7 +206,7 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora()) {
-        T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->kappa, bra, ket);
+        T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket) + qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
@@ -247,12 +248,12 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     double two_cc = 2.0 * c * c;
     MomentumOperator &p = momentum();
     RankZeroOperator &V = potential();
-    RankZeroOperator &kappa = *this->kappa;
-    RankZeroOperator &kappa_m1 = *this->kappa_inv;
+    RankZeroOperator &chi = *this->chi;
+    RankZeroOperator &chi_inv = *this->chi_inv;
     RankZeroOperator &V_zora = this->zora_base;
 
-    RankZeroOperator operOne = 0.5 * tensor::dot(p(kappa), p);
-    RankZeroOperator operThree = kappa * V_zora;
+    RankZeroOperator operOne = 0.5 * tensor::dot(p(chi), p);
+    RankZeroOperator operThree = chi * V_zora + V_zora;
     operOne.setup(prec);
     operThree.setup(prec);
 
@@ -296,7 +297,11 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     operOne.clear();
 
     Timer t_kappa;
-    auto out = kappa_m1(arg);
+    mrchem::OrbitalVector out = chi_inv(arg);
+    for (int i = 0; i < arg.size(); i++) {
+        if (not mrcpp::mpi::my_orb(out[i])) continue;
+        out[i].add(1.0, arg[i]);
+    }
     mrcpp::print::time(2, "Applying kappa inverse", t_kappa);
     return out;
 }

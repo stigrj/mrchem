@@ -47,22 +47,22 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
     if (k->hasReal()) {
         mrcpp::refine_grid(k->real(), 1);
         if (inverse) {
-            k->real().map([two_cc](double val) { return (two_cc - val) / two_cc; });
+            k->real().map([two_cc](double val) { return (two_cc - val) / two_cc - 1.0; });
         } else {
-            k->real().map([two_cc](double val) { return two_cc / (two_cc - val); });
+            k->real().map([two_cc](double val) { return (val) / (two_cc - val); });
         }
         k->real().crop(proj_prec);
     }
 
-    RankZeroOperator &kappa = (*this);
-    kappa = k;
+    RankZeroOperator &chi = (*this);
+    chi = k;
     if (inverse) {
-        kappa.name() = "kappa_m1";
+        chi.name() = "chi_inv";
     } else {
-        kappa.name() = "kappa";
+        chi.name() = "chi";
     }
     auto plevel = Printer::getPrintLevel();
-    print_utils::qmfunction(2, "ZORA operator (" + kappa.name() + ")", *k, timer);
+    print_utils::qmfunction(2, "ZORA operator (" + chi.name() + ")", *k, timer);
 }
 
 } // namespace mrchem
