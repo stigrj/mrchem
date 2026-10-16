@@ -23,9 +23,9 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-#include <MRCPP/Parallel>
 
 #include "RankZeroOperator.h"
 
@@ -43,29 +43,30 @@ namespace mrchem {
  *
  * Converts std::vector<std::complex<double> > to Eigen::VectorXcd
  */
-ComplexVector RankZeroOperator::getCoefVector() const {
+std::vector<ComplexDouble> RankZeroOperator::getCoefVector() const {
     int nCoefs = this->coef_exp.size();
-    ComplexVector out(nCoefs);
-    for (int i = 0; i < nCoefs; i++) out(i) = this->coef_exp[i];
+    std::vector<ComplexDouble> out(nCoefs);
+    for (int i = 0; i < nCoefs; i++) out[i] = this->coef_exp[i];
     return out;
 }
 
 /** @brief return the i-th term (c_i*q_i1*q_i2*...) in the expansion: sum_i c_i * prod_j q_ij */
 RankZeroOperator RankZeroOperator::get(int i) {
-    if (i < 0 or i >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
+    if (i < 0 or static_cast<size_t>(i) >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
     RankZeroOperator out;
     out.name() = this->name();
     auto c_i = this->coef_exp[i];
     auto Q_i = this->oper_exp[i];
     out.coef_exp.push_back(c_i);
     out.oper_exp.push_back(Q_i);
+    out.imag = this->imag;
     return out;
 }
 
 /** @brief return ij-the operator (q_ij) in the expansion: sum_i c_i * prod_j q_ij */
 RankZeroOperator RankZeroOperator::get(int i, int j) {
-    if (i < 0 or i >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
-    if (j < 0 or j >= this->size(i)) MSG_ABORT("Invalid operator term (j): " << i);
+    if (i < 0 or static_cast<size_t>(i) >= this->size()) MSG_ABORT("Invalid operator term (i): " << i);
+    if (j < 0 or static_cast<size_t>(j) >= this->size(i)) MSG_ABORT("Invalid operator term (j): " << i);
     return this->oper_exp[i][j];
 }
 
@@ -99,6 +100,7 @@ RankZeroOperator RankZeroOperator::operator()(RankZeroOperator B) {
             out.oper_exp.push_back(tmp);
         }
     }
+    out.imag = this->imag;
     return out;
 }
 
@@ -112,6 +114,7 @@ RankZeroOperator &RankZeroOperator::operator=(QMOperator_p O) {
     QMOperatorVector tmp;
     tmp.push_back(O);
     this->oper_exp.push_back(tmp);
+    this->imag = O->imag;
     return *this;
 }
 
@@ -148,6 +151,7 @@ RankZeroOperator &RankZeroOperator::operator=(const RankZeroOperator &O) {
         this->name() = O.name();
         this->coef_exp = O.coef_exp;
         this->oper_exp = O.oper_exp;
+        this->imag = O.imag;
     }
     return *this;
 }
@@ -200,8 +204,7 @@ RankZeroOperator &RankZeroOperator::operator-=(const RankZeroOperator &O) {
  */
 void RankZeroOperator::setup(double prec) {
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) {
-            i[j]->setup(prec); }
+        for (size_t j = 0; j < i.size(); j++) { i[j]->setup(prec); }
     }
 }
 
@@ -209,14 +212,14 @@ void RankZeroOperator::setup(double prec) {
  */
 void RankZeroOperator::clear() {
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) { i[j]->clear(); }
+        for (size_t j = 0; j < i.size(); j++) { i[j]->clear(); }
     }
 }
 
 ComplexDouble RankZeroOperator::operator()(const mrcpp::Coord<3> &r) const {
     const RankZeroOperator &O = *this;
     ComplexDouble out = {0.0, 0.0};
-    for (int n = 0; n < O.size(); n++) {
+    for (size_t n = 0; n < O.size(); n++) {
         ComplexDouble out_n = {1.0, 0.0};
         for (auto O_nm : this->oper_exp[n]) {
             if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
@@ -239,19 +242,20 @@ ComplexDouble RankZeroOperator::dagger(const mrcpp::Coord<3> &r) const {
  * Applies each term of the operator expansion to the input orbital. First all
  * components of each term are applied consecutively, then the output of each term
  * is added upp with the corresponding coefficient.
+ * NB: the result is put at the same location as the input (out and inp trees are the same tree)
  */
 Orbital RankZeroOperator::operator()(Orbital inp) {
-    if (inp.getNNodes(NUMBER::Total) == 0) return inp.paramCopy();
+    if (inp.getNNodes() == 0) return inp.paramCopy(false);
 
     RankZeroOperator &O = *this;
-    std::vector<mrcpp::ComplexFunction> func_vec;
-    ComplexVector coef_vec = getCoefVector();
-    for (int n = 0; n < O.size(); n++) {
+    std::vector<mrcpp::CompFunction<3>> func_vec;
+    std::vector<ComplexDouble> coef_vec = getCoefVector();
+    for (size_t n = 0; n < O.size(); n++) {
         Orbital out_n = O.applyOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
-    Orbital out = inp.paramCopy();
-    mrcpp::cplxfunc::linear_combination(out, coef_vec, func_vec, -1.0);
+    Orbital out = inp.paramCopy(true);
+    mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
     return out;
 }
 
@@ -262,17 +266,17 @@ Orbital RankZeroOperator::operator()(Orbital inp) {
  * NOT IMPLEMENTED
  */
 Orbital RankZeroOperator::dagger(Orbital inp) {
-    if (inp.getNNodes(NUMBER::Total) == 0) return inp.paramCopy();
+    if (inp.getNNodes() == 0) return inp.paramCopy(false);
 
     RankZeroOperator &O = *this;
-    std::vector<mrcpp::ComplexFunction> func_vec;
-    ComplexVector coef_vec = getCoefVector();
-    for (int n = 0; n < O.size(); n++) {
+    std::vector<mrcpp::CompFunction<3>> func_vec;
+    std::vector<ComplexDouble> coef_vec = getCoefVector();
+    for (size_t n = 0; n < O.size(); n++) {
         Orbital out_n = O.daggerOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
-    Orbital out = inp.paramCopy();
-    mrcpp::cplxfunc::linear_combination(out, coef_vec, func_vec, -1.0);
+    Orbital out = inp.paramCopy(true);
+    mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
     return out;
 }
 
@@ -286,9 +290,14 @@ Orbital RankZeroOperator::dagger(Orbital inp) {
 OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
     RankZeroOperator &O = *this;
     OrbitalVector out;
-    for (auto i = 0; i < inp.size(); i++) {
+    for (size_t i = 0; i < inp.size(); i++) {
         Timer t1;
-        Orbital out_i = O(inp[i]);
+        Orbital out_i;
+        if (mrcpp::mpi::my_func(inp[i])) {
+            out_i = O(inp[i]);
+        } else {
+            out_i = inp[i].paramCopy(false);
+        }
         out.push_back(out_i);
         std::stringstream o_name;
         o_name << O.name() << "|" << i << ">";
@@ -306,9 +315,14 @@ OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
 OrbitalVector RankZeroOperator::dagger(OrbitalVector &inp) {
     RankZeroOperator &O = *this;
     OrbitalVector out;
-    for (auto i = 0; i < inp.size(); i++) {
+    for (size_t i = 0; i < inp.size(); i++) {
         Timer t1;
-        Orbital out_i = O.dagger(inp[i]);
+        Orbital out_i;
+        if (mrcpp::mpi::my_func(inp[i])) {
+            out_i = O.dagger(inp[i]);
+        } else {
+            out_i = inp[i].paramCopy(false);
+        }
         out.push_back(out_i);
         std::stringstream o_name;
         o_name << O.name() << "^dagger|" << i << ">";
@@ -329,7 +343,7 @@ OrbitalVector RankZeroOperator::dagger(OrbitalVector &inp) {
 ComplexDouble RankZeroOperator::operator()(Orbital bra, Orbital ket) {
     RankZeroOperator &O = *this;
     Orbital Oket = O(ket);
-    ComplexDouble out = orbital::dot(bra, Oket);
+    ComplexDouble out = mrcpp::dot(bra, Oket);
     return out;
 }
 
@@ -343,7 +357,7 @@ ComplexDouble RankZeroOperator::operator()(Orbital bra, Orbital ket) {
 ComplexDouble RankZeroOperator::dagger(Orbital bra, Orbital ket) {
     RankZeroOperator &O = *this;
     Orbital Oket = O.dagger(ket);
-    ComplexDouble out = orbital::dot(bra, Oket);
+    ComplexDouble out = mrcpp::dot(bra, Oket);
     return out;
 }
 
@@ -399,8 +413,15 @@ ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi) {
     Timer t1;
     RankZeroOperator &O = *this;
     OrbitalVector OPhi = O(Phi);
-    ComplexVector eta = orbital::get_occupations(Phi).cast<ComplexDouble>();
-    ComplexVector phi_vec = orbital::dot(Phi, OPhi);
+    std::vector<ComplexDouble> eta(Phi.size());
+    std::vector<ComplexDouble> phi_vec(Phi.size());
+    auto phiOPhi = mrcpp::dot(Phi, OPhi);
+    ComplexDouble out = 0.0;
+    for (size_t i = 0; i < Phi.size(); i++) {
+        eta[i] = Phi[i].occ();
+        phi_vec[i] = phiOPhi[i];
+        out += eta[i] * phi_vec[i];
+    }
 
     std::stringstream o_name;
     o_name << "Trace " << O.name() << "(rho)";
@@ -408,7 +429,7 @@ ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi) {
     auto n_size = orbital::get_size_nodes(OPhi);
     mrcpp::print::tree(2, o_name.str(), n_nodes, n_size, t1.elapsed());
 
-    return eta.dot(phi_vec);
+    return out;
 }
 
 /** @brief compute trace of operator expansion
@@ -429,13 +450,13 @@ ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi, OrbitalVector &X, Orbi
     OrbitalVector OPhi = O(Phi);
     auto y_nodes = orbital::get_n_nodes(OPhi);
     auto y_size = orbital::get_size_nodes(OPhi);
-    auto y_vec = orbital::dot(Y, OPhi);
+    auto y_vec = mrcpp::dot(Y, OPhi);
     OPhi.clear();
 
     OrbitalVector OX = O(X);
     auto x_nodes = orbital::get_n_nodes(OX);
     auto x_size = orbital::get_size_nodes(OX);
-    auto x_vec = orbital::dot(Phi, OX);
+    auto x_vec = mrcpp::dot(Phi, OX);
     OX.clear();
 
     std::stringstream o_name;
@@ -449,10 +470,9 @@ ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi, OrbitalVector &X, Orbi
 ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
     Timer t1;
     RankZeroOperator &O = *this;
-    ComplexVector coef_vec = getCoefVector();
+    std::vector<ComplexDouble> coef_vec = getCoefVector();
     ComplexDouble out = 0.0;
-    for (int n = 0; n < O.size(); n++) out += coef_vec[n] * O.traceOperTerm(n, nucs);
-
+    for (size_t n = 0; n < O.size(); n++) out += coef_vec[n] * O.traceOperTerm(n, nucs);
     std::stringstream o_name;
     o_name << "Trace " << O.name() << "(nucs)";
     mrcpp::print::tree(2, o_name.str(), 0, 0, t1.elapsed());
@@ -468,23 +488,30 @@ ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
  * This consecutively applies all components of a particular term of the operator
  * expansion to the input orbital.
  */
-Orbital RankZeroOperator::applyOperTerm(int n, Orbital inp) {
-    if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
-    if (inp.getNNodes(NUMBER::Total) == 0) return inp.paramCopy();
+Orbital RankZeroOperator::applyOperTerm(int n, const Orbital &inp) {
+    if (static_cast<size_t>(n) >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
+    Orbital out = inp.paramCopy(true);
 
-    Orbital out = inp;
+    if (inp.getNNodes() == 0) return out;
+    int i = 0;
     for (auto O_nm : this->oper_exp[n]) {
         if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
-        out = O_nm->apply(out);
+        if (i==0) {
+            out = O_nm->apply(inp);
+        } else {
+            out = O_nm->apply(out);
+        }
+        i++;
     }
     return out;
 }
 
-Orbital RankZeroOperator::daggerOperTerm(int n, Orbital inp) {
-    if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
-    if (inp.getNNodes(NUMBER::Total) == 0) return inp.paramCopy();
+Orbital RankZeroOperator::daggerOperTerm(int n, const Orbital &inp) {
+    if (static_cast<size_t>(n) >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
+    Orbital out;
+    mrcpp::deep_copy(out, inp);
+    if (inp.getNNodes() == 0) return out;
 
-    Orbital out = inp;
     for (int i = this->oper_exp[n].size() - 1; i >= 0; i--) {
         auto O_nm = this->oper_exp[n][i];
         if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
@@ -494,7 +521,7 @@ Orbital RankZeroOperator::daggerOperTerm(int n, Orbital inp) {
 }
 
 ComplexDouble RankZeroOperator::traceOperTerm(int n, const Nuclei &nucs) {
-    if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
+    if (static_cast<size_t>(n) >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
 
     ComplexDouble out = 0.0;
     for (const auto &nuc_k : nucs) {

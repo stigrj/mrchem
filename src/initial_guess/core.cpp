@@ -37,7 +37,6 @@
 #include "utils/print_utils.h"
 
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/one_electron/MomentumOperator.h"
@@ -91,7 +90,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize Core Hamiltonian matrix");
     print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
-    print_utils::text(0, "Restricted  ", (orbital::size_singly(Phi)) ? "False" : "True");
+    print_utils::text(0, "Restricted  ", (orbital::size_doubly(Phi)) ? "True" : "False");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
@@ -182,7 +181,7 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 
     const char label[10] = "spdfg";
 
-    for (int i = 0; i < nucs.size(); i++) {
+    for (size_t i = 0; i < nucs.size(); i++) {
         const Nucleus &nuc = nucs[i];
         int minAO = std::ceil(nuc.getElement().getZ() / 2.0);
         double Z = nuc.getCharge();
@@ -205,8 +204,8 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
                 HydrogenFunction h_func(n, l, m, Z, R);
                 Phi.push_back(Orbital(SPIN::Paired));
                 Phi.back().setRank(Phi.size() - 1);
-                if (mrcpp::mpi::my_orb(Phi.back())) {
-                    mrcpp::cplxfunc::project(Phi.back(), h_func, NUMBER::Real, prec);
+                if (mrcpp::mpi::my_func(Phi.back())) {
+                    mrcpp::project(Phi.back(), h_func, prec);
                     if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
                 }
 
@@ -227,13 +226,13 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi) {
     if (Psi.size() == 0) return;
     Timer t_tot;
-    mrcpp::mpifuncvec::rotate(Phi, U, Psi, prec);
+    mrcpp::rotate(Phi, U, Psi, prec);
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
 }
 
 ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOperator &p, RankZeroOperator &V) {
     Timer t1;
-    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
+    ComplexMatrix S_m12 = mrcpp::calc_lowdin_matrix(Phi);
     mrcpp::print::separator(2, '-');
     ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(p, Phi, Phi);
     ComplexMatrix v_tilde = V(Phi, Phi);

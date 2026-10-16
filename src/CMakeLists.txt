@@ -33,6 +33,7 @@ add_subdirectory(chemistry)
 add_subdirectory(environment)
 add_subdirectory(mrdft)
 add_subdirectory(properties)
+add_subdirectory(pseudopotential)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 add_subdirectory(scf_solver)
@@ -51,11 +52,17 @@ target_link_libraries(mrchem
   PRIVATE
     Eigen3::Eigen
   PUBLIC
+    Libxc::xc
     XCFun::xcfun
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json
     $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:OpenMP::OpenMP_CXX>
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MPI::MPI_CXX>
+  )
+
+# Suppress warnings from Eigen headers (-isystem instead of -I)
+target_include_directories(mrchem SYSTEM PRIVATE
+  $<TARGET_PROPERTY:Eigen3::Eigen,INTERFACE_INCLUDE_DIRECTORIES>
   )
 
 set_target_properties(mrchem

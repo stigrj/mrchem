@@ -55,7 +55,7 @@ public:
 private:
     const int D;
 
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
@@ -89,7 +89,7 @@ public:
     QMAlpha() = default;
 
 private:
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
@@ -101,7 +101,7 @@ private:
  * @brief Spin beta operator
  *
  * Operator that acts as Identity when applied on beta (or paired) orbitals,
- * and as Zero when applid on alpha orbitals.
+ * and as Zero when applied on alpha orbitals.
  *
  * Can be defined as:
  *
@@ -123,7 +123,7 @@ public:
     QMBeta() = default;
 
 private:
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;

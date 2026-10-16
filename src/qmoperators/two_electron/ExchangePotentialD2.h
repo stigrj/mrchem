@@ -65,9 +65,9 @@ private:
     std::shared_ptr<OrbitalVector> orbitals_y; ///< second set of perturbed orbitals defining the exchange operator
 
     void setupBank() override;
-    void clearBank();
+    void clearBank() override;
 
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital phi_p) override;
     Orbital dagger(Orbital phi_p) override;

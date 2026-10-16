@@ -74,7 +74,7 @@ bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Method        ", "Project GTO molecular orbitals");
     print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Screening     ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
-    if (orbital::size_singly(Phi)) {
+    if (!orbital::size_doubly(Phi)) {
         print_utils::text(0, "Restricted    ", "False");
         print_utils::text(0, "MO alpha file ", moa_file);
         print_utils::text(0, "MO beta file  ", mob_file);
@@ -142,21 +142,32 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     // Read MO file (transpose)
     Timer t2;
     DoubleMatrix MO = math_utils::read_matrix_file(mo_file);
-    if (MO.cols() < Phi.size()) MSG_ABORT("Size mismatch");
+    if (static_cast<size_t>(MO.cols()) < Phi.size()) MSG_ABORT("Size mismatch");
     t2.stop();
 
     Timer t3;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mrcpp::mpi::my_orb(Phi[i])) {
+        bool grid_was_built = false;
+        if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
-            Phi[i].alloc(NUMBER::Real);
             mrcpp::project(prec, Phi[i].real(), mo_i);
+            if (std::abs(Phi[i].norm() - 1.0) > 1e2 * prec) {
+                GaussExp<3> mo_i_grid = gto_exp.getMO(i, MO.transpose(), prec * 1e-1);
+                GaussExp<3> mo_i_screened = gto_exp.getMO(i, MO.transpose(), prec * 1e-2);
+                grid_was_built = true;
+                mrcpp::build_grid(Phi[i].real(), mo_i_grid);
+                mrcpp::project(prec, Phi[i].real(), mo_i_screened);
+                Phi[i].real().crop(prec * 1e-1, false);
+            }
         }
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
         o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
+        if (grid_was_built) {
+            o_txt << '*';
+        }
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
@@ -217,15 +228,14 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         intgrl.getNucleus(0).setCoord(nuc.getCoord());
         gto_utils::OrbitalExp gto_exp(intgrl);
 
-        int n = 0;
-        for (int i = 0; i < gto_exp.size(); i++) {
+        for (size_t i = 0; i < gto_exp.size(); i++) {
             Timer t_i;
             Phi.push_back(Orbital(SPIN::Paired));
             Phi.back().setRank(Phi.size() - 1);
             GaussExp<3> ao_i = gto_exp.getAO(i);
             ao_i.calcScreening(screen);
-            if (mrcpp::mpi::my_orb(Phi.back())) {
-                mrcpp::cplxfunc::project(Phi.back(), ao_i, NUMBER::Real, prec);
+            if (mrcpp::mpi::my_func(Phi.back())) {
+                mrcpp::project(Phi.back(), ao_i, prec);
                 if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
             }
 

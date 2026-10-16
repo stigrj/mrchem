@@ -1,0 +1,249 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+/**
+ * @file projectorOperator.h
+ * @brief Non-local pseudopotential projector operator classes.
+ *
+ * This file contains the classes needed to apply the non-local part of
+ * pseudopotentials using projector functions. The projectors are organized
+ * hierarchically by atom, angular momentum (l), and magnetic quantum number (m).
+ */
+
+#include "tensor/RankZeroOperator.h"
+#include "mrchem.h"
+#include "pseudopotential/pseudopotential.h"
+#include "pseudopotential/projector.h"
+#include "qmfunctions/Orbital.h"
+#include "chemistry/Molecule.h"
+#include "qmoperators/QMOperator.h"
+#include <string>
+
+#include "MRCPP/Printer"
+
+/**
+ * @class magneticQuantumNumberProjector
+ * @brief Container for projector functions with the same magnetic quantum number m.
+ *
+ * For a given angular momentum l and magnetic quantum number m, this class
+ * holds all projector functions (indexed by i) that share these quantum numbers.
+ */
+class magneticQuantumNumberProjector {
+public:
+    std::vector<ProjectorFunction> iProj; ///< Projector functions for this (l,m) pair
+};
+
+/**
+ * @class angularMomentumProjector
+ * @brief Container for projectors with the same angular momentum l.
+ *
+ * For a given angular momentum l, this class holds projectors for all
+ * magnetic quantum numbers m ranging from -l to +l.
+ */
+class angularMomentumProjector {
+public:
+    std::vector<magneticQuantumNumberProjector> mProj; ///< Projectors indexed by m
+};
+
+/**
+ * @class AtomProjector
+ * @brief Container for all projectors associated with a single atom.
+ *
+ * This class organizes the non-local pseudopotential projectors for one atom,
+ * with projectors grouped by angular momentum l.
+ */
+class AtomProjector {
+public:
+    std::vector<angularMomentumProjector> lProj; ///< Projectors indexed by angular momentum l
+};
+
+/**
+ * @class ProjectorOperatorQM
+ * @brief Quantum mechanical operator for non-local pseudopotential projectors.
+ *
+ * This class implements the non-local part of the pseudopotential using
+ * the Goedecker-Teter-Hutter (GTH) form. It applies projector operators to orbitals
+ * by computing inner products with projector functions and forming linear
+ * combinations weighted by the pseudopotential matrix elements h_ij^l.
+ */
+class ProjectorOperatorQM final : public mrchem::QMOperator {
+
+    std::vector<PseudopotentialData> pp; ///< Pseudopotential data for each atom
+    std::vector<AtomProjector> proj;      ///< Projector functions for each atom
+    double prec;                          ///< Numerical precision
+
+public:
+    /**
+     * @brief Constructs the projector operator for a set of nuclei.
+     * @param nucs The nuclei with associated pseudopotential data.
+     * @param prec The numerical precision for projector functions.
+     */
+    ProjectorOperatorQM(mrchem::Nuclei const &nucs, double prec){
+
+        for (size_t i = 0; i < nucs.size(); i++){
+            if (!nucs[i].hasPseudopotential()){
+                MSG_ABORT("No pseudopotential for atom " + std::to_string(i));
+            }
+            this->pp.push_back(*nucs[i].getPseudopotentialData());
+        }
+
+        this->prec = prec;
+
+        // loop over all atoms and create projectors
+        for (size_t i = 0; i < nucs.size(); i++) {
+            mrcpp::Coord<3> pos = nucs[i].getCoord();
+            proj.push_back(AtomProjector());
+            for (int l = 0; l < pp[i].nsep; l++) {
+                proj[i].lProj.push_back(angularMomentumProjector());
+                for (int m = -l; m <= l; m++) {
+                    int mIndex = m + l;
+                    proj[i].lProj[l].mProj.push_back(magneticQuantumNumberProjector());
+                    for (int idim = 0; idim < pp[i].dim_h[l]; idim++){
+                        ProjectorFunction pppp(pos, pp[i].rl[l], idim, l, m, prec);
+                        proj[i].lProj[l].mProj[mIndex].iProj.push_back(pppp);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @brief Sets up the operator with the given precision.
+     * @param prec The numerical precision.
+     */
+    void setup(double prec) override {
+        this->prec = prec;
+    }
+
+    /**
+     * @brief Clears the operator state.
+     */
+    void clear() override {
+    }
+
+protected:
+
+    /**
+     * @brief Applies the non-local projector operator to an orbital.
+     * @param phi The input orbital.
+     * @return The resulting orbital after applying the projector operator.
+     *
+     * The application follows the GTH separable form: sum over atoms, angular
+     * momenta, and projector indices of h_ij^l * <p_i|phi> * |p_j>.
+     */
+    mrchem::Orbital apply(mrchem::Orbital phi) override {
+    // loop over all atoms
+    ComplexDouble dotComplex;
+
+    std::vector<ComplexDouble> complexCoefficients;
+    // Note that mrcpp::CompFunctionVector is more than just a vector of CompFunction
+    std::vector<mrcpp::CompFunction<3>> complexFunctionVector;
+
+    for (size_t iat = 0; iat < proj.size(); iat++) {
+        // loop over all angular momenta
+        for (int l = 0; l < pp[iat].nsep; l++){
+            // loop over all magnetic quantum numbers
+            for (int m = -l; m <= l; m++){
+                int mm = m + l;
+                // loop over all projectors
+                Eigen::VectorXd dot_products(pp[iat].dim_h[l]);
+                for (int ip = 0; ip < pp[iat].dim_h[l]; ip++){
+                    dotComplex = mrcpp::dot(phi, *proj[iat].lProj[l].mProj[mm].iProj[ip].projector_ptr);
+                    dot_products(ip) = dotComplex.real();
+                }
+                dot_products = pp[iat].h[l] * dot_products;
+                // loop over all projectors
+                for (int ip = 0; ip < pp[iat].dim_h[l]; ip++){
+                    complexCoefficients.push_back(dot_products(ip));
+                    complexFunctionVector.push_back(*proj[iat].lProj[l].mProj[mm].iProj[ip].projector_ptr);
+                }
+            }
+        }
+
+    }
+    // convert complexCoefficients to Eigen Vector:
+    mrchem::ComplexVector complexCoefficientsEigen = Eigen::Map<Eigen::VectorXcd>(complexCoefficients.data(), complexCoefficients.size());
+
+    mrchem::Orbital result;
+
+    for (size_t i = 0; i < complexCoefficients.size(); i++){
+        result.add(complexCoefficients[i], complexFunctionVector[i]);
+    }
+
+    return result;
+}
+
+    /**
+     * @brief Applies the adjoint (dagger) operator to an orbital.
+     * @param phi The input orbital.
+     * @return The resulting orbital (same as apply since the operator is Hermitian).
+     */
+    mrchem::Orbital dagger(mrchem::Orbital phi) override {
+        return apply(phi);
+    }
+
+    /**
+     * @brief Evaluates the operator at a given coordinate (not implemented).
+     * @param r The coordinate.
+     * @return Zero (placeholder).
+     */
+    mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const override {
+        (void)r;
+        return ComplexDouble(0.0, 0.0);
+    }
+
+    /**
+     * @brief Applies the operator to another operator (not implemented).
+     * @param O The input operator.
+     */
+    mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) override {
+        (void)O;
+        NOT_IMPLEMENTED_ABORT;
+    }
+};
+
+/**
+ * @class ProjectorOperator
+ * @brief High-level interface for the non-local pseudopotential projector operator.
+ *
+ * This class wraps ProjectorOperatorQM as a RankZeroOperator, providing an
+ * interface for use in the MRChem framework.
+ */
+class ProjectorOperator : public mrchem::RankZeroOperator {
+
+public:
+    /**
+     * @brief Constructs a projector operator for a set of nuclei.
+     * @param nucs The nuclei with associated pseudopotential data.
+     * @param prec The numerical precision.
+     */
+    ProjectorOperator(mrchem::Nuclei const &nucs, double prec) {
+        auto qmOperator = std::make_shared<ProjectorOperatorQM>(nucs, prec);
+        mrchem::RankZeroOperator &pp = (*this);
+        pp = qmOperator;
+    }
+};

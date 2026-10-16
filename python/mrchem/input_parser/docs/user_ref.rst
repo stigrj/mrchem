@@ -231,11 +231,23 @@ User input reference
   
     **Default** ``-1``
   
-   :omp_threads: Force the number of omp threads (leave default is better). 
+   :bank_per_node: Number of MPI processes per node exclusively dedicated to manage orbital bank. 
   
     **Type** ``int``
   
     **Default** ``-1``
+  
+   :omp_threads: Force the number of omp threads for worker processes (leave default is better). 
+  
+    **Type** ``int``
+  
+    **Default** ``-1``
+  
+   :use_omp_num_threads: This will use the environment variable OMP_NUM_THREADS to determine the average number of threads for OMP (bank will use 1, workers may use more). 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
   
  :Basis: Define polynomial basis. 
 
@@ -306,9 +318,17 @@ User input reference
   
     **Default** ``False``
   
-   :coords: Coordinates in xyz format. Atoms can be given either using atom symbol or atom number 
+   :coords: Coordinates in xyz format. Atoms can be given either using atom symbol or atom number. Mutually exclusive with ``xyz_file``. 
   
     **Type** ``str``
+  
+    **Default** ````
+  
+   :xyz_file: Path to an XYZ file containing atomic coordinates. The file must follow the standard XYZ format (first line: atom count, second line: comment, remaining lines: ``<symbol> x y z``). Mutually exclusive with ``coords``. Coordinates are interpreted in the unit set by ``world_unit``. 
+  
+    **Type** ``str``
+  
+    **Default** ````
   
  :WaveFunction: Define the wavefunction method. 
 
@@ -353,6 +373,21 @@ User input reference
     **Predicates**
       - ``value.lower() in ['point_like', 'point_parabola', 'point_minimal', 'finite_gaussian', 'finite_sphere']``
   
+ :Pseudopotential: Define the pseudopotentials. 
+
+  :red:`Keywords`
+   :pp_files: Json string of pseudopotential files. The key can be the element symbol or a number. When the key is an element symbol, all atoms of that element will use the given pseudopotential. When the key is a number (index is 1 based), the corresponding atom will use the given pseudopotential. When the value is an empty string, an all electron calculation will  be performed for the corresponding atom or element. 
+  
+    **Type** ``str``
+  
+    **Default** ``{}``
+  
+   :pp_prec: Precision parameter used in construction of pseudopotentials. 
+  
+    **Type** ``float``
+  
+    **Default** ``user['world_prec']``
+  
  :ZORA: Define required parameters for the ZORA Hamiltonian. 
 
   :red:`Keywords`
@@ -388,6 +423,12 @@ User input reference
     **Type** ``float``
   
     **Default** ``0.0``
+  
+   :xc_library: Runs Libxc or XCFun 
+  
+    **Type** ``str``
+  
+    **Default** ``xcfun``
   
    :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun documentation <https://xcfun.readthedocs.io/>_. 
   
@@ -452,6 +493,33 @@ User input reference
   
     **Default** ``False``
   
+   :population_analysis: Compute population analysis, also possible for half of the space. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :population_dimension: Dimension for population analysis. 0: total, 1: split x, 2: split y, 3: split z. 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+    **Predicates**
+      - ``value in [0, 1, 2, 3]``
+  
+   :population_orbitals: Compute population analysis for the individual orbitals. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+   :population_density: Compute population analysis for the total density. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
    :geometric_derivative: Compute geometric derivative. 
   
     **Type** ``bool``
@@ -483,7 +551,7 @@ User input reference
   
     **Type** ``float``
   
-    **Default** ``0.6``
+    **Default** ``0.5``
   
  :ExternalFields: Define external electromagnetic fields. 
 
@@ -656,7 +724,7 @@ User input reference
   
     **Default** ``initial_guess/y_b``
   
-   :cube_vectors: Directory where cube vectors are stored for mrchem calculation. 
+   :cube_vectors: Directory where cube vectors are stored for MRChem calculation. 
   
     **Type** ``str``
   
@@ -728,14 +796,32 @@ User input reference
   
     **Default** ``-1.0``
   
-   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. 
+   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. ``nao`` will start from orbitals saved in NAO format from external calculations.  It also allows for some mixing iterations to converge the initial guess within the nao basis. 
   
     **Type** ``str``
   
     **Default** ``sad_gto``
   
     **Predicates**
-      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']``
+      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube', 'nao']``
+  
+   :nao_directory: Directory where NAO orbitals are stored for MRChem calculation. 
+  
+    **Type** ``str``
+  
+    **Default** ``none``
+  
+   :initial_mixing_steps: Number of mixing iterations to converge the initial guess within the nao basis. 
+  
+    **Type** ``int``
+  
+    **Default** ``4``
+  
+   :initial_mixing_step_size: Step size for the mixing iterations to converge the initial guess within the nao basis. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.4``
   
    :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint". 
   
@@ -752,6 +838,18 @@ User input reference
     **Predicates**
       - ``value[-1] != '/'``
   
+   :write_density: Write final density to disk, file name ``<path_orbitals>/phi_dens_<p/a/b>``. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :write_orbitals_txt: Write final orbitals to disk, in text format, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
    :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. Note: must be given in quotes if there are slashes in the path "path/to/orbitals". 
   
     **Type** ``str``
@@ -766,6 +864,12 @@ User input reference
     **Type** ``bool``
   
     **Default** ``True``
+  
+   :deltascf_method: Method to use for a DeltaSCF calculation. Options are ``none`` for a normal SCF run, ``MOM`` for a run using the MOM method and ``IMOM`` for a run using the IMOM method. 
+  
+    **Type** ``str``
+  
+    **Default** ``none``
   
    :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
   
@@ -1070,6 +1174,15 @@ User input reference
     **Type** ``float``
   
     **Default** ``0.005``
+  
+ :OrbitalOccupancies: Modify the default orbital occupancies in order to perform a DeltaSCF calculation. 
+
+  :red:`Keywords`
+   :occupancies: List of orbitals, i, for which the default occupancy, f, should be overwritten, written as a list in the format "i f_up f_down", where the orbitals are indexed from zero. 
+  
+    **Type** ``str``
+  
+    **Default** ````
   
  :Constants: Physical and mathematical constants used by MRChem
 

@@ -25,14 +25,14 @@
 
 #pragma once
 
-#include "mrchem.h"
-#include "Orbital.h"
 #include "Density.h"
+#include "Orbital.h"
+#include "mrchem.h"
 
 namespace mrchem {
 namespace density {
 
-void allreduce_density(double prec, Density &rho_tot, Density &rho_loc);
+void allreduce_density(Density &rho_tot, Density &rho_loc);
 void compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp);
 void compute(double prec, Density &rho, OrbitalVector &Phi, DensityType spin);
 void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin);
@@ -46,6 +46,13 @@ void compute_local(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector 
  * @param rhoGrid The grid for the atomic density values
  */
 void readAtomicDensity(const std::string path, Eigen::VectorXd &rGrid, Eigen::VectorXd &rhoGrid);
+
+/**
+ * @brief Saves the density to a file
+ * @param Phi The orbital vector containing from which to compute the density
+ * @param file The file path to save the density
+ */
+void save_density(OrbitalVector &Phi, const std::string &file);
 
 } // namespace density
 } // namespace mrchem

@@ -37,26 +37,24 @@ namespace density_tests {
 
 TEST_CASE("Density", "[density]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-12;
 
     SECTION("calc density") {
         OrbitalVector Phi;
         for (int i = 0; i < 5; i++) Phi.push_back(Orbital(SPIN::Alpha));
         for (int i = 0; i < 2; i++) Phi.push_back(Orbital(SPIN::Beta));
-        Phi.distribute();
 
         HydrogenFunction s1(1, 0, 0);
         HydrogenFunction s2(2, 0, 0);
         HydrogenFunction px(2, 1, 0);
         HydrogenFunction py(2, 1, 1);
         HydrogenFunction pz(2, 1, 2);
-        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], s1, NUMBER::Real, prec);
-        if (mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], s2, NUMBER::Real, prec);
-        if (mrcpp::mpi::my_orb(Phi[2])) mrcpp::cplxfunc::project(Phi[2], px, NUMBER::Imag, prec);
-        if (mrcpp::mpi::my_orb(Phi[3])) mrcpp::cplxfunc::project(Phi[3], py, NUMBER::Imag, prec);
-        if (mrcpp::mpi::my_orb(Phi[4])) mrcpp::cplxfunc::project(Phi[4], pz, NUMBER::Imag, prec);
-        if (mrcpp::mpi::my_orb(Phi[5])) mrcpp::cplxfunc::project(Phi[5], s1, NUMBER::Real, prec);
-        if (mrcpp::mpi::my_orb(Phi[6])) mrcpp::cplxfunc::project(Phi[6], s1, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[0])) mrcpp::project(Phi[0], s1, prec);
+        if (mrcpp::mpi::my_func(Phi[1])) mrcpp::project(Phi[1], s2, prec);
+        if (mrcpp::mpi::my_func(Phi[2])) mrcpp::project(Phi[2], px, prec);
+        if (mrcpp::mpi::my_func(Phi[3])) mrcpp::project(Phi[3], py, prec);
+        if (mrcpp::mpi::my_func(Phi[4])) mrcpp::project(Phi[4], pz, prec);
+        if (mrcpp::mpi::my_func(Phi[5])) mrcpp::project(Phi[5], s1, prec);
+        if (mrcpp::mpi::my_func(Phi[6])) mrcpp::project(Phi[6], s1, prec);
 
         SECTION("non-shared memory total/spin density") {
             Density rho_t(false);

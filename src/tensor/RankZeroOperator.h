@@ -68,8 +68,8 @@ public:
     RankZeroOperator(const RankZeroOperator &O) { *this = O; }
     virtual ~RankZeroOperator() {}
 
-    int size() const { return this->oper_exp.size(); }
-    int size(int i) const { return this->oper_exp[i].size(); }
+    size_t size() const { return this->oper_exp.size(); }
+    size_t size(int i) const { return this->oper_exp[i].size(); }
 
     std::string &name() { return this->oper_name; }
     const std::string &name() const { return this->oper_name; }
@@ -110,28 +110,34 @@ public:
     RankZeroOperator &operator-=(const RankZeroOperator &O);
 
     friend RankZeroOperator operator*(ComplexDouble a, RankZeroOperator A);
+    friend RankZeroOperator operator*(double a, RankZeroOperator A);
     friend RankZeroOperator operator*(RankZeroOperator A, RankZeroOperator B);
     friend RankZeroOperator operator+(RankZeroOperator A, RankZeroOperator B);
     friend RankZeroOperator operator-(RankZeroOperator A, RankZeroOperator B);
+
+    bool isImag() { return this->imag; }
+    void setImag(bool im) { this->imag = im; }
 
 protected:
     std::string oper_name{"O"};
     std::vector<ComplexDouble> coef_exp;
     std::vector<QMOperatorVector> oper_exp;
 
-    Orbital applyOperTerm(int n, Orbital inp);
-    Orbital daggerOperTerm(int n, Orbital inp);
+    Orbital applyOperTerm(int n, const Orbital &inp);
+    Orbital daggerOperTerm(int n, const Orbital &inp);
     ComplexDouble traceOperTerm(int n, const Nuclei &nucs);
-    ComplexVector getCoefVector() const;
+    std::vector<ComplexDouble> getCoefVector() const;
+    bool imag = false; // value will be taken from QMOperator
 };
 
-inline RankZeroOperator operator*(ComplexDouble a, RankZeroOperator A) {
+inline RankZeroOperator operator*(double a, RankZeroOperator A) {
     RankZeroOperator out;
     out.name() = A.name();
-    for (int i = 0; i < A.oper_exp.size(); i++) {
+    for (size_t i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(a * A.coef_exp[i]);
         out.oper_exp.push_back(A.oper_exp[i]);
     }
+    out.imag = A.imag;
     return out;
 }
 
@@ -153,17 +159,20 @@ inline RankZeroOperator operator*(RankZeroOperator A, RankZeroOperator B) {
             out.oper_exp.push_back(tmp);
         }
     }
+    out.imag = A.imag;
     return out;
 }
 
 inline RankZeroOperator operator+(RankZeroOperator A, RankZeroOperator B) {
     RankZeroOperator out;
     out.name() = A.name() + " + " + B.name();
-    for (int i = 0; i < A.oper_exp.size(); i++) {
+    if (not(A.imag == B.imag)) MSG_ABORT("Cannot add real and imaginary operators " + out.name());
+    out.imag = A.imag;
+    for (size_t i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(A.coef_exp[i]);
         out.oper_exp.push_back(A.oper_exp[i]);
     }
-    for (int i = 0; i < B.oper_exp.size(); i++) {
+    for (size_t i = 0; i < B.oper_exp.size(); i++) {
         out.coef_exp.push_back(B.coef_exp[i]);
         out.oper_exp.push_back(B.oper_exp[i]);
     }
@@ -173,11 +182,13 @@ inline RankZeroOperator operator+(RankZeroOperator A, RankZeroOperator B) {
 inline RankZeroOperator operator-(RankZeroOperator A, RankZeroOperator B) {
     RankZeroOperator out;
     out.name() = A.name() + " - " + B.name();
-    for (int i = 0; i < A.oper_exp.size(); i++) {
+    if (not(A.imag == B.imag)) MSG_ABORT("Cannot add real and imaginary operators " + out.name());
+    out.imag = A.imag;
+    for (size_t i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(A.coef_exp[i]);
         out.oper_exp.push_back(A.oper_exp[i]);
     }
-    for (int i = 0; i < B.oper_exp.size(); i++) {
+    for (size_t i = 0; i < B.oper_exp.size(); i++) {
         out.coef_exp.push_back(-B.coef_exp[i]);
         out.oper_exp.push_back(B.oper_exp[i]);
     }

@@ -46,12 +46,11 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     int nFuncs = 3;
     OrbitalVector Phi;
     for (int n = 0; n < nFuncs; n++) Phi.push_back(Orbital(SPIN::Paired));
-    Phi.distribute();
 
     for (int n = 0; n < nFuncs; n++) {
         int nu[3] = {n, 0, 0};
         HarmonicOscillatorFunction f(nu);
-        if (mrcpp::mpi::my_orb(Phi[n])) mrcpp::cplxfunc::project(Phi[n], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[n])) mrcpp::project(Phi[n], f, prec);
     }
 
     // reference values for harmonic oscillator eigenfunctions
@@ -71,8 +70,8 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     T.setup(prec);
     SECTION("apply") {
         Orbital Tphi_0 = T(Phi[0]);
-        ComplexDouble T_00 = orbital::dot(Phi[0], Tphi_0);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        ComplexDouble T_00 = mrcpp::dot(Phi[0], Tphi_0);
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(T_00.real() == Catch::Approx(E_K(0)));
             REQUIRE(T_00.imag() < thrs);
         } else {
@@ -83,9 +82,9 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     SECTION("vector apply") {
         OrbitalVector TPhi = T(Phi);
         ComplexMatrix t = orbital::calc_overlap_matrix(Phi, TPhi);
-        for (int i = 0; i < Phi.size(); i++) {
-            ComplexDouble T_ii = orbital::dot(Phi[i], TPhi[i]);
-            if (mrcpp::mpi::my_orb(Phi[i])) {
+        for (size_t i = 0; i < Phi.size(); i++) {
+            ComplexDouble T_ii = mrcpp::dot(Phi[i], TPhi[i]);
+            if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(T_ii.real() == Catch::Approx(E_K(i)));
                 REQUIRE(T_ii.imag() < thrs);
             } else {
@@ -96,7 +95,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble T_00 = T(Phi[0], Phi[0]);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(T_00.real() == Catch::Approx(E_K(0)));
             REQUIRE(T_00.imag() < thrs);
         } else {
@@ -106,7 +105,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix t = T(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             REQUIRE(t(i, i).real() == Catch::Approx(E_K(i)));
             REQUIRE(t(i, i).imag() < thrs);
         }

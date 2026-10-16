@@ -37,14 +37,13 @@ public:
     QMDerivative(const QMDerivative &inp);
 
 private:
-    const bool imag;     // add imaginary unit prefactor, for faster application
     const int apply_dir; // Cartesian direction of derivative
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 
     bool isReal() const { return not(imag); }
     bool isImag() const { return imag; }
 
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;

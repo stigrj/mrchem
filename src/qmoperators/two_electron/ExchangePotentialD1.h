@@ -54,12 +54,12 @@ public:
 private:
     mrcpp::BankAccount PhiBank; // to put the Orbitals
     void setupBank() override;
-    void clearBank();
+    void clearBank() override;
     int testInternal(Orbital phi_p) const override;
     void setupInternal(double prec) override;
     Orbital calcExchange(Orbital phi_p);
 
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital phi_p) override;
     Orbital dagger(Orbital phi_p) override;

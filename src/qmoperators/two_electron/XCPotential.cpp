@@ -29,6 +29,7 @@
 #include "XCPotential.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
+#include <vector>
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;
@@ -64,6 +65,67 @@ void XCPotential::setup(double prec) {
 
     auto &grid = this->mrdft->grid().get();
     mrcpp::FunctionTreeVector<3> xc_inp = setupDensities(prec, grid);
+
+    if (this->nucs != nullptr) { // Check if there are any NLCCs
+        bool pairedDensity = !this->mrdft->functional().isSpin();
+        std::vector<mrcpp::Coord<3>> nlccCoords;
+        std::vector<double> prefacts;
+        std::vector<double> nlccrs;
+        // Eigen::VectorXd nlccqcores;
+        for (size_t i = 0; i < this->nucs->size(); i++) {
+            Nucleus nuc = (*nucs)[i];
+            if ( nuc.hasPseudopotential()) {
+                if (nuc.getPseudopotentialData()->getHasNlcc()) {
+                    nlccCoords.push_back(nuc.getCoord());
+                    double prefact = - nuc.getPseudopotentialData()->getQnlcc()
+                        * (nuc.getPseudopotentialData()->getZeff() - nuc.getPseudopotentialData()->getZion())
+                        / std::pow((std::sqrt(2 * M_PI) * nuc.getPseudopotentialData()->getRnlcc()), 3.0);
+                    prefacts.push_back(prefact); // minus because rho is electron density not charge density
+                    nlccrs.push_back(nuc.getPseudopotentialData()->getRnlcc());
+                }
+            }
+        }
+        bool hasnlcc = prefacts.size() > 0;
+        if (hasnlcc) {
+            auto rho_analytic = [prefacts, nlccCoords, nlccrs](const mrcpp::Coord<3> &r) {
+                size_t n = prefacts.size();
+                double rho = 0.0;
+                for (size_t i = 0; i < n; i++) {
+                    double rr = std::sqrt((r[0] - nlccCoords[i][0]) * (r[0] - nlccCoords[i][0])
+                        + (r[1] - nlccCoords[i][1]) * (r[1] - nlccCoords[i][1])
+                        + (r[2] - nlccCoords[i][2]) * (r[2] - nlccCoords[i][2]));
+                    rho += prefacts[i] * std::exp(-rr * rr / (2 * nlccrs[i] * nlccrs[i]));
+                }
+                return rho;
+            };
+            double sigma = 0.6;
+            auto gauss = [sigma, nlccCoords](const mrcpp::Coord<3> &r) {
+                int n = nlccCoords.size();
+                double rho = 0.0;
+                for (int i = 0; i < n; i++) {
+                    double rr = std::sqrt((r[0] - nlccCoords[i][0]) * (r[0] - nlccCoords[i][0])
+                        + (r[1] - nlccCoords[i][1]) * (r[1] - nlccCoords[i][1])
+                        + (r[2] - nlccCoords[i][2]) * (r[2] - nlccCoords[i][2]));
+                    rho += std::exp(-rr * rr / (2 * sigma * sigma));
+                }
+                double gaussNormalization = 1.0 / (std::pow(2 * M_PI, 1.5) * std::pow(sigma, 3.0));
+                return rho * gaussNormalization;
+            };
+            mrcpp::AnalyticFunction<3> rho_analytic_func(rho_analytic);
+            mrcpp::CompFunction rho_nlcc;
+            mrcpp::project(rho_nlcc, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
+            mrcpp::project(rho_nlcc, rho_analytic_func, prec);
+
+            if (pairedDensity) {
+                mrcpp::get_func(xc_inp, 0).add(1.0, rho_nlcc.real());
+            } else {
+                mrcpp::get_func(xc_inp, 0).add(0.5, rho_nlcc.real());
+                mrcpp::get_func(xc_inp, 1).add(0.5, rho_nlcc.real());
+            }
+        }
+    }
+
+
     mrcpp::FunctionTreeVector<3> xc_out = this->mrdft->evaluate(xc_inp);
 
     // Fetch energy
@@ -85,11 +147,10 @@ void XCPotential::setup(double prec) {
         this->potentials.push_back(std::make_tuple(1.0, v_global));
     }
 
-
     if (plevel == 2) {
         int totNodes = 0;
         int totSize = 0;
-        for (auto i = 0; i < this->potentials.size(); i++) {
+        for (size_t i = 0; i < this->potentials.size(); i++) {
             auto &f_i = mrcpp::get_func(this->potentials, i);
             totNodes += f_i.getNNodes();
             totSize += f_i.getSizeNodes();
@@ -104,7 +165,7 @@ void XCPotential::setup(double prec) {
 /** @brief Clears all data in the XCPotential object */
 void XCPotential::clear() {
     this->energy = 0.0;
-    for (auto &rho : this->densities) rho.free(NUMBER::Total);
+    for (auto &rho : this->densities) rho.free();
     mrcpp::clear(this->potentials, true);
     clearApplyPrec();
 }
@@ -124,7 +185,7 @@ Density &XCPotential::getDensity(DensityType spin, int pert_idx) {
         NOT_IMPLEMENTED_ABORT;
     }
     if (dens_idx < 0) MSG_ABORT("Invalid density index");
-    if (dens_idx > densities.size()) MSG_ABORT("Invalid density index");
+    if (dens_idx > static_cast<int>(densities.size())) MSG_ABORT("Invalid density index");
     return densities[dens_idx];
 }
 
@@ -185,6 +246,7 @@ Orbital XCPotential::dagger(Orbital phi) {
 }
 
 QMOperatorVector XCPotential::apply(QMOperator_p &O) {
+    (void)O;
     NOT_IMPLEMENTED_ABORT;
 }
 

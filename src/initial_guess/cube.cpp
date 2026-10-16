@@ -60,7 +60,7 @@ bool initial_guess::cube::setup(OrbitalVector &Phi, double prec, const std::stri
     print_utils::text(0, "Calculation   ", "Compute initial orbitals");
     print_utils::text(0, "Method        ", "Project cube file molecular orbitals");
     print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
-    if (orbital::size_singly(Phi)) {
+    if (! orbital::size_doubly(Phi)) {
         print_utils::text(0, "Restricted    ", "False");
         print_utils::text(0, "MO alpha file ", file_a);
         print_utils::text(0, "MO beta file  ", file_b);
@@ -116,11 +116,11 @@ bool initial_guess::cube::project_mo(OrbitalVector &Phi, double prec, const std:
     auto CUBEVector = initial_guess::cube::getCUBEFunction(cube_inp);
 
     bool success = true;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mrcpp::mpi::my_orb(Phi[i])) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
             CUBEfunction phi_i = CUBEVector[i];
-            Phi[i].alloc(NUMBER::Real);
+            Phi[i].alloc(1);
             mrcpp::project(prec, Phi[i].real(), phi_i);
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;

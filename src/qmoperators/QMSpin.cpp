@@ -64,8 +64,8 @@ Orbital QMSpin::apply(Orbital inp) {
             MSG_ABORT("Cannot apply spin operator on paired orbital");
     }
 
-    Orbital out = inp.paramCopy();
-    mrcpp::cplxfunc::deep_copy(out, inp);
+    Orbital out;
+    mrcpp::deep_copy(out, inp);
     out.rescale(coef);
 
     // Flip spin for s_x and s_y
@@ -78,6 +78,7 @@ Orbital QMSpin::apply(Orbital inp) {
 }
 
 Orbital QMSpin::dagger(Orbital inp) {
+    (void)inp;
     NOT_IMPLEMENTED_ABORT;
 }
 
@@ -106,7 +107,7 @@ Orbital QMAlpha::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Orbital out(SPIN::Alpha, 1, inp.getRank());
-    if (inp.spin() == SPIN::Alpha || inp.spin() == SPIN::Paired) mrcpp::cplxfunc::deep_copy(out, inp);
+    if (inp.spin() == SPIN::Alpha || inp.spin() == SPIN::Paired) mrcpp::deep_copy(out, inp);
     return out;
 }
 
@@ -115,7 +116,7 @@ Orbital QMAlpha::dagger(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Orbital out(SPIN::Alpha, 1, inp.getRank());
-    if (inp.spin() == SPIN::Alpha || inp.spin() == SPIN::Paired) mrcpp::cplxfunc::deep_copy(out, inp);
+    if (inp.spin() == SPIN::Alpha || inp.spin() == SPIN::Paired) mrcpp::deep_copy(out, inp);
     return out;
 }
 
@@ -146,7 +147,7 @@ Orbital QMBeta::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Orbital out(SPIN::Beta, 1, inp.getRank());
-    if (inp.spin() == SPIN::Beta || inp.spin() == SPIN::Paired) mrcpp::cplxfunc::deep_copy(out, inp);
+    if (inp.spin() == SPIN::Beta || inp.spin() == SPIN::Paired) mrcpp::deep_copy(out, inp);
     return out;
 }
 
@@ -155,7 +156,7 @@ Orbital QMBeta::dagger(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Orbital out(SPIN::Beta, 1, inp.getRank());
-    if (inp.spin() == SPIN::Beta || inp.spin() == SPIN::Paired) mrcpp::cplxfunc::deep_copy(out, inp);
+    if (inp.spin() == SPIN::Beta || inp.spin() == SPIN::Paired) mrcpp::deep_copy(out, inp);
     return out;
 }
 

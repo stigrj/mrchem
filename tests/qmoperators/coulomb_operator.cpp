@@ -65,14 +65,12 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
             }
         }
     }
-    Phi.distribute();
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
     E_P(0, 0) = 3.1676468518;
@@ -86,8 +84,8 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
     V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
-        ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        ComplexDouble V_00 = mrcpp::dot(Phi[0], Vphi_0);
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -97,9 +95,9 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
-            ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
-            if (mrcpp::mpi::my_orb(Phi[i])) {
+        for (size_t i = 0; i < Phi.size(); i++) {
+            ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
+            if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i, i)).epsilon(thrs));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
@@ -110,7 +108,7 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -120,8 +118,8 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
-            for (int j = 0; j <= i; j++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
+            for (size_t j = 0; j <= i; j++) {
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));
                 REQUIRE(v(i, j).imag() < thrs);
             }
